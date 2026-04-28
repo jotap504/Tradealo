@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trocalia | SDD Visual Command Center</title>
+    <link rel="stylesheet" href="main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>TROCALIA</h1>
+                <span>Command Center v1.0</span>
+            </div>
+            <nav class="main-nav">
+                <button class="nav-item active" data-view="roadmap">Hoja de Ruta</button>
+                <button class="nav-item" data-view="modules">Especificaciones</button>
+                <button class="nav-item" data-view="flows">Flujos Paso a Paso</button>
+                <button class="nav-item" data-view="demo">Vista Previa UI</button>
+                <button class="nav-item" data-view="stack">Stack Tecnológico</button>
+                <button class="nav-item" data-view="security">Seguridad</button>
+                <button class="nav-item" data-view="rules">Reglas de Oro</button>
+                <button class="nav-item" data-view="claude">Integración Claude</button>
+            </nav>
+            <div class="status-panel">
+                <div class="status-item">
+                    <span class="label">Sistema:</span>
+                    <span class="value online">Operativo</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Progreso:</span>
+                    <div class="progress-mini">
+                        <div class="progress-bar" style="width: 5%"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="content-header">
+                <h2 id="view-title">Hoja de Ruta de Implementación</h2>
+                <div class="header-actions">
+                    <button id="copy-sdd" class="btn-secondary">Copiar Prompt SDD</button>
+                </div>
+            </header>
+
+            <section id="roadmap-view" class="view">
+                <div class="roadmap-grid" id="roadmap-container">
+                    <!-- Steps will be injected here -->
+                </div>
+            </section>
+
+            <section id="modules-view" class="view hidden">
+                <div class="modules-accordion" id="modules-container">
+                    <!-- Detailed modules will be injected here -->
+                </div>
+            </section>
+
+            <section id="flows-view" class="view hidden">
+                <div class="flows-grid">
+                    <div class="flow-card">
+                        <h3>Algoritmo: Autocorrección de Pasos</h3>
+                        <div class="code-block">
+                            <pre>
+1. Leer especificación
+2. Escribir código
+3. Escribir tests unitarios
+4. Ejecutar tests
+SI pasan → Tests integración
+SI fallan → Corregir (max 5 iteraciones)
+                            </pre>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <h3>Flujo de Checkout (Pagos)</h3>
+                        <div class="code-block">
+                            <pre>
+1. POST /checkout (idempotency key)
+2. Crear preferencia MercadoPago
+3. Guardar Compra (pending)
+4. Redirigir a Pasarela
+5. Recibir Webhook (Validar HMAC)
+6. ¿Aprobado? → Acreditar Tokens
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="demo-view" class="view hidden">
+                <div class="demo-container">
+                    <div class="demo-info">
+                        <h3>Identidad Visual Trocalia (C2C)</h3>
+                        <p>Diseño centrado en la confianza del usuario final. Estética limpia, ágil y profesional para un marketplace de persona a persona.</p>
+                        <ul class="demo-specs">
+                            <li><strong>Tipografía Display:</strong> Plus Jakarta Sans</li>
+                            <li><strong>Tipografía Body:</strong> Lato</li>
+                            <li><strong>Fondo Página:</strong> #EFEFEF</li>
+                            <li><strong>Tarjetas y Nav:</strong> #FFFFFF</li>
+                            <li><strong>Footer:</strong> #222222</li>
+                            <li><strong>Texto:</strong> #333333</li>
+                        </ul>
+                    </div>
+                    <div class="demo-mockup">
+                        <img src="trocalia_mockup.png" alt="Trocalia UI Mockup">
+                    </div>
+                </div>
+            </section>
+
+            <section id="stack-view" class="view hidden">
+                <div class="stack-grid">
+                    <div class="stack-card">
+                        <div class="stack-icon">⚡</div>
+                        <h3>Backend</h3>
+                        <ul>
+                            <li>Node.js 20 LTS</li>
+                            <li>NestJS 10</li>
+                            <li>Drizzle ORM</li>
+                            <li>BullMQ (Redis)</li>
+                        </ul>
+                    </div>
+                    <div class="stack-card">
+                        <div class="stack-icon">💎</div>
+                        <h3>Frontend</h3>
+                        <ul>
+                            <li>Next.js 14</li>
+                            <li>TailwindCSS</li>
+                            <li>shadcn/ui</li>
+                            <li>TanStack Query</li>
+                        </ul>
+                    </div>
+                    <div class="stack-card">
+                        <div class="stack-icon">🗄️</div>
+                        <h3>Database</h3>
+                        <ul>
+                            <li>PostgreSQL 16</li>
+                            <li>PostGIS</li>
+                            <li>Redis 7</li>
+                            <li>Elasticsearch 8</li>
+                        </ul>
+                    </div>
+                    <div class="stack-card">
+                        <div class="stack-icon">🤖</div>
+                        <h3>AI & Services</h3>
+                        <ul>
+                            <li>DeepSeek (Chat)</li>
+                            <li>Qwen-VL (Vision)</li>
+                            <li>MercadoPago</li>
+                            <li>Cloudflare R2</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="security-view" class="view hidden">
+                <div class="security-rules">
+                    <div class="sec-card">
+                        <h3>🔐 KYC Level 2</h3>
+                        <p>Validación obligatoria de DNI y teléfono para vendedores. Cifrado AES-256 para PII.</p>
+                    </div>
+                    <div class="sec-card">
+                        <h3>🛡️ Wallet Guard</h3>
+                        <p>No se permite balance negativo. Transacciones atómicas con Drizzle transactions.</p>
+                    </div>
+                    <div class="sec-card">
+                        <h3>👁️ Log Sanitization</h3>
+                        <p>Interceptor automático para ocultar passwords, DNI y tokens en logs.</p>
+                    </div>
+                    <div class="sec-card">
+                        <h3>✅ Payment Signature</h3>
+                        <p>Validación obligatoria de HMAC en todos los webhooks de MercadoPago.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="rules-view" class="view hidden">
+                <div class="rules-grid" id="rules-container">
+                    <!-- Rules injected by JS -->
+                </div>
+            </section>
+
+            <section id="claude-view" class="view hidden">
+                <div class="claude-shortcuts">
+                    <h3>Claude Code Integration</h3>
+                    <p>Usa estos atajos para que Claude trabaje por ti siguiendo el SDD.</p>
+                    <div class="shortcut-item">
+                        <code>claude "implement paso [n] following SDD"</code>
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                    <div class="shortcut-item">
+                        <code>claude "fix tests for module [name] using SDD rules"</code>
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <footer style="background: #222222; color: #CCCCCC; padding: 2rem; text-align: center; font-family: var(--font-display); font-size: 0.8rem; border-top: 1px solid #333; position: relative; z-index: 100;">
+        <p>&copy; 2026 Trocalia Marketplace - El mercado C2C más confiable de Argentina</p>
+        <p style="margin-top: 0.5rem; color: #666;">Stack: NestJS | Next.js | PostgreSQL | PostGIS | Redis | Elasticsearch</p>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>

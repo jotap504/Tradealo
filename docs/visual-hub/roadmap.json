@@ -1,0 +1,22 @@
+[
+  { "step": 1, "title": "Setup monorepo", "description": "Turborepo + estructura de carpetas" },
+  { "step": 2, "title": "Schema de base de datos", "description": "Drizzle + migraciones" },
+  { "step": 3, "title": "Módulo: System Config", "description": "Base de todo lo configurable" },
+  { "step": 4, "title": "Módulo: Auth", "description": "Registro, login, JWT, refresh" },
+  { "step": 5, "title": "Módulo: Users & Profiles", "description": "Gestión de perfiles de usuario" },
+  { "step": 6, "title": "Módulo: KYC & Verification", "description": "Validación de identidad" },
+  { "step": 7, "title": "Módulo: Token Wallet", "description": "Monedero de créditos" },
+  { "step": 8, "title": "Módulo: Token Packs & MercadoPago", "description": "Integración de pagos" },
+  { "step": 9, "title": "Módulo: Listings", "description": "CRUD completo de publicaciones" },
+  { "step": 10, "title": "Módulo: AI Generation", "description": "Integración con DeepSeek" },
+  { "step": 11, "title": "Módulo: Search", "description": "Elasticsearch integration" },
+  { "step": 12, "title": "Módulo: Reputation & Reviews", "description": "Sistema de puntuación" },
+  { "step": 13, "title": "Módulo: Contact", "description": "WhatsApp/Email integration" },
+  { "step": 14, "title": "Módulo: Notifications", "description": "Push and email notifications" },
+  { "step": 15, "title": "Módulo: Moderation", "description": "Admin review tools" },
+  { "step": 16, "title": "CEO Panel", "description": "Frontend administrativo" },
+  { "step": 17, "title": "Frontend web", "description": "Next.js — por pantallas" },
+  { "step": 18, "title": "Tests E2E", "description": "Playwright testing" },
+  { "step": 19, "title": "Security audit", "description": "Final security checklist" },
+  { "step": 20, "title": "Performance testing", "description": "Optimization and scaling" }
+]

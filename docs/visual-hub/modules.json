@@ -1,0 +1,87 @@
+[
+  {
+    "id": "6.1",
+    "title": "System Config",
+    "responsibility": "Única fuente de verdad para configuración dinámica del negocio.",
+    "rules": [
+        "TODOS los valores de negocio se leen desde aquí.",
+        "Nunca hardcodear valores de negocio.",
+        "Usa Redis (TTL 5 min) como caché primario."
+    ],
+    "contract": "interface IConfigService {\n  get<T>(key: string): Promise<T>\n}",
+    "status": "pending"
+  },
+  {
+    "id": "6.2",
+    "title": "Auth",
+    "responsibility": "Registro, login, refresh de tokens, logout, verificación de email.",
+    "rules": [
+        "Email único (409 DUPLICATE_EMAIL).",
+        "Rotación obligatoria de Refresh Tokens.",
+        "Acreditar tokens de bienvenida tras registro.",
+        "Rate limit: 5 intentos fallidos en 15 min."
+    ],
+    "contract": "POST /auth/register\nPOST /auth/login\nPOST /auth/refresh",
+    "status": "pending"
+  },
+  {
+    "id": "6.3",
+    "title": "KYC & Verification",
+    "responsibility": "Gestión del proceso de verificación de identidad.",
+    "rules": [
+        "kycLevel 2 necesario para publicar.",
+        "Documentos se suben directo a R2 (Presigned URL).",
+        "Validación estricta de DNI argentino (7-8 dígitos).",
+        "Acreditar tokens al aprobar KYC."
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "6.4",
+    "title": "Token Wallet",
+    "responsibility": "Gestión del balance de tokens. Fuente de verdad sobre créditos.",
+    "rules": [
+        "REGLA CRÍTICA: Nunca modificar balance directo (usar WalletService).",
+        "Balance nunca negativo (INSUFFICIENT_TOKENS).",
+        "FEFO: Consumir primero tokens que vencen antes.",
+        "Transacciones INMUTABLES (solo INSERT)."
+    ],
+    "contract": "credit(tx, userId, amount, reason, referenceId?)\ndebit(tx, userId, amount, reason, referenceId?)",
+    "status": "pending"
+  },
+  {
+    "id": "6.5",
+    "title": "Token Packs & MercadoPago",
+    "responsibility": "Venta de packs de tokens e integración con MercadoPago.",
+    "rules": [
+        "Idempotency key obligatorio en cada compra.",
+        "Validación HMAC-SHA256 en webhooks.",
+        "Solo acreditar con status 'approved'.",
+        "Notificar al usuario tras acreditación."
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "6.6",
+    "title": "Listings",
+    "responsibility": "CRUD completo de publicaciones y ciclo de vida.",
+    "rules": [
+        "Calcular costo = baseCost * durationMultiplier.",
+        "Verificar cuota gratuita mensual antes de debitar.",
+        "Moderación automática según riskScore.",
+        "Sync asíncrono con Elasticsearch."
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "6.7",
+    "title": "AI Generation",
+    "responsibility": "Generación de texto para listings usando DeepSeek.",
+    "rules": [
+        "Verificar feature flag y límite diario por usuario.",
+        "Prompt de sistema FIJO (no editable por usuario).",
+        "Texto generado es solo una sugerencia."
+    ],
+    "status": "pending"
+  }
+]
