@@ -221,6 +221,18 @@ function init() {
     });
 
     // Navigation Logic
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+    }
+
+    toggleBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', toggleSidebar);
+
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const targetView = item.getAttribute('data-view');
@@ -232,6 +244,11 @@ function init() {
             document.getElementById(`${targetView}-view`).classList.remove('hidden');
             
             viewTitle.textContent = item.textContent;
+
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 1024) {
+                toggleSidebar();
+            }
         });
     });
 

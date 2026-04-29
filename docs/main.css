@@ -369,3 +369,106 @@ body {
 
 .shortcut-item code { color: #10b981; font-family: monospace; }
 .btn-copy { background: var(--accent); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
+
+/* Responsive Styles */
+.mobile-header {
+    display: none;
+    background: var(--bg-sidebar);
+    padding: 1rem 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo-mini {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.sidebar-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1100;
+}
+
+.sidebar-toggle .bar {
+    width: 100%;
+    height: 2px;
+    background-color: var(--text-primary);
+    border-radius: 10px;
+    transition: all 0.3s linear;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 900;
+    backdrop-filter: blur(2px);
+}
+
+@media (max-width: 1024px) {
+    body { overflow-y: auto; height: auto; }
+    .app-container { flex-direction: column; }
+    
+    .mobile-header { display: flex; }
+    .sidebar-toggle { display: flex; }
+
+    .sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        height: 100vh;
+        z-index: 1001;
+        transition: left 0.3s ease;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    .content { padding: 1.5rem; }
+    .content-header { flex-direction: column; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; }
+    .content-header h2 { font-size: 1.8rem; }
+
+    .demo-container { flex-direction: column; gap: 2rem; padding: 1.5rem; }
+    .demo-mockup { order: -1; }
+}
+
+@media (max-width: 768px) {
+    .roadmap-grid, .stack-grid, .rules-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .flows-grid, .security-rules {
+        grid-template-columns: 1fr;
+    }
+
+    .step-card, .flow-card, .sec-card {
+        padding: 1.5rem;
+    }
+
+    .logo h1 { font-size: 1.5rem; }
+}
+
