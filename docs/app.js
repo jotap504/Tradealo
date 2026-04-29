@@ -301,10 +301,29 @@ function init() {
         ideasContainer.appendChild(card);
     });
 
+    const ideaModal = document.getElementById('idea-modal');
+    const ideaTextarea = document.getElementById('idea-textarea');
+
     document.getElementById('btn-new-idea').addEventListener('click', () => {
-        const ideaText = prompt("Describe tu idea brevemente:");
-        if (ideaText) {
-            alert("¡Excelente idea! Cópiala y envíala al equipo para que la oficialicemos:\n\n" + ideaText);
+        ideaModal.classList.add('active');
+        ideaTextarea.focus();
+    });
+
+    const closeModal = () => {
+        ideaModal.classList.remove('active');
+        ideaTextarea.value = '';
+    };
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+
+    document.getElementById('btn-submit-idea').addEventListener('click', () => {
+        const text = ideaTextarea.value.trim();
+        if (text) {
+            alert("¡Excelente idea! Cópiala y envíala al equipo para que la oficialicemos:\n\n" + text);
+            closeModal();
+        } else {
+            alert("Por favor, escribe tu idea antes de enviar.");
         }
     });
 

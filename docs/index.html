@@ -223,6 +223,23 @@ SI fallan → Corregir (max 5 iteraciones)
         <p>&copy; 2026 Tradealo Marketplace - El mercado C2C más confiable de Argentina</p>
         <p style="margin-top: 0.5rem; color: #666;">Stack: NestJS | Next.js | PostgreSQL | PostGIS | Redis | Elasticsearch</p>
     </footer>
+    <div class="modal-overlay" id="idea-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Proponer Nueva Idea</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Describe tu visión para Tradealo. El equipo revisará tu propuesta para integrarla al Roadmap.</p>
+                <textarea id="idea-textarea" placeholder="Escribe tu idea aquí..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel">Cancelar</button>
+                <button class="btn-primary" id="btn-submit-idea">Enviar Propuesta</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
