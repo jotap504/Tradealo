@@ -768,52 +768,57 @@ body {
 }
 
 
-/* Estilos de Comentarios Simples */
+/* Estilos de Comentarios Simples - REFORZADOS */
 .idea-footer-simple {
     margin-top: 2rem;
     padding-top: 1.5rem;
-    border-top: 1px dashed var(--border);
+    border-top: 1px dashed #ddd;
+    display: block !important; /* Asegurar que se vea */
 }
 
 .simple-comments-container {
     margin-bottom: 1.5rem;
+    display: block !important;
 }
 
 .simple-comment {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     line-height: 1.4;
-    color: var(--text-primary);
-    padding: 0.8rem;
-    background: #f8fafc;
-    border-radius: 8px;
+    color: #1a1a1a !important; /* Texto bien oscuro */
+    padding: 1rem;
+    background: #f0f7ff !important; /* Azul muy clarito para que resalte */
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
 }
 
 .comment-spacer {
-    height: 1rem; /* El "renglón vacío" entre comentarios */
+    height: 1rem;
 }
 
 .no-comments-text {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: #999;
     font-style: italic;
 }
 
 .simple-input-group {
     display: flex;
     gap: 0.5rem;
+    margin-top: 1rem;
 }
 
 .inline-comment-input {
     flex: 1;
     padding: 0.8rem 1rem;
     border-radius: 10px;
-    border: 1px solid var(--border);
+    border: 2px solid #eee;
     font-family: var(--font-body);
     font-size: 0.9rem;
-    transition: border-color 0.2s;
+    background: white;
 }
 
 .inline-comment-input:focus {
     outline: none;
     border-color: var(--accent);
+    background: #fff;
 }
