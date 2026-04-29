@@ -224,7 +224,7 @@ function init() {
     });
 
     // Google Sheet Backend Configuration
-    const SHEET_URL = "https://script.google.com/macros/s/AKfycbzLvIrHQ_tBC3vCM370ChncyCeikMevfVG_EYzrVxiaLNJPhK6u-NR33QFbOrX5Lxie/exec";
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbzJfauvqra_S6wZGkrhfaszOwgYd2AUgNZ_7iqrnODGnmvtApPq8t0D6KZ-7sDq3GI9/exec";
 
     async function fetchSheetIdeas() {
         try {
