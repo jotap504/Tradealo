@@ -316,6 +316,7 @@ function init() {
     function toggleSidebar() {
         sidebar.classList.toggle('open');
         overlay.classList.toggle('active');
+        toggleBtn.classList.toggle('active');
     }
 
     toggleBtn.addEventListener('click', toggleSidebar);
@@ -334,7 +335,7 @@ function init() {
             viewTitle.textContent = item.textContent;
 
             // Close sidebar on mobile after selection
-            if (window.innerWidth <= 1024) {
+            if (window.innerWidth <= 991) {
                 toggleSidebar();
             }
         });
