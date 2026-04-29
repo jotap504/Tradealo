@@ -231,7 +231,18 @@ SI fallan → Corregir (max 5 iteraciones)
             </div>
             <div class="modal-body">
                 <p>Describe tu visión para Tradealo. El equipo revisará tu propuesta para integrarla al Roadmap.</p>
-                <textarea id="idea-textarea" placeholder="Escribe tu idea aquí..."></textarea>
+                <div class="input-group">
+                    <label>Título de la Propuesta</label>
+                    <input type="text" id="idea-title" placeholder="Ej: Sistema de Puntos de Lealtad">
+                </div>
+                <div class="input-group">
+                    <label>Descripción Detallada</label>
+                    <textarea id="idea-description" placeholder="Explica cómo funcionaría y qué valor aporta..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Estimación de Desarrollo / Esfuerzo</label>
+                    <input type="text" id="idea-estimate" placeholder="Ej: 5 días, 2 semanas o Baja/Media/Alta">
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" id="btn-cancel">Cancelar</button>

@@ -508,6 +508,35 @@ body {
     font-size: 0.8rem;
 }
 
+.idea-footer-actions {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.btn-github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.btn-github-link:hover { opacity: 0.8; text-decoration: underline; }
+
+.loading, .no-ideas {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px dashed var(--border);
+}
+
 /* Responsive Styles */
 .mobile-header {
     display: none;
@@ -674,19 +703,54 @@ body {
 
 .modal-body p { margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6; }
 
-#idea-textarea {
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+#idea-title, #idea-estimate, #idea-description {
     width: 100%;
-    height: 150px;
-    padding: 1rem;
+    padding: 0.8rem 1rem;
     border-radius: 12px;
     border: 1px solid var(--border);
     font-family: var(--font-body);
-    font-size: 1rem;
-    resize: none;
-    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
 
-#idea-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+#idea-description {
+    height: 120px;
+    resize: none;
+}
+
+#idea-title:focus, #idea-estimate:focus, #idea-description:focus { 
+    outline: none; 
+    border-color: var(--accent); 
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+}
+
+.idea-estimate-tag {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.idea-estimate-tag::before { content: '⏱️'; }
 
 .modal-footer {
     display: flex;

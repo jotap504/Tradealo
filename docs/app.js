@@ -223,101 +223,93 @@ function init() {
         rulesContainer.appendChild(card);
     });
 
-    // Idea Rendering Helper
+    // Google Sheet Backend Configuration
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbzLvIrHQ_tBC3vCM370ChncyCeikMevfVG_EYzrVxiaLNJPhK6u-NR33QFbOrX5Lxie/exec";
+
+    async function fetchSheetIdeas() {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues?labels=${ISSUE_LABEL}&state=open`, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await response.json();
+            
+            return issues.map(issue => {
+                // Parse estimate from body (looks for "Estimación: text")
+                const estimateMatch = issue.body.match(/Estimación:\s*(.*)/i);
+                const estimate = estimateMatch ? estimateMatch[1] : "";
+                const cleanBody = issue.body.replace(/Estimación:\s*.*/i, '').trim();
+
+                return {
+                    id: issue.id,
+                    number: issue.number,
+                    title: issue.title,
+                    description: cleanBody,
+                    estimate: estimate,
+                    author: issue.user.login,
+                    votes: issue.reactions ? (issue.reactions['+1'] + issue.reactions['heart'] + issue.reactions['hooray'] || 0) : issue.comments, // Fallback to comments if no reactions
+                    status: issue.labels.find(l => l.name !== ISSUE_LABEL)?.name || "Nueva",
+                    tags: [ISSUE_LABEL],
+                    comments_url: issue.html_url,
+                    comments_count: issue.comments
+                };
+            });
+        } catch (e) {
+            console.error("Error fetching GitHub ideas", e);
+            return [];
+        }
+    }
+
+    // Idea Rendering Helper (Google Sheet version)
     function createIdeaCard(idea) {
         const card = document.createElement('div');
-        card.className = 'idea-card new-idea-anim';
+        card.className = 'idea-card';
         card.innerHTML = `
             <div class="idea-header">
-                <div class="idea-status-tag">${idea.status || 'Nueva'}</div>
+                <div class="idea-status-tag">${idea.status}</div>
                 <div class="idea-votes">
                     <button class="btn-vote">🔥</button>
-                    <span class="vote-count">${idea.votes || 1}</span>
+                    <span class="vote-count">${idea.votes}</span>
                 </div>
             </div>
+            ${idea.estimate ? `<div class="idea-estimate-tag">Estimación: ${idea.estimate}</div>` : ''}
             <h3>${idea.title}</h3>
             <p class="idea-desc">${idea.description}</p>
-            <div class="idea-author">Por: <strong>${idea.author || 'Tú (Local)'}</strong></div>
-            <div class="idea-tags">
-                ${(idea.tags || ['UserFeedback']).map(tag => `<span class="tag">#${tag}</span>`).join('')}
-            </div>
-            <div class="idea-comments">
-                <h4>Comentarios / Sub-ideas:</h4>
-                <ul class="comments-list">
-                    ${(idea.comments || []).map(c => `<li>${c}</li>`).join('')}
-                </ul>
-                <div class="comment-input-group">
-                    <input type="text" placeholder="Añadir comentario..." class="new-comment-input">
-                    <button class="btn-add-comment">Añadir</button>
-                </div>
+            <div class="idea-author">Propuesta por: <strong>@${idea.author}</strong></div>
+            <div class="idea-footer-actions">
+                <a href="#" class="btn-github-link" onclick="alert('Los comentarios se gestionan en la hoja de cálculo.'); return false;">
+                    💬 Ver ${idea.comments_count} comentarios
+                </a>
             </div>
         `;
-
+        // Vote handling
         const voteBtn = card.querySelector('.btn-vote');
-        voteBtn.addEventListener('click', (e) => {
+        voteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const countSpan = card.querySelector('.vote-count');
-            let currentVotes = parseInt(countSpan.textContent);
-            countSpan.textContent = currentVotes + 1;
-            voteBtn.style.transform = 'scale(1.5)';
-            setTimeout(() => voteBtn.style.transform = 'scale(1)', 200);
-        });
-
-        const commentInput = card.querySelector('.new-comment-input');
-        const addCommentBtn = card.querySelector('.btn-add-comment');
-        const commentsList = card.querySelector('.comments-list');
-
-        const submitComment = () => {
-            const text = commentInput.value.trim();
-            if (text) {
-                // UI Update
-                const li = document.createElement('li');
-                li.textContent = text;
-                commentsList.appendChild(li);
-                commentInput.value = '';
-
-                // Persist
-                try {
-                    const extraComments = JSON.parse(localStorage.getItem('tradealo_extra_comments') || '{}');
-                    if (!extraComments[idea.id]) extraComments[idea.id] = [];
-                    extraComments[idea.id].push(text);
-                    localStorage.setItem('tradealo_extra_comments', JSON.stringify(extraComments));
-                } catch (e) {
-                    console.error("Error saving comment", e);
-                }
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'vote', id: idea.id })
+                });
+                renderIdeas();
+            } catch (err) {
+                console.error('Voting error', err);
             }
-        };
-
-        addCommentBtn.addEventListener('click', submitComment);
-        commentInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') submitComment();
         });
-
         return card;
     }
 
-    // Load and Inject Ideas
-    function renderIdeas() {
+    async function renderIdeas() {
+        ideasContainer.innerHTML = '<div class="loading">Sincronizando con Google Sheet…</div>';
+        const sheetIdeas = await fetchSheetIdeas();
         ideasContainer.innerHTML = '';
-        let localIdeas = [];
-        let extraComments = {};
-        try {
-            localIdeas = JSON.parse(localStorage.getItem('tradealo_local_ideas') || '[]');
-            extraComments = JSON.parse(localStorage.getItem('tradealo_extra_comments') || '{}');
-        } catch (e) {
-            console.error("LocalStorage blocked or corrupted", e);
+        if (sheetIdeas.length === 0) {
+            ideasContainer.innerHTML = '<p class="no-ideas">No hay ideas publicadas aún. ¡Sé el primero!</p>';
+            return;
         }
-        
-        // Combined list: local ideas first (newest first), then official ones
-        const allIdeas = [...localIdeas].reverse().concat(IDEAS_DATA);
-        allIdeas.forEach(idea => {
-            // Merge extra comments if they exist
-            if (extraComments[idea.id]) {
-                if (!idea.comments) idea.comments = [];
-                // Filter duplicates if any (basic check)
-                const combinedComments = [...idea.comments, ...extraComments[idea.id]];
-                idea.comments = combinedComments;
-            }
+        // Sort by votes descending
+        sheetIdeas.sort((a, b) => b.votes - a.votes);
+        sheetIdeas.forEach(idea => {
             ideasContainer.appendChild(createIdeaCard(idea));
         });
     }
@@ -325,53 +317,45 @@ function init() {
     renderIdeas();
 
     const ideaModal = document.getElementById('idea-modal');
-    const ideaTextarea = document.getElementById('idea-textarea');
+    const ideaTitleInput = document.getElementById('idea-title');
+    const ideaDescInput = document.getElementById('idea-description');
+    const ideaEstimateInput = document.getElementById('idea-estimate');
 
     document.getElementById('btn-new-idea').addEventListener('click', () => {
         ideaModal.classList.add('active');
-        ideaTextarea.focus();
+        ideaTitleInput.focus();
     });
 
     const closeModal = () => {
         ideaModal.classList.remove('active');
-        ideaTextarea.value = '';
+        ideaTitleInput.value = '';
+        ideaDescInput.value = '';
+        ideaEstimateInput.value = '';
     };
 
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('btn-cancel').addEventListener('click', closeModal);
 
-    document.getElementById('btn-submit-idea').addEventListener('click', () => {
-        const text = ideaTextarea.value.trim();
-        if (text) {
-            const newIdea = {
-                id: Date.now(),
-                title: text.split('\n')[0].substring(0, 50),
-                description: text,
-                author: "Tú",
-                votes: 1,
-                status: "Nueva",
-                tags: ["Comunidad"],
-                comments: []
-            };
-
-            // Local State Update
+    document.getElementById('btn-submit-idea').addEventListener('click', async () => {
+        const title = ideaTitleInput.value.trim();
+        const desc = ideaDescInput.value.trim();
+        const estimate = ideaEstimateInput.value.trim();
+        if (title && desc) {
             try {
-                const currentLocal = JSON.parse(localStorage.getItem('tradealo_local_ideas') || '[]');
-                currentLocal.push(newIdea);
-                localStorage.setItem('tradealo_local_ideas', JSON.stringify(currentLocal));
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', title, description: desc, estimate })
+                });
+                closeModal();
+                renderIdeas();
+                alert('Idea enviada y guardada en la hoja de cálculo.');
             } catch (e) {
-                console.warn("Could not save idea to localStorage", e);
+                console.error('Error adding idea', e);
+                alert('No se pudo guardar la idea.');
             }
-
-            // UI Update: Re-render all to ensure order
-            renderIdeas();
-            
-            closeModal();
-            
-            // Scroll to the newest idea
-            ideasContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-            alert("Por favor, escribe tu idea antes de enviar.");
+            alert('Por favor, completa al menos el título y la descripción.');
         }
     });
 
