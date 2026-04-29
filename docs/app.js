@@ -146,46 +146,7 @@ const MODULES_DATA = [
   }
 ];
 
-const IDEAS_DATA = [
-  {
-    "id": 1,
-    "title": "IA de Verificación de Estado (Vision)",
-    "author": "Juan Pablo",
-    "description": "Usar Qwen-VL para analizar las fotos de los productos y asignar automáticamente un estado (Nuevo, Usado - Como Nuevo, etc.) para evitar estafas.",
-    "votes": 15,
-    "status": "In Discussion",
-    "tags": ["AI", "Security"],
-    "comments": [
-        "Podríamos integrarlo directamente en el flujo de publicación.",
-        "Ahorraría mucho tiempo de moderación manual."
-    ]
-  },
-  {
-    "id": 2,
-    "title": "Sistema de 'Canje Directo' (Barter)",
-    "author": "Equipo Tradealo",
-    "description": "Permitir que dos usuarios acuerden un intercambio directo de productos más una diferencia en Tokens si fuera necesario.",
-    "votes": 28,
-    "status": "Approved",
-    "tags": ["Core", "Business"],
-    "comments": [
-        "Es la esencia del nombre original (Trocalia/Tradealo).",
-        "Necesitamos un contrato digital de intercambio seguro."
-    ]
-  },
-  {
-    "id": 3,
-    "title": "Notificaciones vía WhatsApp Directo",
-    "author": "Santi",
-    "description": "Integrar un bot que avise al vendedor por WhatsApp cuando alguien está interesado, sin que tenga que entrar a la web.",
-    "votes": 42,
-    "status": "In Progress",
-    "tags": ["UX", "Notifications"],
-    "comments": [
-        "OneSignal ya lo soporta, pero WhatsApp es más directo en Argentina."
-    ]
-  }
-];
+const IDEAS_DATA = [];
 
 const RULES_DATA = [
     { id: "001", title: "Propiedad de Datos", desc: "Nunca exponer datos de un usuario a otro sin verificar ownership." },
@@ -283,7 +244,7 @@ function init() {
             <div class="idea-comments">
                 <h4>Comentarios / Sub-ideas:</h4>
                 <ul class="comments-list">
-                    ${(idea.comments || ['Esperando feedback del equipo...']).map(c => `<li>${c}</li>`).join('')}
+                    ${(idea.comments || []).map(c => `<li>${c}</li>`).join('')}
                 </ul>
                 <div class="comment-input-group">
                     <input type="text" placeholder="Añadir comentario..." class="new-comment-input">
@@ -390,7 +351,7 @@ function init() {
                 votes: 1,
                 status: "Nueva",
                 tags: ["Comunidad"],
-                comments: ["¡Gracias por tu propuesta! La revisaremos pronto."]
+                comments: []
             };
 
             // Local State Update
