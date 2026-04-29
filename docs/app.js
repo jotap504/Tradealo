@@ -265,6 +265,12 @@ function init() {
     function createIdeaCard(idea) {
         const card = document.createElement('div');
         card.className = 'idea-card';
+        
+        // Formatear comentarios con un renglón de por medio
+        const commentsHtml = (idea.comments || [])
+            .map(c => `<div class="simple-comment">${c}</div>`)
+            .join('<div class="comment-spacer"></div>');
+
         card.innerHTML = `
             <div class="idea-header">
                 <div class="idea-status-tag">${idea.status}</div>
@@ -277,10 +283,15 @@ function init() {
             <h3>${idea.title}</h3>
             <p class="idea-desc">${idea.description}</p>
             <div class="idea-author">Propuesta por: <strong>@${idea.author}</strong></div>
-            <div class="idea-footer-actions">
-                <a href="#" class="btn-github-link" onclick="window.openCommentsModal('${idea.id}', '${idea.title}'); return false;">
-                    💬 Ver ${idea.comments_count || 0} comentarios
-                </a>
+            
+            <div class="idea-footer-simple">
+                <div class="simple-comments-container">
+                    ${commentsHtml || '<p class="no-comments-text">Sin comentarios aún...</p>'}
+                </div>
+                <div class="simple-input-group">
+                    <input type="text" class="inline-comment-input" placeholder="Escribe un comentario y presiona Enter..." 
+                        onkeydown="if(event.key === 'Enter') window.submitSimpleComment('${idea.id}', this.value)">
+                </div>
             </div>
         `;
         // Vote handling
@@ -301,6 +312,22 @@ function init() {
         });
         return card;
     }
+
+    window.submitSimpleComment = async (ideaId, comment) => {
+        if (!comment.trim()) return;
+        try {
+            await fetch(SHEET_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'addComment', ideaId, comment })
+            });
+            alert('Comentario agregado!');
+            renderIdeas();
+        } catch (e) {
+            console.error("Error adding comment", e);
+        }
+    };
 
     async function renderIdeas() {
         ideasContainer.innerHTML = '<div class="loading">Sincronizando con Google Sheet…</div>';
@@ -361,85 +388,6 @@ function init() {
             }
         } else {
             alert('Por favor, completa al menos el título y la descripción.');
-        }
-    });
-    
-    // --- Comments Logic ---
-    const commentsModal = document.getElementById('comments-modal');
-    const commentsList = document.getElementById('comments-list');
-    const commentsTitle = document.getElementById('comments-title');
-    const commentAuthorInput = document.getElementById('comment-author');
-    const commentTextInput = document.getElementById('comment-text');
-    let activeIdeaId = null;
-
-    window.openCommentsModal = async (ideaId, title) => {
-        activeIdeaId = ideaId;
-        commentsTitle.textContent = `Comentarios: ${title}`;
-        commentsModal.classList.add('active');
-        commentsList.innerHTML = '<div class="loading">Cargando comentarios...</div>';
-        
-        try {
-            const response = await fetch(`${SHEET_URL}?action=getComments&ideaId=${ideaId}`);
-            const comments = await response.json();
-            
-            commentsList.innerHTML = '';
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<div class="comment-empty">No hay comentarios aún. ¡Sé el primero en opinar!</div>';
-            } else {
-                comments.forEach(c => {
-                    const div = document.createElement('div');
-                    div.className = 'comment-item';
-                    const date = c.date ? new Date(c.date).toLocaleDateString() : '';
-                    div.innerHTML = `
-                        <div class="comment-meta">
-                            <span class="comment-author">${c.author}</span>
-                            <span class="comment-date">${date}</span>
-                        </div>
-                        <div class="comment-text">${c.comment}</div>
-                    `;
-                    commentsList.appendChild(div);
-                });
-            }
-        } catch (e) {
-            console.error("Error loading comments", e);
-            commentsList.innerHTML = '<div class="comment-empty">Error al cargar comentarios.</div>';
-        }
-    };
-
-    const closeCommentsModal = () => {
-        commentsModal.classList.remove('active');
-        commentAuthorInput.value = '';
-        commentTextInput.value = '';
-    };
-
-    document.getElementById('comments-close').addEventListener('click', closeCommentsModal);
-
-    document.getElementById('btn-submit-comment').addEventListener('click', async () => {
-        const author = commentAuthorInput.value.trim() || "Anónimo";
-        const comment = commentTextInput.value.trim();
-        
-        if (!comment) return alert('Escribe un comentario.');
-        
-        try {
-            await fetch(SHEET_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ 
-                    action: 'addComment', 
-                    ideaId: activeIdeaId, 
-                    author, 
-                    comment 
-                })
-            });
-            
-            commentTextInput.value = '';
-            alert('Comentario enviado!');
-            window.openCommentsModal(activeIdeaId, commentsTitle.textContent.replace('Comentarios: ', ''));
-            renderIdeas(); // Update count on cards
-        } catch (e) {
-            console.error("Error submitting comment", e);
-            alert('Error al enviar comentario.');
         }
     });
 
