@@ -36,5 +36,6 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
-# Drizzle
-drizzle/
+# Drizzle generated client (not migrations)
+# Migration files in apps/api/drizzle/ ARE tracked
+drizzle/meta/
