@@ -228,12 +228,35 @@ function init() {
 
     async function fetchSheetIdeas() {
         try {
-            const response = await fetch(`${SHEET_URL}?action=get`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const ideas = await response.json();
-            return ideas || [];
+            console.log("Iniciando fetch de ideas desde:", SHEET_URL);
+            const response = await fetch(`${SHEET_URL}?action=get`, {
+                method: 'GET',
+                mode: 'cors',
+                redirect: 'follow'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log("Datos recibidos de Google Sheet:", data);
+            
+            // Si data es un objeto con una propiedad ideas o similar, ajustarlo
+            const ideas = Array.isArray(data) ? data : (data.ideas || []);
+            
+            return ideas.map(idea => ({
+                id: idea.id || Math.random(),
+                title: idea.title || idea.Title || "Sin título",
+                description: idea.description || idea.Description || "Sin descripción",
+                author: idea.author || idea.Author || "Anónimo",
+                votes: parseInt(idea.votes || idea.Votes || 0),
+                status: idea.status || idea.Status || "Nueva",
+                estimate: idea.estimate || idea.Estimate || "",
+                comments_count: idea.comments_count || 0
+            }));
         } catch (e) {
-            console.error("Error fetching Google Sheet ideas", e);
+            console.error("Error detallado al obtener ideas:", e);
             return [];
         }
     }
@@ -329,8 +352,9 @@ function init() {
                     body: JSON.stringify({ action: 'add', title, description: desc, estimate })
                 });
                 closeModal();
-                renderIdeas();
-                alert('Idea enviada y guardada en la hoja de cálculo.');
+                alert('Idea enviada! Sincronizando con la hoja de cálculo...');
+                // Pequeño delay para que GAS termine de procesar antes de re-consultar
+                setTimeout(renderIdeas, 1500);
             } catch (e) {
                 console.error('Error adding idea', e);
                 alert('No se pudo guardar la idea.');
