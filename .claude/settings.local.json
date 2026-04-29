@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:bellroy.com)"
+      "WebFetch(domain:bellroy.com)",
+      "PowerShell(pnpm *)",
+      "PowerShell(npm install *)"
     ]
   }
 }

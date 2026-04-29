@@ -146,6 +146,47 @@ const MODULES_DATA = [
   }
 ];
 
+const IDEAS_DATA = [
+  {
+    "id": 1,
+    "title": "IA de Verificación de Estado (Vision)",
+    "author": "Juan Pablo",
+    "description": "Usar Qwen-VL para analizar las fotos de los productos y asignar automáticamente un estado (Nuevo, Usado - Como Nuevo, etc.) para evitar estafas.",
+    "votes": 15,
+    "status": "In Discussion",
+    "tags": ["AI", "Security"],
+    "comments": [
+        "Podríamos integrarlo directamente en el flujo de publicación.",
+        "Ahorraría mucho tiempo de moderación manual."
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Sistema de 'Canje Directo' (Barter)",
+    "author": "Equipo Tradealo",
+    "description": "Permitir que dos usuarios acuerden un intercambio directo de productos más una diferencia en Tokens si fuera necesario.",
+    "votes": 28,
+    "status": "Approved",
+    "tags": ["Core", "Business"],
+    "comments": [
+        "Es la esencia del nombre original (Trocalia/Tradealo).",
+        "Necesitamos un contrato digital de intercambio seguro."
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Notificaciones vía WhatsApp Directo",
+    "author": "Santi",
+    "description": "Integrar un bot que avise al vendedor por WhatsApp cuando alguien está interesado, sin que tenga que entrar a la web.",
+    "votes": 42,
+    "status": "In Progress",
+    "tags": ["UX", "Notifications"],
+    "comments": [
+        "OneSignal ya lo soporta, pero WhatsApp es más directo en Argentina."
+    ]
+  }
+];
+
 const RULES_DATA = [
     { id: "001", title: "Propiedad de Datos", desc: "Nunca exponer datos de un usuario a otro sin verificar ownership." },
     { id: "002", title: "Balance No Negativo", desc: "Nunca permitir balance negativo en el wallet." },
@@ -163,6 +204,7 @@ function init() {
     const roadmapContainer = document.getElementById('roadmap-container');
     const rulesContainer = document.getElementById('rules-container');
     const modulesContainer = document.getElementById('modules-container');
+    const ideasContainer = document.getElementById('ideas-container');
     const navItems = document.querySelectorAll('.nav-item');
     const views = document.querySelectorAll('.view');
     const viewTitle = document.getElementById('view-title');
@@ -218,6 +260,52 @@ function init() {
             <p>${rule.desc}</p>
         `;
         rulesContainer.appendChild(card);
+    });
+
+    // Inject Ideas (Innovation Lab)
+    IDEAS_DATA.forEach(idea => {
+        const card = document.createElement('div');
+        card.className = 'idea-card';
+        card.innerHTML = `
+            <div class="idea-header">
+                <div class="idea-status-tag">${idea.status}</div>
+                <div class="idea-votes" data-id="${idea.id}">
+                    <button class="btn-vote">🔥</button>
+                    <span class="vote-count">${idea.votes}</span>
+                </div>
+            </div>
+            <h3>${idea.title}</h3>
+            <p class="idea-desc">${idea.description}</p>
+            <div class="idea-author">Por: <strong>${idea.author}</strong></div>
+            <div class="idea-tags">
+                ${idea.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+            </div>
+            <div class="idea-comments">
+                <h4>Comentarios / Sub-ideas:</h4>
+                <ul>
+                    ${idea.comments.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+
+        const voteBtn = card.querySelector('.btn-vote');
+        voteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const countSpan = card.querySelector('.vote-count');
+            let currentVotes = parseInt(countSpan.textContent);
+            countSpan.textContent = currentVotes + 1;
+            voteBtn.style.transform = 'scale(1.5)';
+            setTimeout(() => voteBtn.style.transform = 'scale(1)', 200);
+        });
+
+        ideasContainer.appendChild(card);
+    });
+
+    document.getElementById('btn-new-idea').addEventListener('click', () => {
+        const ideaText = prompt("Describe tu idea brevemente:");
+        if (ideaText) {
+            alert("¡Excelente idea! Cópiala y envíala al equipo para que la oficialicemos:\n\n" + ideaText);
+        }
     });
 
     // Navigation Logic

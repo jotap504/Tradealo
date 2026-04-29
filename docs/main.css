@@ -370,6 +370,110 @@ body {
 .shortcut-item code { color: #10b981; font-family: monospace; }
 .btn-copy { background: var(--accent); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
 
+/* Innovation Lab */
+.innovation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.innovation-header h3 { font-size: 1.8rem; color: var(--accent); margin-bottom: 0.5rem; }
+.innovation-header p { color: var(--text-secondary); }
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4); }
+
+.ideas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.idea-card {
+    background: var(--bg-card);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.idea-card:hover { border-color: var(--accent); box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+
+.idea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.idea-status-tag {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.idea-votes {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    padding: 6px 12px;
+    border-radius: 30px;
+}
+
+.btn-vote {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.vote-count { font-weight: 800; color: #334155; }
+
+.idea-card h3 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary); }
+.idea-desc { color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem; }
+.idea-author { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; }
+
+.idea-tags { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+.tag { font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+
+.idea-comments {
+    background: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 16px;
+}
+
+.idea-comments h4 { font-size: 0.85rem; margin-bottom: 1rem; text-transform: uppercase; color: #64748b; }
+.idea-comments ul { list-style: none; }
+.idea-comments li {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid #e2e8f0;
+}
+
 /* Responsive Styles */
 .mobile-header {
     display: none;
@@ -457,7 +561,7 @@ body {
 }
 
 @media (max-width: 768px) {
-    .roadmap-grid, .stack-grid, .rules-grid {
+    .roadmap-grid, .stack-grid, .rules-grid, .ideas-grid {
         grid-template-columns: 1fr;
     }
 
@@ -465,10 +569,16 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .step-card, .flow-card, .sec-card {
+    .step-card, .flow-card, .sec-card, .idea-card {
         padding: 1.5rem;
     }
 
     .logo h1 { font-size: 1.5rem; }
+
+    .innovation-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
 }
 

@@ -33,6 +33,7 @@
                 <button class="nav-item" data-view="stack">Stack Tecnológico</button>
                 <button class="nav-item" data-view="security">Seguridad</button>
                 <button class="nav-item" data-view="rules">Reglas de Oro</button>
+                <button class="nav-item" data-view="innovation">Innovation Lab</button>
                 <button class="nav-item" data-view="claude">Integración Claude</button>
             </nav>
             <div class="status-panel">
@@ -186,6 +187,19 @@ SI fallan → Corregir (max 5 iteraciones)
             <section id="rules-view" class="view hidden">
                 <div class="rules-grid" id="rules-container">
                     <!-- Rules injected by JS -->
+                </div>
+            </section>
+
+            <section id="innovation-view" class="view hidden">
+                <div class="innovation-header">
+                    <div class="header-info">
+                        <h3>Hub de Ideas y Brainstorming</h3>
+                        <p>Espacio para proponer y debatir el futuro de Tradealo. Las ideas votadas se priorizan en el Roadmap.</p>
+                    </div>
+                    <button id="btn-new-idea" class="btn-primary">Proponer Nueva Idea</button>
+                </div>
+                <div class="ideas-grid" id="ideas-container">
+                    <!-- Ideas will be injected here -->
                 </div>
             </section>
 
