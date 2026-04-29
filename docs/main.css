@@ -666,3 +666,12 @@ body {
     gap: 1rem;
 }
 
+.new-idea-anim {
+    animation: ideaIn 0.5s ease-out;
+}
+
+@keyframes ideaIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+

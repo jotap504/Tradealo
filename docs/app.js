@@ -262,28 +262,28 @@ function init() {
         rulesContainer.appendChild(card);
     });
 
-    // Inject Ideas (Innovation Lab)
-    IDEAS_DATA.forEach(idea => {
+    // Idea Rendering Helper
+    function createIdeaCard(idea) {
         const card = document.createElement('div');
-        card.className = 'idea-card';
+        card.className = 'idea-card new-idea-anim';
         card.innerHTML = `
             <div class="idea-header">
-                <div class="idea-status-tag">${idea.status}</div>
-                <div class="idea-votes" data-id="${idea.id}">
+                <div class="idea-status-tag">${idea.status || 'Nueva'}</div>
+                <div class="idea-votes">
                     <button class="btn-vote">🔥</button>
-                    <span class="vote-count">${idea.votes}</span>
+                    <span class="vote-count">${idea.votes || 1}</span>
                 </div>
             </div>
             <h3>${idea.title}</h3>
             <p class="idea-desc">${idea.description}</p>
-            <div class="idea-author">Por: <strong>${idea.author}</strong></div>
+            <div class="idea-author">Por: <strong>${idea.author || 'Tú (Local)'}</strong></div>
             <div class="idea-tags">
-                ${idea.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                ${(idea.tags || ['UserFeedback']).map(tag => `<span class="tag">#${tag}</span>`).join('')}
             </div>
             <div class="idea-comments">
                 <h4>Comentarios / Sub-ideas:</h4>
                 <ul>
-                    ${idea.comments.map(c => `<li>${c}</li>`).join('')}
+                    ${(idea.comments || ['Esperando feedback del equipo...']).map(c => `<li>${c}</li>`).join('')}
                 </ul>
             </div>
         `;
@@ -298,8 +298,27 @@ function init() {
             setTimeout(() => voteBtn.style.transform = 'scale(1)', 200);
         });
 
-        ideasContainer.appendChild(card);
-    });
+        return card;
+    }
+
+    // Load and Inject Ideas
+    function renderIdeas() {
+        ideasContainer.innerHTML = '';
+        let localIdeas = [];
+        try {
+            localIdeas = JSON.parse(localStorage.getItem('tradealo_local_ideas') || '[]');
+        } catch (e) {
+            console.error("LocalStorage blocked or corrupted", e);
+        }
+        
+        // Combined list: local ideas first (newest first), then official ones
+        const allIdeas = [...localIdeas].reverse().concat(IDEAS_DATA);
+        allIdeas.forEach(idea => {
+            ideasContainer.appendChild(createIdeaCard(idea));
+        });
+    }
+
+    renderIdeas();
 
     const ideaModal = document.getElementById('idea-modal');
     const ideaTextarea = document.getElementById('idea-textarea');
@@ -320,8 +339,33 @@ function init() {
     document.getElementById('btn-submit-idea').addEventListener('click', () => {
         const text = ideaTextarea.value.trim();
         if (text) {
-            alert("¡Excelente idea! Cópiala y envíala al equipo para que la oficialicemos:\n\n" + text);
+            const newIdea = {
+                id: Date.now(),
+                title: text.split('\n')[0].substring(0, 50),
+                description: text,
+                author: "Tú",
+                votes: 1,
+                status: "Nueva",
+                tags: ["Comunidad"],
+                comments: ["¡Gracias por tu propuesta! La revisaremos pronto."]
+            };
+
+            // Local State Update
+            try {
+                const currentLocal = JSON.parse(localStorage.getItem('tradealo_local_ideas') || '[]');
+                currentLocal.push(newIdea);
+                localStorage.setItem('tradealo_local_ideas', JSON.stringify(currentLocal));
+            } catch (e) {
+                console.warn("Could not save idea to localStorage", e);
+            }
+
+            // UI Update: Re-render all to ensure order
+            renderIdeas();
+            
             closeModal();
+            
+            // Scroll to the newest idea
+            ideasContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             alert("Por favor, escribe tu idea antes de enviar.");
         }
