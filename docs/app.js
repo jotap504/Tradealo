@@ -267,9 +267,14 @@ function init() {
         card.className = 'idea-card';
         
         // Formatear comentarios con un renglón de por medio
-        const commentsHtml = (idea.comments || [])
-            .map(c => `<div class="simple-comment">${c}</div>`)
-            .join('<div class="comment-spacer"></div>');
+        let commentsHtml = '';
+        if (idea.comments && idea.comments.length > 0) {
+            commentsHtml = idea.comments
+                .map(c => `<div class="simple-comment">${c}</div>`)
+                .join('<div class="comment-spacer"></div>');
+        } else {
+            commentsHtml = '<p class="no-comments-text">Sin comentarios aún...</p>';
+        }
 
         card.innerHTML = `
             <div class="idea-header">
@@ -286,7 +291,7 @@ function init() {
             
             <div class="idea-footer-simple">
                 <div class="simple-comments-container">
-                    ${commentsHtml || '<p class="no-comments-text">Sin comentarios aún...</p>'}
+                    ${commentsHtml}
                 </div>
                 <div class="simple-input-group">
                     <input type="text" class="inline-comment-input" placeholder="Escribe un comentario y presiona Enter..." 
