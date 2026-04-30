@@ -5,6 +5,8 @@ import { RedisModule } from './redis/redis.module'
 import { ConfigModule } from './config/config.module'
 import { AuthModule } from './auth/auth.module'
 import { WalletModule } from './wallet/wallet.module'
+import { StorageModule } from './storage/storage.module'
+import { UsersModule } from './users/users.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
 import { KycLevelGuard } from './common/guards/kyc-level.guard'
@@ -16,6 +18,8 @@ import { KycLevelGuard } from './common/guards/kyc-level.guard'
     ConfigModule,
     AuthModule,
     WalletModule,
+    StorageModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
