@@ -9,6 +9,8 @@ import { StorageModule } from './storage/storage.module'
 import { UsersModule } from './users/users.module'
 import { CategoriesModule } from './categories/categories.module'
 import { ListingsModule } from './listings/listings.module'
+import { AiModule } from './ai/ai.module'
+import { SearchModule } from './search/search.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
 import { KycLevelGuard } from './common/guards/kyc-level.guard'
@@ -24,6 +26,8 @@ import { KycLevelGuard } from './common/guards/kyc-level.guard'
     UsersModule,
     CategoriesModule,
     ListingsModule,
+    AiModule,
+    SearchModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
