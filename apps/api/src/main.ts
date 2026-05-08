@@ -1,19 +1,19 @@
-import { NestFactory } from '@nestjs/core'
-import { ValidationPipe } from '@nestjs/common'
-import helmet from 'helmet'
-import { rateLimit } from 'express-rate-limit'
-import { RedisStore } from 'rate-limit-redis'
-import type Redis from 'ioredis'
-import { AppModule } from './app.module'
-import { REDIS_TOKEN } from './redis/redis.module'
-import { HttpExceptionFilter } from './common/filters/http-exception.filter'
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
-import { TransformInterceptor } from './common/interceptors/transform.interceptor'
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import type Redis from 'ioredis';
+import { AppModule } from './app.module';
+import { REDIS_TOKEN } from './redis/redis.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule);
 
-  const redisClient = app.get<Redis>(REDIS_TOKEN)
+  const redisClient = app.get<Redis>(REDIS_TOKEN);
 
   app.use(
     helmet({
@@ -33,13 +33,13 @@ async function bootstrap(): Promise<void> {
       noSniff: true,
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     }),
-  )
+  );
 
   app.enableCors({
     origin: process.env.CORS_ORIGINS?.split(',') ?? [],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  })
+  });
 
   app.use(
     rateLimit({
@@ -52,7 +52,7 @@ async function bootstrap(): Promise<void> {
           redisClient.call(args[0], ...args.slice(1)) as Promise<number>,
       }),
     }),
-  )
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -61,14 +61,17 @@ async function bootstrap(): Promise<void> {
       transform: true,
       transformOptions: { enableImplicitConversion: false },
     }),
-  )
+  );
 
-  app.useGlobalFilters(new HttpExceptionFilter())
-  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor())
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+  );
 
-  app.setGlobalPrefix('api/v1')
+  app.setGlobalPrefix('api/v1');
 
-  await app.listen(process.env.PORT ?? 3001)
+  await app.listen(process.env.PORT ?? 3001);
 }
 
-bootstrap()
+bootstrap();
