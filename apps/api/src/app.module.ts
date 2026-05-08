@@ -21,6 +21,7 @@ import { JobsModule } from './jobs/jobs.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
 import { KycLevelGuard } from './common/guards/kyc-level.guard'
+import { RateLimitGuard } from './common/guards/rate-limit.guard'
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { KycLevelGuard } from './common/guards/kyc-level.guard'
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: KycLevelGuard },
   ],

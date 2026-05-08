@@ -8,6 +8,7 @@ import { CreateListingDto } from './dto/create-listing.dto'
 import { ListListingsDto } from './dto/list-listings.dto'
 import { Public } from '../common/decorators/public.decorator'
 import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator'
+import { RateLimit } from '../common/decorators/rate-limit.decorator'
 
 @Controller('listings')
 export class ListingsController {
@@ -15,6 +16,7 @@ export class ListingsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ ttl: 3600, limit: 20, keyBy: 'user' })
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateListingDto) {
     return this.listingsService.create(user.sub, dto)
   }

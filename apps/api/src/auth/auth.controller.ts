@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto'
 import { RefreshDto } from './dto/refresh.dto'
 import { Public } from '../common/decorators/public.decorator'
 import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator'
+import { RateLimit } from '../common/decorators/rate-limit.decorator'
 import type { Request } from 'express'
 
 @Controller('auth')
@@ -14,6 +15,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ ttl: 3600, limit: 3, keyBy: 'ip' })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto)
   }
@@ -21,6 +23,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ ttl: 900, limit: 5, keyBy: 'ip' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
   }
