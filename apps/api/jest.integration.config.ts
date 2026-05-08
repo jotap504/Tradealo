@@ -5,4 +5,4 @@ export default {
   transform: { '^.+\\.(t|j)s$': 'ts-jest' },
   testEnvironment: 'node',
   setupFilesAfterEnv: ['./jest.setup.ts'],
-}
+};
