@@ -1,9 +1,19 @@
-import { Module } from '@nestjs/common'
-import { AdminService } from './admin.service'
-import { AdminController } from './admin.controller'
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { AdminService } from './admin.service';
+import { AdminController } from './admin.controller';
+import { AdminAuthService } from './admin-auth.service';
+import { AdminAuthController } from './admin-auth.controller';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
+import { AdminPreAuthGuard } from '../common/guards/admin-preauth.guard';
 
 @Module({
-  controllers: [AdminController],
-  providers: [AdminService],
+  imports: [
+    JwtModule.register({
+      secret: process.env.ADMIN_JWT_SECRET ?? 'changeme_admin_dev_only',
+    }),
+  ],
+  controllers: [AdminController, AdminAuthController],
+  providers: [AdminService, AdminAuthService, AdminJwtGuard, AdminPreAuthGuard],
 })
 export class AdminModule {}
