@@ -13,9 +13,10 @@ let pool: Pool;
 
 beforeAll(async () => {
   if (!process.env.CI) {
-    execSync('docker compose -f docker-compose.test.yml up -d --wait', {
-      stdio: 'inherit',
-    });
+    execSync(
+      'docker compose -f ../../docker-compose.test.yml -p trocalia-test up -d --wait',
+      { stdio: 'inherit' },
+    );
     execSync('pnpm db:migrate', {
       stdio: 'inherit',
       env: { ...process.env, DATABASE_URL: TEST_DB_URL },
@@ -31,11 +32,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await pool?.end();
-  if (!process.env.CI) {
-    execSync('docker compose -f docker-compose.test.yml down -v', {
-      stdio: 'inherit',
-    });
-  }
 });
 
 async function seedTestConfig(
@@ -48,12 +44,16 @@ async function seedTestConfig(
         key: entry.key,
         category: entry.category,
         label: entry.label,
-        dataType: entry.dataType as typeof schema.systemConfigs.$inferInsert['dataType'],
+        dataType:
+          entry.dataType as (typeof schema.systemConfigs.$inferInsert)['dataType'],
         value: entry.value as unknown as Record<string, unknown>,
         defaultValue: entry.defaultValue as unknown as Record<string, unknown>,
         unit: entry.unit ?? null,
         isPublic: entry.isPublic,
-        validation: (entry.validation ?? null) as Record<string, unknown> | null,
+        validation: (entry.validation ?? null) as Record<
+          string,
+          unknown
+        > | null,
       })
       .onConflictDoNothing();
   }
@@ -65,10 +65,18 @@ async function seedTestUsers(
   const hash = await bcrypt.hash('TestPass123!', 10);
 
   const users = [
-    { email: FIXTURES.userNoKyc.email,      kycLevel: 0, role: 'user'          as const },
-    { email: FIXTURES.userKyc1.email,        kycLevel: 1, role: 'user'          as const },
-    { email: FIXTURES.userKyc2Seller.email,  kycLevel: 2, role: 'verified_user' as const },
-    { email: FIXTURES.adminUser.email,       kycLevel: 2, role: 'super_admin'   as const },
+    { email: FIXTURES.userNoKyc.email, kycLevel: 0, role: 'user' as const },
+    { email: FIXTURES.userKyc1.email, kycLevel: 1, role: 'user' as const },
+    {
+      email: FIXTURES.userKyc2Seller.email,
+      kycLevel: 2,
+      role: 'verified_user' as const,
+    },
+    {
+      email: FIXTURES.adminUser.email,
+      kycLevel: 2,
+      role: 'super_admin' as const,
+    },
   ];
 
   for (const u of users) {
@@ -87,8 +95,16 @@ async function seedTestUsers(
 }
 
 export const FIXTURES = {
-  userNoKyc:      { email: 'nokyc@test.com',       kycLevel: 0, password: 'TestPass123!' },
-  userKyc1:       { email: 'kyc1@test.com',         kycLevel: 1, password: 'TestPass123!' },
-  userKyc2Seller: { email: 'seller@test.com',       kycLevel: 2, password: 'TestPass123!' },
-  adminUser:      { email: 'admin@tradealo.com.ar', role: 'super_admin' as const, password: 'TestPass123!' },
+  userNoKyc: { email: 'nokyc@test.com', kycLevel: 0, password: 'TestPass123!' },
+  userKyc1: { email: 'kyc1@test.com', kycLevel: 1, password: 'TestPass123!' },
+  userKyc2Seller: {
+    email: 'seller@test.com',
+    kycLevel: 2,
+    password: 'TestPass123!',
+  },
+  adminUser: {
+    email: 'admin@tradealo.com.ar',
+    role: 'super_admin' as const,
+    password: 'TestPass123!',
+  },
 } as const;

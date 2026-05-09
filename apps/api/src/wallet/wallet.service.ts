@@ -4,68 +4,70 @@ import {
   NotFoundException,
   BadRequestException,
   UnprocessableEntityException,
-} from '@nestjs/common'
-import { eq, and, or, lt, desc, asc, sql } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import { ConfigService } from '../config/config.service'
-import * as schema from '../database/schema'
-import { encodeCursor, decodeCursor } from '../common/utils/cursor.util'
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import { eq, and, or, lt, desc, asc, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import { ConfigService } from '../config/config.service';
+import * as schema from '../database/schema';
+import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 
-type DB = NodePgDatabase<typeof schema>
-type CreditReason = typeof schema.creditTransactions.$inferInsert['reason']
+type DB = NodePgDatabase<typeof schema>;
+type CreditReason = (typeof schema.creditTransactions.$inferInsert)['reason'];
 
 export interface WalletBalance {
-  userId: string
-  balance: number
-  lifetimeEarned: number
-  lifetimeSpent: number
-  updatedAt: Date
+  userId: string;
+  balance: number;
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+  updatedAt: Date;
 }
 
 export interface CreditTxResult {
-  id: string
-  userId: string
-  amount: number
-  balanceAfter: number
-  reason: string
-  referenceId: string | null
-  referenceType: string | null
-  expiresAt: Date | null
-  createdAt: Date
+  id: string;
+  userId: string;
+  amount: number;
+  balanceAfter: number;
+  reason: string;
+  referenceId: string | null;
+  referenceType: string | null;
+  expiresAt: Date | null;
+  createdAt: Date;
 }
 
 export interface PaginatedTransactions {
-  data: CreditTxResult[]
-  nextCursor: string | null
-  hasMore: boolean
+  data: CreditTxResult[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 export interface TokenPackWithPrice {
-  id: string
-  key: string
-  label: string
-  tokens: number
-  bonusPct: number
-  isFeatured: boolean
-  price: string
-  currencyCode: string
+  id: string;
+  key: string;
+  label: string;
+  tokens: number;
+  bonusPct: number;
+  isFeatured: boolean;
+  price: string;
+  currencyCode: string;
 }
 
 export interface FreeQuota {
-  quota: number
-  used: number
-  remaining: number
+  quota: number;
+  used: number;
+  remaining: number;
 }
 
-const DEFAULT_PAGE_LIMIT = 20
-const MAX_PAGE_LIMIT = 50
+const DEFAULT_PAGE_LIMIT = 20;
+const MAX_PAGE_LIMIT = 50;
 
 function currentYearMonth(): string {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
 }
 
 @Injectable()
@@ -80,19 +82,24 @@ export class WalletService {
       .select()
       .from(schema.wallets)
       .where(eq(schema.wallets.userId, userId))
-      .limit(1)
+      .limit(1);
 
-    if (!wallet) throw new NotFoundException('WALLET_NOT_FOUND')
-    return wallet
+    if (!wallet) throw new NotFoundException('WALLET_NOT_FOUND');
+    return wallet;
   }
 
   async credit(
     userId: string,
     amount: number,
     reason: CreditReason,
-    options?: { referenceId?: string; referenceType?: string; expiresAt?: Date },
+    options?: {
+      referenceId?: string;
+      referenceType?: string;
+      expiresAt?: Date;
+    },
   ): Promise<CreditTxResult> {
-    if (amount <= 0) throw new BadRequestException('Credit amount must be positive')
+    if (amount <= 0)
+      throw new BadRequestException('Credit amount must be positive');
 
     return this.db.transaction(async (tx) => {
       const [updated] = await tx
@@ -103,9 +110,9 @@ export class WalletService {
           updatedAt: new Date(),
         })
         .where(eq(schema.wallets.userId, userId))
-        .returning({ balance: schema.wallets.balance })
+        .returning({ balance: schema.wallets.balance });
 
-      if (!updated) throw new NotFoundException('WALLET_NOT_FOUND')
+      if (!updated) throw new NotFoundException('WALLET_NOT_FOUND');
 
       const [txn] = await tx
         .insert(schema.creditTransactions)
@@ -118,10 +125,10 @@ export class WalletService {
           referenceType: options?.referenceType,
           expiresAt: options?.expiresAt,
         })
-        .returning()
+        .returning();
 
-      return txn as CreditTxResult
-    })
+      return txn as CreditTxResult;
+    });
   }
 
   async debit(
@@ -130,17 +137,23 @@ export class WalletService {
     reason: CreditReason,
     options?: { referenceId?: string; referenceType?: string },
   ): Promise<CreditTxResult> {
-    if (amount <= 0) throw new BadRequestException('Debit amount must be positive')
+    if (amount <= 0)
+      throw new BadRequestException('Debit amount must be positive');
 
     return this.db.transaction(async (tx) => {
       const [wallet] = await tx
         .select({ balance: schema.wallets.balance })
         .from(schema.wallets)
         .where(eq(schema.wallets.userId, userId))
-        .limit(1)
+        .for('update')
+        .limit(1);
 
-      if (!wallet) throw new NotFoundException('WALLET_NOT_FOUND')
-      if (wallet.balance < amount) throw new UnprocessableEntityException('INSUFFICIENT_BALANCE')
+      if (!wallet) throw new NotFoundException('WALLET_NOT_FOUND');
+      if (wallet.balance < amount)
+        throw new HttpException(
+          'INSUFFICIENT_BALANCE',
+          HttpStatus.PAYMENT_REQUIRED,
+        );
 
       const [updated] = await tx
         .update(schema.wallets)
@@ -150,7 +163,7 @@ export class WalletService {
           updatedAt: new Date(),
         })
         .where(eq(schema.wallets.userId, userId))
-        .returning({ balance: schema.wallets.balance })
+        .returning({ balance: schema.wallets.balance });
 
       const [txn] = await tx
         .insert(schema.creditTransactions)
@@ -162,10 +175,10 @@ export class WalletService {
           referenceId: options?.referenceId,
           referenceType: options?.referenceType,
         })
-        .returning()
+        .returning();
 
-      return txn as CreditTxResult
-    })
+      return txn as CreditTxResult;
+    });
   }
 
   async getTransactionHistory(
@@ -173,13 +186,13 @@ export class WalletService {
     cursor?: string,
     limit = DEFAULT_PAGE_LIMIT,
   ): Promise<PaginatedTransactions> {
-    const pageSize = Math.min(limit, MAX_PAGE_LIMIT)
-    const fetchCount = pageSize + 1
+    const pageSize = Math.min(limit, MAX_PAGE_LIMIT);
+    const fetchCount = pageSize + 1;
 
-    const conditions = [eq(schema.creditTransactions.userId, userId)]
+    const conditions = [eq(schema.creditTransactions.userId, userId)];
 
     if (cursor) {
-      const { createdAt, id } = decodeCursor(cursor)
+      const { createdAt, id } = decodeCursor(cursor);
       conditions.push(
         or(
           lt(schema.creditTransactions.createdAt, createdAt),
@@ -188,23 +201,28 @@ export class WalletService {
             lt(schema.creditTransactions.id, id),
           ),
         )!,
-      )
+      );
     }
 
     const rows = await this.db
       .select()
       .from(schema.creditTransactions)
       .where(and(...conditions))
-      .orderBy(desc(schema.creditTransactions.createdAt), desc(schema.creditTransactions.id))
-      .limit(fetchCount)
+      .orderBy(
+        desc(schema.creditTransactions.createdAt),
+        desc(schema.creditTransactions.id),
+      )
+      .limit(fetchCount);
 
-    const hasMore = rows.length > pageSize
-    const data = hasMore ? rows.slice(0, pageSize) : rows
-    const last = data[data.length - 1]
+    const hasMore = rows.length > pageSize;
+    const data = hasMore ? rows.slice(0, pageSize) : rows;
+    const last = data[data.length - 1];
     const nextCursor =
-      hasMore && last ? encodeCursor({ createdAt: last.createdAt, id: last.id }) : null
+      hasMore && last
+        ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+        : null;
 
-    return { data: data as CreditTxResult[], nextCursor, hasMore }
+    return { data: data as CreditTxResult[], nextCursor, hasMore };
   }
 
   async getTokenPacks(countryCode = 'AR'): Promise<TokenPackWithPrice[]> {
@@ -229,11 +247,11 @@ export class WalletService {
         ),
       )
       .where(eq(schema.tokenPackDefinitions.isActive, true))
-      .orderBy(asc(schema.tokenPackDefinitions.sortOrder))
+      .orderBy(asc(schema.tokenPackDefinitions.sortOrder));
   }
 
   async getFreeQuota(userId: string): Promise<FreeQuota> {
-    const yearMonth = currentYearMonth()
+    const yearMonth = currentYearMonth();
 
     const [record] = await this.db
       .select()
@@ -244,24 +262,31 @@ export class WalletService {
           eq(schema.freeListingQuotas.yearMonth, yearMonth),
         ),
       )
-      .limit(1)
+      .limit(1);
 
     if (record) {
-      return { quota: record.quota, used: record.used, remaining: record.quota - record.used }
+      return {
+        quota: record.quota,
+        used: record.used,
+        remaining: record.quota - record.used,
+      };
     }
 
-    const monthlyQuota = await this.configService.getNumber('tokens.quota.monthly', 5)
+    const monthlyQuota = await this.configService.getNumber(
+      'tokens.quota.monthly',
+      5,
+    );
 
     await this.db
       .insert(schema.freeListingQuotas)
       .values({ userId, yearMonth, quota: monthlyQuota, used: 0 })
-      .onConflictDoNothing()
+      .onConflictDoNothing();
 
-    return { quota: monthlyQuota, used: 0, remaining: monthlyQuota }
+    return { quota: monthlyQuota, used: 0, remaining: monthlyQuota };
   }
 
   async consumeFreeQuota(userId: string): Promise<void> {
-    const yearMonth = currentYearMonth()
+    const yearMonth = currentYearMonth();
 
     const result = await this.db
       .update(schema.freeListingQuotas)
@@ -273,8 +298,9 @@ export class WalletService {
           sql`${schema.freeListingQuotas.used} < ${schema.freeListingQuotas.quota}`,
         ),
       )
-      .returning({ used: schema.freeListingQuotas.used })
+      .returning({ used: schema.freeListingQuotas.used });
 
-    if (result.length === 0) throw new UnprocessableEntityException('FREE_QUOTA_EXHAUSTED')
+    if (result.length === 0)
+      throw new UnprocessableEntityException('FREE_QUOTA_EXHAUSTED');
   }
 }
