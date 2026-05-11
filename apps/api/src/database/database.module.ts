@@ -16,6 +16,7 @@ export const DRIZZLE_TOKEN = Symbol('DRIZZLE_TOKEN')
           connectionTimeoutMillis: 10000,
           idleTimeoutMillis: 30000,
           max: 5,
+          ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         })
         const dbLogger = new Logger('DatabaseModule')
         pool.on('error', (err: Error) => dbLogger.warn('pg pool error: ' + err.message))
@@ -26,4 +27,5 @@ export const DRIZZLE_TOKEN = Symbol('DRIZZLE_TOKEN')
   exports: [DRIZZLE_TOKEN],
 })
 export class DatabaseModule {}
+
 
