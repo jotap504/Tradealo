@@ -15,11 +15,6 @@ export default function PrivateLayout({
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
-  const initialize = useAuthStore((s) => s.initialize);
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
 
   useEffect(() => {
     if (initialized && !user) {
