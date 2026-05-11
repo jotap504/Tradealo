@@ -69,7 +69,7 @@ async function bootstrap(): Promise<void> {
     new TransformInterceptor(),
   );
 
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', { exclude: ['/health'] });
 
   await app.listen(process.env.PORT ?? 3001);
 }

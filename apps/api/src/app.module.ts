@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
 import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './redis/redis.module';
 import { ConfigModule } from './config/config.module';
@@ -24,6 +25,7 @@ import { KycLevelGuard } from './common/guards/kyc-level.guard';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 
 @Module({
+  controllers: [AppController],
   imports: [
     DatabaseModule,
     RedisModule,

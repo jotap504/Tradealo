@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: trocalia-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      # ── Database (Supabase) ──────────────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false
+      # ── Redis (Upstash) ─────────────────────────────────────────────────────
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      # ── JWT ─────────────────────────────────────────────────────────────────
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ADMIN_JWT_SECRET
+        generateValue: true
+      - key: ADMIN_SESSION_TIMEOUT
+        value: "7200"
+      # ── Cloudflare R2 ────────────────────────────────────────────────────────
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_KYC_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      # ── MercadoPago ─────────────────────────────────────────────────────────
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      - key: MP_WEBHOOK_SECRET
+        sync: false
+      - key: MP_NOTIFICATION_URL
+        sync: false
+      # ── App ─────────────────────────────────────────────────────────────────
+      - key: CORS_ORIGINS
+        sync: false
+      # ── KYC Encryption ──────────────────────────────────────────────────────
+      - key: KYC_ENCRYPTION_KEY
+        sync: false
