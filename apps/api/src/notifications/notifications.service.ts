@@ -20,13 +20,14 @@ export interface SendNotificationParams {
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name)
-  private readonly resend: Resend
+  private readonly resend: Resend | null
   private readonly oneSignalAppId: string
   private readonly oneSignalKey: string
   private readonly fromEmail: string
 
   constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {
-    this.resend = new Resend(process.env.RESEND_API_KEY)
+    this.resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+    if (!this.resend) this.logger.warn('RESEND_API_KEY not set — email notifications disabled')
     this.oneSignalAppId = process.env.ONESIGNAL_APP_ID ?? ''
     this.oneSignalKey = process.env.ONESIGNAL_API_KEY ?? ''
     this.fromEmail = process.env.MAIL_FROM ?? 'noreply@trocalia.ar'
@@ -108,6 +109,10 @@ export class NotificationsService {
   }
 
   private async sendEmail(to: string, subject: string, text: string): Promise<void> {
+    if (!this.resend) {
+      this.logger.warn(`Email skipped (no RESEND_API_KEY): to=${to} subject=${subject}`)
+      return
+    }
     await this.resend.emails.send({
       from: this.fromEmail,
       to,
