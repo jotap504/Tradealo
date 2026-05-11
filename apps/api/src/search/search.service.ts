@@ -3,7 +3,7 @@ import { Client } from '@elastic/elasticsearch'
 import type {
   Sort, FieldValue, QueryDslQueryContainer,
 } from '@elastic/elasticsearch/lib/api/types'
-import { ELASTICSEARCH_TOKEN } from './search.module'
+import { ELASTICSEARCH_TOKEN } from './search.constants'
 import type { SearchListingsDto } from './dto/search-listings.dto'
 import { SearchSort } from './dto/search-listings.dto'
 
