@@ -16,6 +16,7 @@ export const REDIS_TOKEN = Symbol('REDIS_TOKEN')
           db: 0,
           lazyConnect: false,
           retryStrategy: (times) => Math.min(times * 100, 3000),
+          ...(process.env.NODE_ENV === 'production' ? { tls: {} } : {}),
         }),
     },
   ],
