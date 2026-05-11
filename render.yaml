@@ -32,15 +32,11 @@ services:
       - key: ADMIN_SESSION_TIMEOUT
         value: "7200"
       # ── Cloudflare R2 ────────────────────────────────────────────────────────
-      - key: R2_ENDPOINT
+      - key: SUPABASE_URL
         sync: false
-      - key: R2_ACCESS_KEY_ID
+      - key: SUPABASE_SERVICE_KEY
         sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_BUCKET_NAME
-        sync: false
-      - key: R2_PUBLIC_URL
+      - key: SUPABASE_STORAGE_BUCKET
         sync: false
       # ── MercadoPago ─────────────────────────────────────────────────────────
       - key: MP_ACCESS_TOKEN

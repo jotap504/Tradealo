@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { S3Client, DeleteObjectCommand, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { StorageClient } from '@supabase/storage-js'
 
-const PRESIGNED_PUT_TTL = 300   // 5 min for uploads
-const PRESIGNED_GET_TTL = 3600  // 1 hour for admin review
+const PRESIGNED_PUT_TTL = 300
+const PRESIGNED_GET_TTL = 3600
 
 export interface PresignedPut {
   uploadUrl: string
@@ -18,52 +17,40 @@ export interface PresignedGet {
 
 @Injectable()
 export class StorageService {
-  private readonly client: S3Client
+  private readonly storage: StorageClient
   private readonly bucket: string
-  private readonly publicUrl: string
   private readonly logger = new Logger(StorageService.name)
 
   constructor() {
-    this.bucket = process.env.R2_BUCKET_NAME ?? 'tradealo'
-    this.publicUrl = (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, '')
+    const supabaseUrl = process.env.SUPABASE_URL ?? ''
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? ''
+    this.bucket = process.env.SUPABASE_STORAGE_BUCKET ?? 'trocalia'
 
-    this.client = new S3Client({
-      region: 'auto',
-      endpoint: process.env.R2_ENDPOINT ?? '',
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
-      },
+    this.storage = new StorageClient(`${supabaseUrl}/storage/v1`, {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
     })
   }
 
-  async getPresignedPut(key: string, contentType: string): Promise<PresignedPut> {
-    const uploadUrl = await getSignedUrl(
-      this.client,
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }),
-      { expiresIn: PRESIGNED_PUT_TTL },
-    )
-    return { uploadUrl, key, expiresIn: PRESIGNED_PUT_TTL }
+  async getPresignedPut(key: string, _contentType: string): Promise<PresignedPut> {
+    const { data, error } = await this.storage.from(this.bucket).createSignedUploadUrl(key)
+    if (error) throw error
+    return { uploadUrl: data.signedUrl, key, expiresIn: PRESIGNED_PUT_TTL }
   }
 
   async getPresignedGet(key: string): Promise<PresignedGet> {
-    const url = await getSignedUrl(
-      this.client,
-      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-      { expiresIn: PRESIGNED_GET_TTL },
-    )
-    return { url, expiresIn: PRESIGNED_GET_TTL }
+    const { data, error } = await this.storage.from(this.bucket).createSignedUrl(key, PRESIGNED_GET_TTL)
+    if (error) throw error
+    return { url: data.signedUrl, expiresIn: PRESIGNED_GET_TTL }
   }
 
   async deleteObject(key: string): Promise<void> {
-    try {
-      await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
-    } catch (err) {
-      this.logger.warn(`Failed to delete R2 object: ${key}`, err)
-    }
+    const { error } = await this.storage.from(this.bucket).remove([key])
+    if (error) this.logger.warn(`Failed to delete storage object: ${key}`, error)
   }
 
   getPublicUrl(key: string): string {
-    return `${this.publicUrl}/${key}`
+    const { data } = this.storage.from(this.bucket).getPublicUrl(key)
+    return data.publicUrl
   }
 }
