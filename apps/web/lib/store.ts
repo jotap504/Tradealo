@@ -22,29 +22,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearUser: () => set({ user: null }),
   initialize: async () => {
     if (get().initialized) return;
-    // Skip the network call entirely if there's no token in storage
-    if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
-      set({ user: null, isLoading: false, initialized: true });
-      return;
+
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken');
+      const stored = localStorage.getItem('authUser');
+
+      if (token && stored) {
+        try {
+          const user = JSON.parse(stored);
+          set({ user, isLoading: false, initialized: true });
+          return;
+        } catch {
+          // Corrupt stored user, fall through to clear
+          localStorage.removeItem('authUser');
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+      }
     }
-    set({ isLoading: true });
-    try {
-      const me = await auth.getMe();
-      set({ user: me, isLoading: false, initialized: true });
-    } catch {
-      // Don't overwrite user if login() set it while getMe() was in-flight
-      set((state) => ({
-        user: state.user,
-        isLoading: false,
-        initialized: true,
-      }));
-    }
+
+    // No token or corrupt data: mark as initialized without a user
+    set({ user: null, isLoading: false, initialized: true });
   },
   logout: async () => {
     try {
       await auth.logout();
     } catch {
       /* ignore */
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authUser');
     }
     set({ user: null });
   },

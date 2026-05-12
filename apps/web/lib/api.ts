@@ -52,6 +52,9 @@ apiClient.interceptors.response.use(
         if (unwrapped.refreshToken) {
           localStorage.setItem('refreshToken', unwrapped.refreshToken);
         }
+        if (unwrapped.user) {
+          localStorage.setItem('authUser', JSON.stringify(unwrapped.user));
+        }
       }
 
       return { ...res, data: unwrapped };
