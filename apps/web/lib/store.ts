@@ -22,12 +22,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearUser: () => set({ user: null }),
   initialize: async () => {
     if (get().initialized) return;
+    // Skip the network call entirely if there's no token in storage
+    if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
+      set({ user: null, isLoading: false, initialized: true });
+      return;
+    }
     set({ isLoading: true });
     try {
       const me = await auth.getMe();
       set({ user: me, isLoading: false, initialized: true });
     } catch {
-      set({ user: null, isLoading: false, initialized: true });
+      // Don't overwrite user if login() set it while getMe() was in-flight
+      set((state) => ({
+        user: state.user,
+        isLoading: false,
+        initialized: true,
+      }));
     }
   },
   logout: async () => {
