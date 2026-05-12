@@ -123,11 +123,22 @@ export class AuthService {
         })
       }
 
-      return inserted
+      return { ...inserted, username: dto.username }
     })
 
     const tokens = await this.createTokenPair(user.id, user.email, user.role, user.kycLevel)
-    return { ...tokens, user }
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        kycLevel: user.kycLevel,
+        referralCode: user.referralCode,
+        createdAt: user.createdAt,
+      },
+    }
   }
 
   async login(dto: LoginDto): Promise<TokenPair & { user: UserSummary }> {
