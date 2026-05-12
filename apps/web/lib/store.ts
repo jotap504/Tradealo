@@ -7,6 +7,7 @@ interface AuthState {
   isLoading: boolean;
   initialized: boolean;
   setUser: (user: User | null) => void;
+  setInitialized: (value: boolean) => void;
   clearUser: () => void;
   initialize: () => Promise<void>;
   logout: () => Promise<void>;
@@ -17,6 +18,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   initialized: false,
   setUser: (user) => set({ user }),
+  setInitialized: (value) => set({ initialized: value }),
   clearUser: () => set({ user: null }),
   initialize: async () => {
     if (get().initialized) return;
