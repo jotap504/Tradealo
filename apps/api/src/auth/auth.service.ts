@@ -130,13 +130,20 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<TokenPair & { user: UserSummary }> {
-    const [user] = await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        user: schema.users,
+        profile: schema.userProfiles,
+      })
       .from(schema.users)
+      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
       .where(eq(schema.users.email, dto.email))
       .limit(1)
 
-    if (!user) throw new UnauthorizedException('INVALID_CREDENTIALS')
+    const row = rows[0]
+    if (!row) throw new UnauthorizedException('INVALID_CREDENTIALS')
+
+    const { user, profile } = row
 
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash)
     if (!passwordValid) throw new UnauthorizedException('INVALID_CREDENTIALS')
@@ -154,6 +161,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        username: profile?.username || undefined,
         role: user.role,
         kycLevel: user.kycLevel,
         referralCode: user.referralCode,
@@ -211,15 +219,10 @@ export class AuthService {
       )
   }
 
-  async getMe(userId: string): Promise<UserSummary & { profile: typeof schema.userProfiles.$inferSelect | null }> {
+  async getMe(userId: string): Promise<UserSummary> {
     const rows = await this.db
       .select({
-        id: schema.users.id,
-        email: schema.users.email,
-        role: schema.users.role,
-        kycLevel: schema.users.kycLevel,
-        referralCode: schema.users.referralCode,
-        createdAt: schema.users.createdAt,
+        user: schema.users,
         profile: schema.userProfiles,
       })
       .from(schema.users)
@@ -229,7 +232,18 @@ export class AuthService {
 
     const row = rows[0]
     if (!row) throw new NotFoundException('USER_NOT_FOUND')
-    return row
+
+    const { user, profile } = row
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: profile?.username || undefined,
+      role: user.role,
+      kycLevel: user.kycLevel,
+      referralCode: user.referralCode,
+      createdAt: user.createdAt,
+    }
   }
 
   private async createTokenPair(
