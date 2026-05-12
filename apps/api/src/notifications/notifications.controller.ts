@@ -8,6 +8,11 @@ import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  @Get('unread-count')
+  async unreadCount(@CurrentUser() user: JwtPayload): Promise<{ count: number }> {
+    return this.notificationsService.countUnread(user.sub)
+  }
+
   @Get()
   findAll(
     @CurrentUser() user: JwtPayload,

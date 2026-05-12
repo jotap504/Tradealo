@@ -39,6 +39,19 @@ export class ListingsController {
     return this.listingsService.findAll(query);
   }
 
+  @Get('me')
+  findMe(
+    @CurrentUser() user: JwtPayload,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.listingsService.findByUser(
+      user.sub,
+      cursor,
+      limit ? parseInt(limit, 10) : 20,
+    );
+  }
+
   @Get('mine')
   findMine(
     @CurrentUser() user: JwtPayload,

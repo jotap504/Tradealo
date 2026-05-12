@@ -80,6 +80,19 @@ export class NotificationsService {
     }
   }
 
+  async countUnread(userId: string): Promise<{ count: number }> {
+    const rows = await this.db
+      .select({ id: schema.notifications.id })
+      .from(schema.notifications)
+      .where(
+        and(
+          eq(schema.notifications.userId, userId),
+          isNull(schema.notifications.readAt),
+        ),
+      );
+    return { count: rows.length };
+  }
+
   async findForUser(userId: string, unreadOnly = false) {
     const conditions = [eq(schema.notifications.userId, userId)];
     if (unreadOnly) conditions.push(isNull(schema.notifications.readAt));
