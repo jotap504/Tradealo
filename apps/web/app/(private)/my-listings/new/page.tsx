@@ -137,19 +137,19 @@ export default function NewListingPage() {
 
   const buildPayload = () => ({
     categoryId: formData.categoryId,
-    isCollectible: formData.isCollectible,
+    type: formData.type,
     title: formData.title,
     description: formData.description,
     condition: formData.condition,
-    attributes: formData.attributes,
+    collectibleAttributes: Object.keys(formData.attributes).length > 0 ? formData.attributes : undefined,
     price: Number(formData.price),
     currency: formData.currency,
-    negotiable: formData.negotiable,
+    priceNegotiable: formData.negotiable,
     paymentMethods: formData.paymentMethods,
     shippingOptions: formData.shippingOptions,
-    shippingDescription: formData.shippingDescription,
-    province: formData.province,
-    city: formData.city,
+    shippingDescription: formData.shippingDescription || undefined,
+    province: formData.province || undefined,
+    city: formData.city || undefined,
   });
 
   const goNext = async () => {
@@ -169,10 +169,7 @@ export default function NewListingPage() {
       if (!listingId) {
         setSaving(true);
         try {
-          const created = await listings.createListing({
-            ...buildPayload(),
-            status: 'draft',
-          });
+          const created = await listings.createListing(buildPayload());
           setListingId(created.id);
         } catch {
           toast.error('No se pudo guardar el borrador');
