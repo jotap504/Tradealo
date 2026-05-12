@@ -42,6 +42,9 @@ export class RateLimitGuard implements CanActivate {
         : `ip:${request.ip ?? 'unknown'}`;
 
     const key = `rl:${context.getHandler().name}:${keyPart}`;
+
+    if (this.redis.status !== 'ready') return true;
+
     const count = await this.redis.incr(key);
 
     if (count === 1) {
