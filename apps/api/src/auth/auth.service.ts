@@ -59,6 +59,14 @@ export class AuthService {
 
     if (existing) throw new ConflictException('EMAIL_ALREADY_EXISTS')
 
+    const [existingUsername] = await this.db
+      .select({ id: schema.userProfiles.userId })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.username, dto.username))
+      .limit(1)
+
+    if (existingUsername) throw new ConflictException('USERNAME_ALREADY_EXISTS')
+
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS)
     const referralCode = this.generateReferralCode()
     const rewardTokens = await this.configService.getNumber(
@@ -94,7 +102,10 @@ export class AuthService {
           createdAt: schema.users.createdAt,
         })
 
-      await tx.insert(schema.userProfiles).values({ userId: inserted.id })
+      await tx.insert(schema.userProfiles).values({
+        userId: inserted.id,
+        username: dto.username,
+      })
 
       await tx.insert(schema.wallets).values({
         userId: inserted.id,

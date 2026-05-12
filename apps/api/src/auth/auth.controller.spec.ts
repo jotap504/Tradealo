@@ -45,8 +45,8 @@ describe('AuthController', () => {
   })
 
   it('register() delegates to AuthService.register', async () => {
-    const result = await controller.register({ email: 'test@example.com', password: 'Password1' })
-    expect(mockAuthService.register).toHaveBeenCalledWith({ email: 'test@example.com', password: 'Password1' })
+    const result = await controller.register({ email: 'test@example.com', username: 'testuser', password: 'Password1' })
+    expect(mockAuthService.register).toHaveBeenCalledWith({ email: 'test@example.com', username: 'testuser', password: 'Password1' })
     expect(result).toEqual(TOKEN_PAIR)
   })
 

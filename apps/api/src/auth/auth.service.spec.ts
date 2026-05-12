@@ -96,6 +96,7 @@ describe('AuthService', () => {
     it('creates user, wallet, credit_transaction and returns token pair', async () => {
       mockDb.select
         .mockReturnValueOnce(qb([]))                       // email check: not found
+        .mockReturnValueOnce(qb([]))                       // username check: not found
         .mockReturnValueOnce(qb([]))                       // referralCode lookup: not found
 
       mockDb.transaction.mockImplementationOnce(
@@ -115,6 +116,7 @@ describe('AuthService', () => {
 
       const result = await service.register({
         email: 'test@example.com',
+        username: 'testuser',
         password: 'Password1',
       })
 
@@ -127,12 +129,14 @@ describe('AuthService', () => {
     it('throws ConflictException when email is already in use', async () => {
       mockDb.select.mockReturnValueOnce(qb([{ id: USER_ID }]))
       await expect(
-        service.register({ email: 'test@example.com', password: 'Password1' }),
+        service.register({ email: 'test@example.com', username: 'testuser', password: 'Password1' }),
       ).rejects.toThrow(ConflictException)
     })
 
     it('registers without referralCode and sets referredById to undefined', async () => {
-      mockDb.select.mockReturnValueOnce(qb([]))  // email check
+      mockDb.select
+        .mockReturnValueOnce(qb([]))  // email check
+        .mockReturnValueOnce(qb([]))  // username check
 
       mockDb.transaction.mockImplementationOnce(
         async (fn: (tx: typeof mockDb) => Promise<unknown>) => {
@@ -149,13 +153,14 @@ describe('AuthService', () => {
       )
       mockDb.insert.mockReturnValueOnce(insertQb())
 
-      const result = await service.register({ email: 'test@example.com', password: 'Password1' })
+      const result = await service.register({ email: 'test@example.com', username: 'testuser', password: 'Password1' })
       expect(result.user).toBeDefined()
     })
 
     it('resolves referredById when valid referralCode is provided', async () => {
       mockDb.select
         .mockReturnValueOnce(qb([]))                        // email check
+        .mockReturnValueOnce(qb([]))                        // username check
         .mockReturnValueOnce(qb([{ id: 'referrer-uuid' }])) // referrer lookup
 
       mockDb.transaction.mockImplementationOnce(
@@ -175,6 +180,7 @@ describe('AuthService', () => {
 
       const result = await service.register({
         email: 'test@example.com',
+        username: 'testuser',
         password: 'Password1',
         referralCode: 'VALIDCODE123',
       })
