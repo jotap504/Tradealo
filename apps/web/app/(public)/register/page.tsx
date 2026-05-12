@@ -97,6 +97,9 @@ export default function RegisterPage() {
               error={errors.username?.message}
               autoComplete="username"
               helper="Solo letras, números y guiones bajos"
+              showCount
+              minLength={3}
+              maxLength={30}
             />
             <Input
               label="Contraseña"
@@ -105,6 +108,7 @@ export default function RegisterPage() {
               {...register('password')}
               error={errors.password?.message}
               autoComplete="new-password"
+              helper="Mínimo 8 caracteres, una mayúscula y un número"
             />
             <Input
               label="Confirmar contraseña"

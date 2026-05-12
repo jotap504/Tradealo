@@ -158,12 +158,12 @@ export default function NewListingPage() {
       return;
     }
     if (step === 2) {
-      if (!formData.title.trim()) {
-        toast.error('El título es obligatorio');
+      if (!formData.title.trim() || formData.title.trim().length < 5) {
+        toast.error('El título debe tener al menos 5 caracteres');
         return;
       }
-      if (!formData.description.trim()) {
-        toast.error('La descripción es obligatoria');
+      if (!formData.description.trim() || formData.description.trim().length < 20) {
+        toast.error('La descripción debe tener al menos 20 caracteres');
         return;
       }
       if (!listingId) {
@@ -251,6 +251,9 @@ export default function NewListingPage() {
                   placeholder="Ej: Bicicleta rodado 26 en buen estado"
                   value={formData.title}
                   onChange={(e) => update({ title: e.target.value })}
+                  showCount
+                  minLength={5}
+                  maxLength={150}
                 />
                 <AIGeneratorButton
                   type="title"
@@ -265,6 +268,9 @@ export default function NewListingPage() {
                   rows={5}
                   value={formData.description}
                   onChange={(e) => update({ description: e.target.value })}
+                  showCount
+                  minLength={20}
+                  maxLength={5000}
                 />
                 <AIGeneratorButton
                   type="description"
@@ -461,6 +467,8 @@ export default function NewListingPage() {
                 rows={3}
                 value={formData.shippingDescription}
                 onChange={(e) => update({ shippingDescription: e.target.value })}
+                showCount
+                maxLength={500}
               />
             </div>
           )}

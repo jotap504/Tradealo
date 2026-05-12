@@ -39,6 +39,7 @@ export default function EditProfilePage() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
@@ -52,6 +53,9 @@ export default function EditProfilePage() {
       });
     }
   }, [user, reset]);
+
+  const bioValue = watch('bio') ?? '';
+  const usernameValue = watch('username') ?? '';
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,14 +141,22 @@ export default function EditProfilePage() {
               label="Nombre de usuario"
               placeholder="mi_usuario"
               {...register('username')}
+              value={usernameValue}
               error={errors.username?.message}
+              helper="Solo letras, números y guiones bajos"
+              showCount
+              minLength={3}
+              maxLength={30}
             />
             <Textarea
               label="Sobre mí (opcional)"
               placeholder="Contá algo sobre vos…"
               rows={4}
               {...register('bio')}
+              value={bioValue}
               error={errors.bio?.message}
+              showCount
+              maxLength={300}
             />
             <ProvinceSelector label="Provincia" {...register('province')} />
             <Input

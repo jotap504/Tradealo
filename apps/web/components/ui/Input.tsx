@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, InputHTMLAttributes, ReactNode, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,15 +9,35 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   helper?: string;
   leftIcon?: ReactNode;
   rightSlot?: ReactNode;
+  showCount?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helper, leftIcon, rightSlot, className, id, ...rest },
+    { label, error, helper, leftIcon, rightSlot, showCount, className, id, ...rest },
     ref
   ) => {
     const inputId =
       id ?? (rest.name ? `input-${rest.name}` : `input-${Math.random().toString(36).slice(2, 8)}`);
+
+    const [len, setLen] = useState(() =>
+      String(rest.value ?? rest.defaultValue ?? '').length
+    );
+    useEffect(() => {
+      if (rest.value !== undefined) setLen(String(rest.value).length);
+    }, [rest.value]);
+
+    const minLen = rest.minLength !== undefined ? Number(rest.minLength) : undefined;
+    const maxLen = rest.maxLength !== undefined ? Number(rest.maxLength) : undefined;
+    const belowMin = minLen !== undefined && len < minLen;
+
+    const counterLabel = (() => {
+      if (maxLen && minLen) return `${len} / ${maxLen}${belowMin ? ` — mín. ${minLen}` : ''}`;
+      if (maxLen) return `${len} / ${maxLen}`;
+      if (minLen) return belowMin ? `${len} — mínimo ${minLen} caracteres` : `${len} caracteres`;
+      return `${len}`;
+    })();
+
     return (
       <div className="w-full">
         {label && (
@@ -50,13 +70,24 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className
             )}
             {...rest}
+            onChange={(e) => {
+              if (showCount) setLen(e.target.value.length);
+              rest.onChange?.(e);
+            }}
           />
           {rightSlot && <span className="pr-2">{rightSlot}</span>}
         </div>
         {error ? (
           <p className="mt-1.5 text-xs text-tradealo-error">{error}</p>
-        ) : helper ? (
-          <p className="mt-1.5 text-xs text-tradealo-text-muted">{helper}</p>
+        ) : (helper || showCount) ? (
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            {helper && <p className="text-xs text-tradealo-text-muted">{helper}</p>}
+            {showCount && (
+              <p className={cn('text-xs ml-auto', belowMin ? 'text-tradealo-error font-medium' : 'text-tradealo-text-muted')}>
+                {counterLabel}
+              </p>
+            )}
+          </div>
         ) : null}
       </div>
     );
@@ -69,12 +100,32 @@ export interface TextareaProps
   label?: string;
   error?: string;
   helper?: string;
+  showCount?: boolean;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, helper, className, id, ...rest }, ref) => {
+  ({ label, error, helper, showCount, className, id, ...rest }, ref) => {
     const textareaId =
       id ?? (rest.name ? `ta-${rest.name}` : `ta-${Math.random().toString(36).slice(2, 8)}`);
+
+    const [len, setLen] = useState(() =>
+      String(rest.value ?? rest.defaultValue ?? '').length
+    );
+    useEffect(() => {
+      if (rest.value !== undefined) setLen(String(rest.value).length);
+    }, [rest.value]);
+
+    const minLen = rest.minLength !== undefined ? Number(rest.minLength) : undefined;
+    const maxLen = rest.maxLength !== undefined ? Number(rest.maxLength) : undefined;
+    const belowMin = minLen !== undefined && len < minLen;
+
+    const counterLabel = (() => {
+      if (maxLen && minLen) return `${len} / ${maxLen}${belowMin ? ` — mín. ${minLen}` : ''}`;
+      if (maxLen) return `${len} / ${maxLen}`;
+      if (minLen) return belowMin ? `${len} — mínimo ${minLen} caracteres` : `${len} caracteres`;
+      return `${len}`;
+    })();
+
     return (
       <div className="w-full">
         {label && (
@@ -98,11 +149,22 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             className
           )}
           {...rest}
+          onChange={(e) => {
+            if (showCount) setLen(e.target.value.length);
+            rest.onChange?.(e);
+          }}
         />
         {error ? (
           <p className="mt-1.5 text-xs text-tradealo-error">{error}</p>
-        ) : helper ? (
-          <p className="mt-1.5 text-xs text-tradealo-text-muted">{helper}</p>
+        ) : (helper || showCount) ? (
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            {helper && <p className="text-xs text-tradealo-text-muted">{helper}</p>}
+            {showCount && (
+              <p className={cn('text-xs ml-auto', belowMin ? 'text-tradealo-error font-medium' : 'text-tradealo-text-muted')}>
+                {counterLabel}
+              </p>
+            )}
+          </div>
         ) : null}
       </div>
     );
