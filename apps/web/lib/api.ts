@@ -29,10 +29,23 @@ let isRefreshing = false;
 let pendingRequests: Array<(token: boolean) => void> = [];
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Unwrap standardized { success: true, data: T } response
+    if (res.data && res.data.success === true && res.data.data !== undefined) {
+      return { ...res, data: res.data.data };
+    }
+    return res;
+  },
   async (error: AxiosError) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;
+    const errorData = error.response?.data as any;
+
+    // Normalize error message from { success: false, error: { message } }
+    if (errorData?.success === false && errorData?.error?.message) {
+      // Inject message into data for pages expecting err.response.data.message
+      errorData.message = errorData.error.message;
+    }
 
     if (
       status === 401 &&
