@@ -208,7 +208,7 @@ export const auth = {
 
 export interface ListingsQuery {
   q?: string;
-  category?: string;
+  categoryId?: string;
   province?: string;
   condition?: string;
   type?: string;

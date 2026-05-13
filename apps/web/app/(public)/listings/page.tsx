@@ -18,7 +18,7 @@ function ListingsInner() {
 
   const queryParams = {
     q: sp.get('q') ?? undefined,
-    category: sp.get('category') ?? undefined,
+    categoryId: sp.get('category') ?? undefined,
     province: sp.get('province') ?? undefined,
     condition: sp.get('condition') ?? undefined,
     type: sp.get('type') ?? undefined,
