@@ -6,6 +6,7 @@ import {
 export enum ListingType { STANDARD = 'standard', PREMIUM = 'premium' }
 export enum ListingCondition { NEW = 'new', USED = 'used', REFURBISHED = 'refurbished' }
 export enum Currency { ARS = 'ARS', USD = 'USD' }
+export enum SaleType { CONTACT = 'contact', STOCK = 'stock', AUCTION = 'auction' }
 
 export class CreateListingDto {
   @IsUUID()
@@ -84,4 +85,18 @@ export class CreateListingDto {
   @IsNumber()
   @Min(1)
   durationDays?: number
+
+  @IsOptional()
+  @IsEnum(SaleType)
+  saleType?: SaleType
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  stock?: number
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  desiredPrice?: number
 }

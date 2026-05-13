@@ -49,6 +49,10 @@ export const listings = pgTable('listings', {
 
   condition:            listingConditionEnum('condition').notNull(),
 
+  saleType:             text('sale_type').notNull().default('contact'),
+  stock:                integer('stock'),
+  desiredPrice:         integer('desired_price'),
+
   location:             geometryPoint('location'),
   locationText:         varchar('location_text', { length: 200 }),
   city:                 varchar('city', { length: 100 }),

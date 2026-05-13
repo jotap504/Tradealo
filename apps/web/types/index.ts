@@ -28,6 +28,8 @@ export interface ListingImage {
   sortOrder: number;
 }
 
+export type SaleType = 'contact' | 'stock' | 'auction';
+
 export interface Listing {
   id: string;
   title: string;
@@ -36,6 +38,7 @@ export interface Listing {
   currency: Currency;
   condition: ListingCondition;
   type: ListingType;
+  saleType: SaleType;
   status: string;
   province: string;
   city?: string;
@@ -54,6 +57,18 @@ export interface Listing {
   showPhone?: boolean;
   phone?: string;
   riskScore?: number;
+  stock?: number;
+  desiredPrice?: number;
+}
+
+export interface Bid {
+  id: string;
+  listingId: string;
+  bidderId: string;
+  amount: number;
+  status: 'active' | 'outbid' | 'won' | 'lost';
+  bidder?: User;
+  createdAt: string;
 }
 
 export interface CategoryAttribute {

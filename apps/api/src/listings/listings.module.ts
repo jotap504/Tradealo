@@ -5,9 +5,10 @@ import { ListingImagesService } from './listing-images.service'
 import { ListingImagesController } from './listing-images.controller'
 import { WalletModule } from '../wallet/wallet.module'
 import { MessagingModule } from '../messaging/messaging.module'
+import { NotificationsModule } from '../notifications/notifications.module'
 
 @Module({
-  imports: [WalletModule, MessagingModule],
+  imports: [WalletModule, MessagingModule, NotificationsModule],
   controllers: [ListingsController, ListingImagesController],
   providers: [ListingsService, ListingImagesService],
   exports: [ListingsService],

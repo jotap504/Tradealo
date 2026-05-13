@@ -12,6 +12,7 @@ import type {
   Review,
   Conversation,
   Message,
+  Bid,
   PaginatedResponse,
   SystemConfig,
   AdminStats,
@@ -239,6 +240,12 @@ export const listings = {
     post<Listing>(`/listings/${id}/renew`, { durationDays }),
   contactSeller: (id: string, payload: { message: string }) =>
     post<{ conversationId: string }>(`/listings/${id}/contact`, payload),
+  buyNow: (id: string) =>
+    post<{ conversationId: string }>(`/listings/${id}/buy`),
+  placeBid: (id: string, payload: { amount: number }) =>
+    post<{ bid: Bid; instantBuy: boolean; conversationId?: string }>(`/listings/${id}/bids`, payload),
+  getBids: (id: string) =>
+    get<Bid[]>(`/listings/${id}/bids`),
 };
 
 export const categories = {

@@ -12,6 +12,7 @@ import {
   asc,
   lt,
   or,
+  ne,
   sql,
   gte,
   lte,
@@ -22,11 +23,13 @@ import { DRIZZLE_TOKEN } from '../database/database.module';
 import { ConfigService } from '../config/config.service';
 import { WalletService } from '../wallet/wallet.service';
 import { MessagingService } from '../messaging/messaging.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as schema from '../database/schema';
 import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 import { LISTING } from '../common/constants/listing.constants';
 import type { CreateListingDto } from './dto/create-listing.dto';
 import type { ListListingsDto } from './dto/list-listings.dto';
+import type { PlaceBidDto } from './dto/place-bid.dto';
 
 type DB = NodePgDatabase<typeof schema>;
 type Listing = typeof schema.listings.$inferSelect;
@@ -41,6 +44,7 @@ export class ListingsService {
     private readonly configService: ConfigService,
     private readonly walletService: WalletService,
     private readonly messagingService: MessagingService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateListingDto): Promise<Listing> {
@@ -103,6 +107,9 @@ export class ListingsService {
         moderationStatus,
         riskScore,
         status: 'draft',
+        saleType: dto.saleType ?? 'contact',
+        stock: dto.stock,
+        desiredPrice: dto.desiredPrice !== undefined ? Math.round(dto.desiredPrice * 100) : undefined,
       })
       .returning();
 
@@ -553,6 +560,207 @@ export class ListingsService {
       .where(eq(schema.listings.id, listingId));
 
     return { conversationId: conversation.id };
+  }
+
+  async buyNow(
+    listingId: string,
+    userId: string,
+  ): Promise<{ conversationId: string }> {
+    const [listing] = await this.db
+      .select()
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .limit(1);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId === userId)
+      throw new BadRequestException('CANNOT_BUY_OWN_LISTING');
+    if (listing.saleType !== 'stock')
+      throw new BadRequestException('NOT_A_STOCK_LISTING');
+    if (listing.status !== 'active')
+      throw new BadRequestException('LISTING_NOT_ACTIVE');
+    if (!listing.stock || listing.stock <= 0)
+      throw new BadRequestException('OUT_OF_STOCK');
+
+    const [updated] = await this.db
+      .update(schema.listings)
+      .set({
+        stock: sql`${schema.listings.stock} - 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(schema.listings.id, listingId), sql`${schema.listings.stock} > 0`),
+      )
+      .returning();
+
+    if (!updated || (updated.stock ?? 0) < 0) {
+      throw new BadRequestException('OUT_OF_STOCK');
+    }
+
+    if (updated.stock === 0) {
+      await this.db
+        .update(schema.listings)
+        .set({ status: 'sold', soldAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.listings.id, listingId));
+    }
+
+    const conversation =
+      await this.messagingService.findOrCreateConversation(userId, listingId);
+    await this.messagingService.sendMessage(
+      conversation.id,
+      userId,
+      '¡Hola! Quiero comprar este producto.',
+    );
+
+    await this.notificationsService.send({
+      userId: listing.userId,
+      channel: 'in_app',
+      type: 'item_purchased',
+      title: '¡Vendiste un producto!',
+      body: `Alguien compró "${listing.title}".`,
+      data: { listingId, conversationId: conversation.id },
+    });
+
+    return { conversationId: conversation.id };
+  }
+
+  async placeBid(
+    listingId: string,
+    userId: string,
+    dto: PlaceBidDto,
+  ): Promise<{
+    bid: typeof schema.listingBids.$inferSelect | null;
+    instantBuy: boolean;
+    conversationId?: string;
+  }> {
+    const [listing] = await this.db
+      .select()
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .limit(1);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId === userId)
+      throw new BadRequestException('CANNOT_BID_OWN_LISTING');
+    if (listing.saleType !== 'auction')
+      throw new BadRequestException('NOT_AN_AUCTION');
+    if (listing.status !== 'active')
+      throw new BadRequestException('LISTING_NOT_ACTIVE');
+
+    const amountCents = Math.round(dto.amount * 100);
+    const basePriceCents = Math.round(Number(listing.price) * 100);
+    const desiredCents = listing.desiredPrice ?? Infinity;
+
+    if (amountCents < basePriceCents) {
+      throw new BadRequestException('BID_BELOW_BASE_PRICE');
+    }
+
+    // Instant buy if bid >= desired price
+    if (amountCents >= desiredCents) {
+      await this.db
+        .update(schema.listings)
+        .set({ status: 'sold', soldAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.listings.id, listingId));
+
+      const [bid] = await this.db
+        .insert(schema.listingBids)
+        .values({ listingId, bidderId: userId, amount: amountCents, status: 'won' })
+        .returning();
+
+      await this.db
+        .update(schema.listingBids)
+        .set({ status: 'lost' })
+        .where(
+          and(
+            eq(schema.listingBids.listingId, listingId),
+            eq(schema.listingBids.status, 'active'),
+            ne(schema.listingBids.bidderId, userId),
+          ),
+        );
+
+      const conversation =
+        await this.messagingService.findOrCreateConversation(userId, listingId);
+      await this.messagingService.sendMessage(
+        conversation.id,
+        userId,
+        '¡Compré este producto al precio deseado!',
+      );
+
+      await this.notificationsService.send({
+        userId: listing.userId,
+        channel: 'in_app',
+        type: 'auction_won',
+        title: '¡Subasta finalizada!',
+        body: `"${listing.title}" se vendió al precio deseado.`,
+        data: { listingId, conversationId: conversation.id },
+      });
+
+      return { bid, instantBuy: true, conversationId: conversation.id };
+    }
+
+    // Regular bid — use transaction for atomicity
+    return this.db.transaction(async (tx) => {
+      const [locked] = await tx
+        .select()
+        .from(schema.listings)
+        .where(eq(schema.listings.id, listingId));
+
+      if (!locked || locked.status !== 'active')
+        throw new BadRequestException('LISTING_NOT_ACTIVE');
+
+      const [highestBid] = await tx
+        .select()
+        .from(schema.listingBids)
+        .where(
+          and(
+            eq(schema.listingBids.listingId, listingId),
+            eq(schema.listingBids.status, 'active'),
+          ),
+        )
+        .orderBy(desc(schema.listingBids.amount))
+        .limit(1);
+
+      if (highestBid && amountCents <= highestBid.amount) {
+        throw new BadRequestException('BID_TOO_LOW');
+      }
+
+      await tx
+        .update(schema.listingBids)
+        .set({ status: 'outbid' })
+        .where(
+          and(
+            eq(schema.listingBids.listingId, listingId),
+            eq(schema.listingBids.status, 'active'),
+            ne(schema.listingBids.bidderId, userId),
+          ),
+        );
+
+      const [bid] = await tx
+        .insert(schema.listingBids)
+        .values({ listingId, bidderId: userId, amount: amountCents, status: 'active' })
+        .returning();
+
+      if (highestBid && highestBid.bidderId !== userId) {
+        await this.notificationsService.send({
+          userId: highestBid.bidderId,
+          channel: 'in_app',
+          type: 'outbid',
+          title: 'Te superaron la oferta',
+          body: `Alguien ofreció más en "${locked.title}".`,
+          data: { listingId, bidId: bid.id },
+        });
+      }
+
+      return { bid, instantBuy: false };
+    });
+  }
+
+  async getBids(listingId: string) {
+    return this.db
+      .select()
+      .from(schema.listingBids)
+      .where(eq(schema.listingBids.listingId, listingId))
+      .orderBy(desc(schema.listingBids.amount));
   }
 
   private async recordView(

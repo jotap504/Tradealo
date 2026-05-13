@@ -15,6 +15,8 @@ import type { Request } from 'express';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListListingsDto } from './dto/list-listings.dto';
+import { PlaceBidDto } from './dto/place-bid.dto';
+import { BuyNowDto } from './dto/buy-now.dto';
 import { Public } from '../common/decorators/public.decorator';
 import {
   CurrentUser,
@@ -108,5 +110,32 @@ export class ListingsController {
     @Body('message') message: string,
   ) {
     return this.listingsService.contactSeller(id, user.sub, message);
+  }
+
+  @Post(':id/buy')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ ttl: 3600, limit: 5, keyBy: 'user' })
+  buyNow(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() _dto: BuyNowDto,
+  ) {
+    return this.listingsService.buyNow(id, user.sub);
+  }
+
+  @Post(':id/bids')
+  @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ ttl: 60, limit: 10, keyBy: 'user' })
+  placeBid(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PlaceBidDto,
+  ) {
+    return this.listingsService.placeBid(id, user.sub, dto);
+  }
+
+  @Get(':id/bids')
+  getBids(@Param('id') id: string) {
+    return this.listingsService.getBids(id);
   }
 }

@@ -23,7 +23,7 @@ import {
   LISTING_DURATION_OPTIONS,
   LISTING_BASE_COST,
 } from '@/lib/constants';
-import type { Category, TokenPack } from '@/types';
+import type { Category, TokenPack, SaleType } from '@/types';
 
 interface FormData {
   categoryId: string;
@@ -43,6 +43,9 @@ interface FormData {
   city: string;
   type: 'standard' | 'premium';
   durationDays: 30 | 60 | 90;
+  saleType: SaleType;
+  stock: string;
+  desiredPrice: string;
 }
 
 const EMPTY_FORM: FormData = {
@@ -63,6 +66,9 @@ const EMPTY_FORM: FormData = {
   city: '',
   type: 'standard',
   durationDays: 30,
+  saleType: 'contact',
+  stock: '',
+  desiredPrice: '',
 };
 
 const TOTAL_STEPS = 6;
@@ -145,6 +151,9 @@ export default function NewListingPage() {
     price: Number(formData.price),
     currency: formData.currency,
     priceNegotiable: formData.negotiable,
+    saleType: formData.saleType,
+    stock: formData.stock ? Number(formData.stock) : undefined,
+    desiredPrice: formData.desiredPrice ? Number(formData.desiredPrice) : undefined,
     paymentMethods: formData.paymentMethods,
     shippingOptions: formData.shippingOptions,
     shippingDescription: formData.shippingDescription || undefined,
@@ -415,6 +424,58 @@ export default function NewListingPage() {
                 />
                 <span className="text-sm font-medium">Precio negociable</span>
               </label>
+              <div className="border-t border-tradealo-border pt-4">
+                <label className="block text-sm font-medium text-tradealo-text mb-2">
+                  Tipo de venta
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: 'contact' as SaleType, label: 'Contacto libre', desc: 'Te contactan y arreglan' },
+                    { value: 'stock' as SaleType, label: 'Stock', desc: 'Vendé con cantidad' },
+                    { value: 'auction' as SaleType, label: 'Subasta', desc: 'Ofertas y precio deseado' },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => update({ saleType: opt.value })}
+                      className={cn(
+                        'p-3 rounded-xl border text-left transition-all',
+                        formData.saleType === opt.value
+                          ? 'border-tradealo-primary bg-tradealo-primary-light'
+                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
+                      )}
+                    >
+                      <p className="text-sm font-semibold">{opt.label}</p>
+                      <p className="text-[10px] text-tradealo-text-muted mt-0.5">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+                {formData.saleType === 'stock' && (
+                  <div className="mt-3">
+                    <Input
+                      label="Cantidad en stock"
+                      type="number"
+                      placeholder="Ej: 5"
+                      min="1"
+                      value={formData.stock}
+                      onChange={(e) => update({ stock: e.target.value })}
+                    />
+                  </div>
+                )}
+                {formData.saleType === 'auction' && (
+                  <div className="mt-3">
+                    <Input
+                      label="Precio deseado (opcional)"
+                      type="number"
+                      placeholder="Ej: 50000"
+                      min="0"
+                      value={formData.desiredPrice}
+                      onChange={(e) => update({ desiredPrice: e.target.value })}
+                      helper="Si alguien ofrece este monto, la subasta finaliza automáticamente"
+                    />
+                  </div>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-tradealo-text mb-2">
                   Métodos de pago aceptados
