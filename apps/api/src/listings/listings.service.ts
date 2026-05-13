@@ -233,7 +233,7 @@ export class ListingsService {
   ): Promise<
     Listing & {
       images: (typeof schema.listingImages.$inferSelect)[];
-      seller: typeof schema.users.$inferSelect & Partial<typeof schema.userProfiles.$inferSelect>;
+      seller: Record<string, unknown> | undefined;
     }
   > {
     const [listing] = await this.db
