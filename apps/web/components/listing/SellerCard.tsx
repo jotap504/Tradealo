@@ -9,10 +9,22 @@ import { formatDate } from '@/lib/utils';
 import type { User } from '@/types';
 
 interface Props {
-  user: User;
+  user?: User | null;
 }
 
 export function SellerCard({ user }: Props) {
+  if (!user) {
+    return (
+      <Card>
+        <CardBody>
+          <p className="text-sm text-tradealo-text-muted text-center">
+            Información del vendedor no disponible
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
+
   const rep = user.reputation ?? { average: 0, count: 0 };
   return (
     <Card>

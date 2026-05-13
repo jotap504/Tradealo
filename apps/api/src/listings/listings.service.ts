@@ -5,7 +5,18 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { eq, and, desc, asc, lt, or, sql, gte, lte, inArray } from 'drizzle-orm';
+import {
+  eq,
+  and,
+  desc,
+  asc,
+  lt,
+  or,
+  sql,
+  gte,
+  lte,
+  inArray,
+} from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import { ConfigService } from '../config/config.service';
@@ -160,25 +171,57 @@ export class ListingsService {
         ? encodeCursor({ createdAt: last.createdAt, id: last.id })
         : null;
 
-    // Attach images
+    // Attach images and seller data
     const ids = data.map((r) => r.id);
     if (ids.length > 0) {
-      const imageRows = await this.db
-        .select()
-        .from(schema.listingImages)
-        .where(inArray(schema.listingImages.listingId, ids))
-        .orderBy(asc(schema.listingImages.sortOrder));
-      const imagesByListing = new Map<string, (typeof schema.listingImages.$inferSelect)[]>();
+      const [imageRows, userRows] = await Promise.all([
+        this.db
+          .select()
+          .from(schema.listingImages)
+          .where(inArray(schema.listingImages.listingId, ids))
+          .orderBy(asc(schema.listingImages.sortOrder)),
+        this.db
+          .select({
+            id: schema.users.id,
+            email: schema.users.email,
+            role: schema.users.role,
+            kycLevel: schema.users.kycLevel,
+            status: schema.users.status,
+            createdAt: schema.users.createdAt,
+            username: schema.userProfiles.username,
+            avatarUrl: schema.userProfiles.avatarUrl,
+            bio: schema.userProfiles.bio,
+            city: schema.userProfiles.city,
+            province: schema.userProfiles.province,
+          })
+          .from(schema.users)
+          .leftJoin(
+            schema.userProfiles,
+            eq(schema.userProfiles.userId, schema.users.id),
+          )
+          .where(
+            inArray(
+              schema.users.id,
+              data.map((r) => r.userId),
+            ),
+          ),
+      ]);
+      const imagesByListing = new Map<
+        string,
+        (typeof schema.listingImages.$inferSelect)[]
+      >();
       for (const img of imageRows) {
         const arr = imagesByListing.get(img.listingId) ?? [];
         arr.push(img);
         imagesByListing.set(img.listingId, arr);
       }
-      const dataWithImages = data.map((r) => ({
+      const sellersById = new Map(userRows.map((u) => [u.id, u]));
+      const dataWithEnrichments = data.map((r) => ({
         ...r,
         images: imagesByListing.get(r.id) ?? [],
+        seller: sellersById.get(r.userId) ?? undefined,
       }));
-      return { data: dataWithImages, nextCursor, hasMore };
+      return { data: dataWithEnrichments, nextCursor, hasMore };
     }
 
     return { data, nextCursor, hasMore };
@@ -188,7 +231,10 @@ export class ListingsService {
     id: string,
     viewerUserId?: string,
   ): Promise<
-    Listing & { images: (typeof schema.listingImages.$inferSelect)[] }
+    Listing & {
+      images: (typeof schema.listingImages.$inferSelect)[];
+      seller: typeof schema.users.$inferSelect & Partial<typeof schema.userProfiles.$inferSelect>;
+    }
   > {
     const [listing] = await this.db
       .select()
@@ -200,15 +246,40 @@ export class ListingsService {
     if (listing.status === 'removed' || listing.deletedAt)
       throw new NotFoundException('LISTING_NOT_FOUND');
 
-    const images = await this.db
-      .select()
-      .from(schema.listingImages)
-      .where(eq(schema.listingImages.listingId, id))
-      .orderBy(asc(schema.listingImages.sortOrder));
+    const [images, sellerRows] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.listingImages)
+        .where(eq(schema.listingImages.listingId, id))
+        .orderBy(asc(schema.listingImages.sortOrder)),
+      this.db
+        .select({
+          id: schema.users.id,
+          email: schema.users.email,
+          role: schema.users.role,
+          kycLevel: schema.users.kycLevel,
+          status: schema.users.status,
+          createdAt: schema.users.createdAt,
+          username: schema.userProfiles.username,
+          avatarUrl: schema.userProfiles.avatarUrl,
+          bio: schema.userProfiles.bio,
+          city: schema.userProfiles.city,
+          province: schema.userProfiles.province,
+        })
+        .from(schema.users)
+        .leftJoin(
+          schema.userProfiles,
+          eq(schema.userProfiles.userId, schema.users.id),
+        )
+        .where(eq(schema.users.id, listing.userId))
+        .limit(1),
+    ]);
+
+    const seller = sellerRows[0] ?? undefined;
 
     this.recordView(id, viewerUserId).catch(() => {});
 
-    return { ...listing, images };
+    return { ...listing, images, seller };
   }
 
   async update(
