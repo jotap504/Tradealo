@@ -1,6 +1,5 @@
 {
   "framework": "nextjs",
-  "pnpmVersion": "10",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm --filter @tradealo/web build"
 }
