@@ -4,16 +4,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Phone, Send, MessageCircle } from 'lucide-react';
+import { Phone, Send, MessageCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input, Textarea } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Input';
 import { Card, CardBody } from '@/components/ui/Card';
+import { useAuthStore, toast } from '@/lib/store';
 import { listings } from '@/lib/api';
-import { toast } from '@/lib/store';
 
 const schema = z.object({
-  name: z.string().min(2, 'Mínimo 2 caracteres'),
-  email: z.string().email('Email inválido'),
   message: z.string().min(10, 'Contanos un poco más (mínimo 10 caracteres)'),
 });
 
@@ -27,6 +25,7 @@ interface Props {
 }
 
 export function ContactButtons({ listingId, showPhone, phone, sellerUsername }: Props) {
+  const currentUser = useAuthStore((s) => s.user);
   const [sent, setSent] = useState(false);
   const {
     register,
@@ -95,17 +94,14 @@ export function ContactButtons({ listingId, showPhone, phone, sellerUsername }: 
             <p className="text-sm font-medium text-tradealo-text">
               Enviar consulta
             </p>
-            <Input
-              placeholder="Tu nombre"
-              {...register('name')}
-              error={errors.name?.message}
-            />
-            <Input
-              type="email"
-              placeholder="tu@email.com"
-              {...register('email')}
-              error={errors.email?.message}
-            />
+            {currentUser && (
+              <div className="flex items-center gap-2 text-xs text-tradealo-text-muted bg-tradealo-bg rounded-lg px-3 py-2">
+                <User size={14} />
+                <span>
+                  {currentUser.username ?? currentUser.email}
+                </span>
+              </div>
+            )}
             <Textarea
               placeholder="Hola, me interesa, ¿sigue disponible? ¿Aceptás trueque?"
               rows={4}

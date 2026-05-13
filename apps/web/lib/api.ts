@@ -235,7 +235,7 @@ export const listings = {
     post<Listing>(`/listings/${id}/publish`, payload),
   renewListing: (id: string, durationDays: number) =>
     post<Listing>(`/listings/${id}/renew`, { durationDays }),
-  contactSeller: (id: string, payload: { name: string; email: string; message: string }) =>
+  contactSeller: (id: string, payload: { message: string }) =>
     post<{ ok: true }>(`/listings/${id}/contact`, payload),
 };
 

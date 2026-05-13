@@ -515,6 +515,56 @@ export class ListingsService {
     return 'approved';
   }
 
+  async contactSeller(
+    listingId: string,
+    userId: string,
+    message: string,
+  ): Promise<void> {
+    const [listing] = await this.db
+      .select({
+        id: schema.listings.id,
+        userId: schema.listings.userId,
+        status: schema.listings.status,
+      })
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .limit(1);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId === userId)
+      throw new BadRequestException('CANNOT_CONTACT_OWN_LISTING');
+
+    const [user] = await this.db
+      .select({
+        id: schema.users.id,
+        email: schema.users.email,
+        username: schema.userProfiles.username,
+      })
+      .from(schema.users)
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    await this.db.insert(schema.contactInquiries).values({
+      listingId,
+      senderUserId: userId,
+      senderName: user?.username ?? user?.email ?? 'Usuario',
+      senderEmail: user?.email,
+      message,
+    });
+
+    await this.db
+      .update(schema.listings)
+      .set({
+        contactsCount: sql`${schema.listings.contactsCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.listings.id, listingId));
+  }
+
   private async recordView(
     listingId: string,
     viewerUserId?: string,

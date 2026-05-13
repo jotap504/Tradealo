@@ -98,4 +98,15 @@ export class ListingsController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.listingsService.remove(id, user.sub);
   }
+
+  @Post(':id/contact')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ ttl: 3600, limit: 10, keyBy: 'user' })
+  contactSeller(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body('message') message: string,
+  ) {
+    return this.listingsService.contactSeller(id, user.sub, message);
+  }
 }
