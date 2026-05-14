@@ -456,7 +456,33 @@ export class ListingsService {
         ? encodeCursor({ createdAt: last.createdAt, id: last.id })
         : null;
 
-    return { data, nextCursor, hasMore };
+    // Batch-fetch images for all returned listings
+    let enriched = data;
+    if (data.length > 0) {
+      const listingIds = data.map((l) => l.id);
+      const allImages = await this.db
+        .select()
+        .from(schema.listingImages)
+        .where(inArray(schema.listingImages.listingId, listingIds))
+        .orderBy(asc(schema.listingImages.sortOrder));
+
+      const imageMap = new Map<
+        string,
+        (typeof schema.listingImages.$inferSelect)[]
+      >();
+      for (const img of allImages) {
+        const arr = imageMap.get(img.listingId) ?? [];
+        arr.push(img);
+        imageMap.set(img.listingId, arr);
+      }
+
+      enriched = data.map((r) => ({
+        ...r,
+        images: imageMap.get(r.id) ?? [],
+      }));
+    }
+
+    return { data: enriched, nextCursor, hasMore };
   }
 
   private async chargePublication(
