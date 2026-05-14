@@ -334,6 +334,11 @@ export class ListingsService {
         ...(dto.collectibleAttributes && {
           collectibleAttributes: dto.collectibleAttributes,
         }),
+        ...(dto.saleType && { saleType: dto.saleType }),
+        ...(dto.stock !== undefined && { stock: dto.stock }),
+        ...(dto.desiredPrice !== undefined && {
+          desiredPrice: Math.round(dto.desiredPrice * 100),
+        }),
         updatedAt: new Date(),
       })
       .where(eq(schema.listings.id, id))
