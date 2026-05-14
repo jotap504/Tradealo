@@ -46,6 +46,8 @@ interface FormData {
   saleType: SaleType;
   stock: string;
   desiredPrice: string;
+  contactPhone: string;
+  showWhatsApp: boolean;
 }
 
 const EMPTY_FORM: FormData = {
@@ -69,6 +71,8 @@ const EMPTY_FORM: FormData = {
   saleType: 'contact',
   stock: '',
   desiredPrice: '',
+  contactPhone: '',
+  showWhatsApp: false,
 };
 
 const TOTAL_STEPS = 6;
@@ -159,6 +163,9 @@ export default function NewListingPage() {
     shippingDescription: formData.shippingDescription || undefined,
     province: formData.province || undefined,
     city: formData.city || undefined,
+    contactInfo: formData.contactPhone
+      ? { phone: formData.contactPhone, showWhatsApp: formData.showWhatsApp }
+      : undefined,
   });
 
   const goNext = async () => {
@@ -531,6 +538,31 @@ export default function NewListingPage() {
                 showCount
                 maxLength={500}
               />
+
+              <div className="border-t border-tradealo-border pt-4">
+                <h3 className="font-heading font-semibold text-sm mb-3">
+                  Datos de contacto para el comprador
+                </h3>
+                <p className="text-xs text-tradealo-text-muted mb-3">
+                  Estos datos se enviarán automáticamente al comprador cuando realice una compra.
+                </p>
+                <Input
+                  label="Teléfono de contacto"
+                  type="tel"
+                  placeholder="Ej: +54 9 11 1234-5678"
+                  value={formData.contactPhone}
+                  onChange={(e) => update({ contactPhone: e.target.value })}
+                />
+                <label className="flex items-center gap-2 cursor-pointer mt-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.showWhatsApp}
+                    onChange={(e) => update({ showWhatsApp: e.target.checked })}
+                    className="w-4 h-4 rounded text-tradealo-primary"
+                  />
+                  <span className="text-sm font-medium">Mostrar link de WhatsApp</span>
+                </label>
+              </div>
             </div>
           )}
 

@@ -109,6 +109,7 @@ export class ListingsService {
         status: 'draft',
         saleType: dto.saleType ?? 'contact',
         stock: dto.stock,
+        contactInfo: dto.contactInfo ?? {},
         desiredPrice:
           dto.desiredPrice !== undefined
             ? Math.round(dto.desiredPrice * 100)
@@ -339,6 +340,7 @@ export class ListingsService {
         ...(dto.desiredPrice !== undefined && {
           desiredPrice: Math.round(dto.desiredPrice * 100),
         }),
+        ...(dto.contactInfo !== undefined && { contactInfo: dto.contactInfo }),
         updatedAt: new Date(),
       })
       .where(eq(schema.listings.id, id))
@@ -643,10 +645,22 @@ export class ListingsService {
       userId,
       listingId,
     );
+
+    // Build message with seller contact info
+    let contactMessage = '¡Hola! Quiero comprar este producto.';
+    const contactInfo = listing.contactInfo as Record<string, unknown> | undefined;
+    if (contactInfo?.phone) {
+      contactMessage += `\n\n📞 Contacto del vendedor: ${contactInfo.phone}`;
+    }
+    if (contactInfo?.showWhatsApp && contactInfo?.phone) {
+      const waNumber = String(contactInfo.phone).replace(/[^0-9]/g, '');
+      contactMessage += `\n💬 WhatsApp: https://wa.me/${waNumber}`;
+    }
+
     await this.messagingService.sendMessage(
       conversation.id,
       userId,
-      '¡Hola! Quiero comprar este producto.',
+      contactMessage,
     );
 
     await this.notificationsService.send({

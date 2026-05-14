@@ -122,4 +122,7 @@ export class CreateListingDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   desiredPrice?: number;
+
+  @IsOptional()
+  contactInfo?: Record<string, unknown>;
 }

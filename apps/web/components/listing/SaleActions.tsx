@@ -91,9 +91,12 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
     }
   };
 
-  const waNumber = phone?.replace(/[^0-9]/g, '');
+  // Use per-listing contactInfo when available, fall back to profile-level phone/showPhone
+  const listingPhone = listing.contactInfo?.phone ?? phone;
+  const listingShowPhone = listing.contactInfo?.phone ? (listing.contactInfo?.showWhatsApp ?? true) : showPhone;
+  const waNumber = listingPhone?.replace(/[^0-9]/g, '');
   const waLink =
-    showPhone && waNumber
+    listingShowPhone && waNumber
       ? `https://wa.me/${waNumber}?text=${encodeURIComponent(
           `Hola${sellerUsername ? ` ${sellerUsername}` : ''}, vi tu publicación en Tradealo y me interesa.`
         )}`

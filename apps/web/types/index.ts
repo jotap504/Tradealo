@@ -56,6 +56,10 @@ export interface Listing {
   expiresAt?: string;
   showPhone?: boolean;
   phone?: string;
+  contactInfo?: {
+    phone?: string;
+    showWhatsApp?: boolean;
+  };
   riskScore?: number;
   stock?: number;
   desiredPrice?: number;

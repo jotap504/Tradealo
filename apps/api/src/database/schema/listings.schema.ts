@@ -89,6 +89,7 @@ export const listings = pgTable(
     shippingDescription: text('shipping_description'),
 
     collectibleAttributes: jsonb('collectible_attributes'),
+    contactInfo: jsonb('contact_info').notNull().default({}),
 
     viewsCount: integer('views_count').notNull().default(0),
     contactsCount: integer('contacts_count').notNull().default(0),
