@@ -162,6 +162,12 @@ export function CategoryAccordionHero() {
                     ${index === activeIndex ? 'flex-[3]' : 'flex-[0.55]'}
                   `}
                   onMouseEnter={() => setActiveIndex(index)}
+                  onClick={(e) => {
+                    if (index !== activeIndex) {
+                      e.preventDefault();
+                      setActiveIndex(index);
+                    }
+                  }}
                 >
                   <img
                     src={item.imageUrl}

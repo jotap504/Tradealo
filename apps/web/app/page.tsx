@@ -3,7 +3,6 @@ import { ArrowRight } from 'lucide-react';
 import { ListingCard } from '@/components/listing/ListingCard';
 import { ListingGrid } from '@/components/listing/ListingGrid';
 import { Badge } from '@/components/ui/Badge';
-import { Card, CardBody } from '@/components/ui/Card';
 import { CategoryAccordionHero } from '@/components/ui/interactive-image-accordion';
 import { API_URL } from '@/lib/constants';
 import type { Listing, Category } from '@/types';
@@ -38,32 +37,29 @@ async function fetchCategories(): Promise<Category[]> {
   }
 }
 
-const SLUG_EMOJI: Array<[string, string]> = [
-  ['moda', '👕'],
-  ['ropa', '👕'],
-  ['tecnolog', '📱'],
-  ['celular', '📱'],
-  ['libro', '📚'],
-  ['cultur', '📚'],
-  ['hogar', '🛋️'],
-  ['mueble', '🛋️'],
-  ['depor', '🚲'],
-  ['bici', '🚲'],
-  ['coleccion', '💎'],
-  ['joya', '💎'],
-  ['herram', '🔧'],
-  ['construc', '🔧'],
-  ['niño', '🧸'],
-  ['bebé', '🧸'],
-  ['infant', '🧸'],
-  ['music', '🎸'],
-  ['instrumen', '🎸'],
+const CATEGORY_IMAGES: Array<[string, string]> = [
+  ['electronica', '/categories/electronics.png'],
+  ['vehiculos', '/categories/vehicles.png'],
+  ['ropa', '/categories/fashion.png'],
+  ['hogar', '/categories/home.png'],
+  ['deportes', '/categories/sports.png'],
+  ['instrumentos', '/categories/music.png'],
+  ['coleccionables', '/categories/collectibles.png'],
+  ['otros', '/categories/others.png'],
+  ['tecnolog', '/categories/electronics.png'],
+  ['celular', '/categories/electronics.png'],
+  ['mueble', '/categories/home.png'],
+  ['bici', '/categories/sports.png'],
+  ['niño', '/categories/kids.png'],
+  ['bebé', '/categories/kids.png'],
+  ['herram', '/categories/tools.png'],
+  ['libro', '/categories/books.png'],
 ];
 
-function getCategoryEmoji(slug: string): string {
+function getCategoryImage(slug: string): string {
   const s = slug?.toLowerCase() ?? '';
-  const match = SLUG_EMOJI.find(([key]) => s.includes(key));
-  return match ? match[1] : '📦';
+  const match = CATEGORY_IMAGES.find(([key]) => s.includes(key));
+  return match ? match[1] : '/categories/fashion.png'; // fallback
 }
 
 export default async function HomePage() {
@@ -93,19 +89,21 @@ export default async function HomePage() {
           <h2 className="font-heading text-2xl font-bold text-tradealo-text mb-6">
             Explorar por categoría
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
             {rootCategories.map((cat) => (
-              <Link key={cat.id} href={`/listings?category=${cat.id}`}>
-                <Card hover className="text-center cursor-pointer">
-                  <CardBody className="flex flex-col items-center gap-3 py-6">
-                    <span className="text-3xl" role="img" aria-label={cat.name}>
-                      {getCategoryEmoji(cat.slug)}
-                    </span>
-                    <span className="font-medium text-sm text-tradealo-text">
-                      {cat.name}
-                    </span>
-                  </CardBody>
-                </Card>
+              <Link key={cat.id} href={`/listings?category=${cat.id}`} className="group">
+                <div className="flex flex-col gap-3">
+                  <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center p-4 transition-all duration-300 group-hover:bg-gray-200 group-hover:shadow-md">
+                    <img
+                      src={getCategoryImage(cat.slug)}
+                      alt={cat.name}
+                      className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <span className="font-semibold text-sm text-tradealo-text text-center line-clamp-1">
+                    {cat.name}
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
