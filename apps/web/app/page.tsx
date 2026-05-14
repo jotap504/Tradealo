@@ -4,7 +4,7 @@ import { ListingCard } from '@/components/listing/ListingCard';
 import { ListingGrid } from '@/components/listing/ListingGrid';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
-import { CategoryAccordionHero } from '@/components/ui/interactive-image-accordion';
+import { DarkHero } from '@/components/listing/DarkHero';
 import { API_URL } from '@/lib/constants';
 import type { Listing, Category } from '@/types';
 
@@ -85,7 +85,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-16 pb-20">
-      <CategoryAccordionHero />
+      <DarkHero />
 
       {/* Categorías */}
       {rootCategories.length > 0 && (

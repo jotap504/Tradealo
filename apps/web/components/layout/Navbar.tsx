@@ -32,11 +32,14 @@ export function Navbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const isHome = pathname === '/';
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMobileOpen(false);
     setMenuOpen(false);
+    setScrolled(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -50,6 +53,13 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!isHome) return;
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', fn, { passive: true });
+    return () => window.removeEventListener('scroll', fn);
+  }, [isHome]);
+
   const onLogout = async () => {
     await logout();
     router.push('/');
@@ -61,7 +71,29 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-tradealo-border shadow-sm">
+    <>
+      {isHome && !scrolled && (
+        <style>{`
+          header[data-nav="dark"] a[href="/messages"],
+          header[data-nav="dark"] button[aria-label="Notificaciones"] {
+            color: #fff !important;
+          }
+          header[data-nav="dark"] a[href="/messages"]:hover,
+          header[data-nav="dark"] button[aria-label="Notificaciones"]:hover {
+            background-color: rgba(255,255,255,0.1) !important;
+          }
+        `}</style>
+      )}
+    <header
+      data-nav={isHome && !scrolled ? 'dark' : 'light'}
+      className={cn(
+        isHome ? 'fixed top-0 left-0 right-0' : 'sticky top-0',
+        'z-50 transition-all duration-300',
+        isHome && !scrolled
+          ? 'bg-transparent'
+          : 'bg-white border-b border-tradealo-border shadow-sm'
+      )}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center gap-3">
         <Link
           href="/"
@@ -71,7 +103,12 @@ export function Navbar() {
           <span className="w-8 h-8 rounded-lg bg-tradealo-primary flex items-center justify-center text-white shadow-sm group-hover:bg-tradealo-primary-hover transition-colors">
             <Repeat size={16} strokeWidth={2.5} />
           </span>
-          <span className="font-heading font-bold text-lg text-tradealo-primary tracking-tight">
+          <span
+            className={cn(
+              'font-heading font-bold text-lg tracking-tight transition-colors duration-300',
+              isHome && !scrolled ? 'text-white' : 'text-tradealo-primary'
+            )}
+          >
             Tradealo
           </span>
         </Link>
@@ -86,8 +123,12 @@ export function Navbar() {
                 className={cn(
                   'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                   active
-                    ? 'text-tradealo-primary bg-tradealo-primary-light'
-                    : 'text-tradealo-text hover:bg-gray-100'
+                    ? isHome && !scrolled
+                      ? 'text-white bg-white/10'
+                      : 'text-tradealo-primary bg-tradealo-primary-light'
+                    : isHome && !scrolled
+                      ? 'text-white/70 hover:text-white hover:bg-white/10'
+                      : 'text-tradealo-text hover:bg-gray-100'
                 )}
               >
                 {l.label}
@@ -96,7 +137,7 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="hidden md:flex flex-1 max-w-sm mx-3">
+        <div className={cn('hidden md:flex flex-1 max-w-sm mx-3', isHome && !scrolled && 'md:hidden')}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -122,7 +163,15 @@ export function Navbar() {
           {user ? (
             <>
               <Link href="/my-listings/new" className="hidden sm:block">
-                <Button size="md" leftIcon={<Plus size={16} />}>
+                <Button
+                  size="md"
+                  leftIcon={<Plus size={16} />}
+                  className={cn(
+                    isHome &&
+                      !scrolled &&
+                      'bg-white text-tradealo-primary hover:bg-gray-100 active:bg-gray-200'
+                  )}
+                >
                   Publicar
                 </Button>
               </Link>
@@ -131,14 +180,26 @@ export function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-100 transition-colors"
+                  className={cn(
+                    'flex items-center gap-2 p-1 pr-2 rounded-full transition-colors',
+                    isHome && !scrolled
+                      ? 'hover:bg-white/10'
+                      : 'hover:bg-gray-100'
+                  )}
                 >
                   <Avatar
                     src={user.avatarUrl}
                     username={user.username ?? user.email}
                     size="sm"
                   />
-                  <ChevronDown size={14} className="text-tradealo-text-muted" />
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      isHome && !scrolled
+                        ? 'text-white'
+                        : 'text-tradealo-text-muted'
+                    )}
+                  />
                 </button>
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-tradealo-border rounded-xl shadow-lg z-50 overflow-hidden animate-slide-up">
@@ -194,22 +255,47 @@ export function Navbar() {
           ) : (
             <>
               <Link href="/login" className="hidden sm:block">
-                <Button variant="ghost" size="md">
+                <Button
+                  variant="ghost"
+                  size="md"
+                  className={cn(
+                    isHome && !scrolled && 'text-white hover:bg-white/10'
+                  )}
+                >
                   Ingresar
                 </Button>
               </Link>
               <Link href="/register">
-                <Button size="md">Registrarse</Button>
+                <Button
+                  size="md"
+                  className={cn(
+                    isHome &&
+                      !scrolled &&
+                      'bg-white text-tradealo-primary hover:bg-gray-100 active:bg-gray-200'
+                  )}
+                >
+                  Registrarse
+                </Button>
               </Link>
             </>
           )}
 
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            className={cn(
+              'md:hidden p-2 rounded-lg transition-colors',
+              isHome && !scrolled
+                ? 'hover:bg-white/10'
+                : 'hover:bg-gray-100'
+            )}
             onClick={() => setMobileOpen(true)}
             aria-label="Abrir menú"
           >
-            <Menu size={20} />
+            <Menu
+              size={20}
+              className={cn(
+                isHome && !scrolled ? 'text-white' : 'text-tradealo-text'
+              )}
+            />
           </button>
         </div>
       </div>
@@ -312,6 +398,7 @@ export function Navbar() {
         </div>
       )}
     </header>
+    </>
   );
 }
 
