@@ -150,13 +150,18 @@ export function CategoryAccordionHero() {
               ))}
             </div>
 
-            {/* Mobile: horizontal image cards */}
-            <div className="flex sm:hidden overflow-x-auto snap-x snap-mandatory gap-3 pb-4 -mx-4 px-4 scrollbar-hide">
-              {CATEGORY_DATA.map((item) => (
+            {/* Mobile: accordion (same behavior as desktop) */}
+            <div className="flex sm:hidden flex-row items-stretch gap-1.5 h-56">
+              {CATEGORY_DATA.map((item, index) => (
                 <Link
                   key={item.id}
                   href={`/listings?category=${item.slug}`}
-                  className="relative h-48 w-36 shrink-0 snap-start rounded-xl overflow-hidden"
+                  className={`
+                    relative rounded-xl overflow-hidden cursor-pointer
+                    transition-all duration-700 ease-in-out shrink-0
+                    ${index === activeIndex ? 'flex-[3]' : 'flex-[0.55]'}
+                  `}
+                  onMouseEnter={() => setActiveIndex(index)}
                 >
                   <img
                     src={item.imageUrl}
@@ -166,12 +171,24 @@ export function CategoryAccordionHero() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <h3 className="font-heading text-white font-bold text-sm">
+                    <h3
+                      className={`
+                        font-heading text-white font-bold
+                        transition-all duration-300 ease-in-out
+                        ${
+                          index === activeIndex
+                            ? 'text-sm mb-0.5'
+                            : 'text-[10px] [writing-mode:vertical-rl] rotate-180 mb-0'
+                        }
+                      `}
+                    >
                       {item.title}
                     </h3>
-                    <p className="text-white/70 text-[11px] mt-0.5 leading-tight">
-                      {item.description}
-                    </p>
+                    {index === activeIndex && (
+                      <p className="text-white/80 text-[11px] max-w-[140px] leading-tight animate-fade-in">
+                        {item.description}
+                      </p>
+                    )}
                   </div>
                 </Link>
               ))}
