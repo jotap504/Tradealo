@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/utils';
 import type { Listing } from '@/types';
 import { ListingGallery } from './ListingGallery';
 import { ListingReviews } from './ListingReviews';
+import { ListingQuestions } from '@/components/listing/ListingQuestions';
 
 async function getListing(id: string): Promise<Listing | null> {
   try {
@@ -166,6 +167,7 @@ export default async function ListingDetailPage({
           </div>
 
           <ListingReviews sellerId={listing.seller?.id} />
+          <ListingQuestions listingId={listing.id} sellerId={listing.seller?.id} />
         </div>
 
         {/* Right column 40% sticky */}

@@ -17,6 +17,8 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { ListListingsDto } from './dto/list-listings.dto';
 import { PlaceBidDto } from './dto/place-bid.dto';
 import { BuyNowDto } from './dto/buy-now.dto';
+import { AskQuestionDto } from './dto/ask-question.dto';
+import { AnswerQuestionDto } from './dto/answer-question.dto';
 import { Public } from '../common/decorators/public.decorator';
 import {
   CurrentUser,
@@ -137,5 +139,33 @@ export class ListingsController {
   @Get(':id/bids')
   getBids(@Param('id') id: string) {
     return this.listingsService.getBids(id);
+  }
+
+  @Post(':id/questions')
+  @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ ttl: 3600, limit: 10, keyBy: 'user' })
+  askQuestion(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: AskQuestionDto,
+  ) {
+    return this.listingsService.askQuestion(id, user.sub, dto.question);
+  }
+
+  @Post(':id/questions/:questionId/answer')
+  @HttpCode(HttpStatus.OK)
+  answerQuestion(
+    @Param('id') id: string,
+    @Param('questionId') questionId: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: AnswerQuestionDto,
+  ) {
+    return this.listingsService.answerQuestion(id, questionId, user.sub, dto.answer);
+  }
+
+  @Public()
+  @Get(':id/questions')
+  getQuestions(@Param('id') id: string) {
+    return this.listingsService.getQuestions(id);
   }
 }

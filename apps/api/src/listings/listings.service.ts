@@ -17,6 +17,7 @@ import {
   gte,
   lte,
   inArray,
+  ilike,
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
@@ -148,6 +149,29 @@ export class ListingsService {
       conditions.push(gte(schema.listings.price, String(dto.minPrice)));
     if (dto.maxPrice !== undefined)
       conditions.push(lte(schema.listings.price, String(dto.maxPrice)));
+    if (dto.q)
+      conditions.push(
+        or(
+          ilike(schema.listings.title, `%${dto.q}%`),
+          ilike(schema.listings.description, `%${dto.q}%`),
+        )!,
+      );
+    if (dto.city)
+      conditions.push(
+        ilike(schema.listings.city, `%${dto.city}%`),
+      );
+    if (dto.currency)
+      conditions.push(eq(schema.listings.currency, dto.currency));
+    if (dto.type)
+      conditions.push(eq(schema.listings.type, dto.type));
+    if (dto.paymentMethods) {
+      const methods = dto.paymentMethods.split(',').filter(Boolean);
+      if (methods.length > 0) {
+        conditions.push(
+          sql`${schema.listings.paymentMethods} ?| ${sql`ARRAY[${sql.join(methods.map((m) => sql`${m}`), sql`, `)}]`}`,
+        );
+      }
+    }
 
     if (dto.cursor) {
       const { createdAt, id } = decodeCursor(dto.cursor);
@@ -169,12 +193,30 @@ export class ListingsService {
           ? [desc(schema.listings.price), desc(schema.listings.createdAt)]
           : [desc(schema.listings.createdAt), desc(schema.listings.id)];
 
-    const rows = await this.db
-      .select()
-      .from(schema.listings)
-      .where(and(...conditions))
-      .orderBy(...orderBy)
-      .limit(fetchCount);
+    let rows: typeof schema.listings.$inferSelect[];
+    if (dto.sort === 'reputation') {
+      const result = await this.db
+        .select()
+        .from(schema.listings)
+        .leftJoin(
+          schema.reputationScores,
+          eq(schema.listings.sellerId, schema.reputationScores.userId),
+        )
+        .where(and(...conditions))
+        .orderBy(
+          desc(schema.reputationScores.asSellerAvg),
+          desc(schema.listings.createdAt),
+        )
+        .limit(fetchCount);
+      rows = result.map((r) => r.listings);
+    } else {
+      rows = await this.db
+        .select()
+        .from(schema.listings)
+        .where(and(...conditions))
+        .orderBy(...orderBy)
+        .limit(fetchCount);
+    }
 
     const hasMore = rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;
@@ -826,6 +868,72 @@ export class ListingsService {
       .from(schema.listingBids)
       .where(eq(schema.listingBids.listingId, listingId))
       .orderBy(desc(schema.listingBids.amount));
+  }
+
+  async askQuestion(listingId: string, userId: string, question: string) {
+    const listing = await this.db
+      .select({ userId: schema.listings.userId })
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .then((rows) => rows[0]);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId === userId)
+      throw new BadRequestException('CANNOT_ASK_OWN_LISTING');
+
+    const [qa] = await this.db
+      .insert(schema.listingQuestions)
+      .values({ listingId, userId, question })
+      .returning();
+
+    await this.notificationsService.send({
+      userId: listing.userId,
+      channel: 'in_app',
+      type: 'listing_question',
+      title: 'Nueva pregunta en tu publicación',
+      body: question.substring(0, 200),
+    });
+
+    return qa;
+  }
+
+  async answerQuestion(
+    listingId: string,
+    questionId: string,
+    userId: string,
+    answer: string,
+  ) {
+    const listing = await this.db
+      .select({ userId: schema.listings.userId })
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .then((rows) => rows[0]);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId !== userId)
+      throw new ForbiddenException('NOT_LISTING_OWNER');
+
+    const [qa] = await this.db
+      .update(schema.listingQuestions)
+      .set({ answer, answeredAt: new Date() })
+      .where(
+        and(
+          eq(schema.listingQuestions.id, questionId),
+          eq(schema.listingQuestions.listingId, listingId),
+        ),
+      )
+      .returning();
+
+    if (!qa) throw new NotFoundException('QUESTION_NOT_FOUND');
+    return qa;
+  }
+
+  async getQuestions(listingId: string) {
+    return this.db
+      .select()
+      .from(schema.listingQuestions)
+      .where(eq(schema.listingQuestions.listingId, listingId))
+      .orderBy(desc(schema.listingQuestions.createdAt));
   }
 
   private async recordView(

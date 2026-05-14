@@ -7,7 +7,7 @@ import { SlidersHorizontal, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ProvinceSelector } from '@/components/ui/ProvinceSelector';
-import { CONDITIONS } from '@/lib/constants';
+import { CONDITIONS, PAYMENT_METHODS } from '@/lib/constants';
 import { categories } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,9 @@ interface FiltersState {
   q: string;
   category: string;
   province: string;
+  city: string;
   conditions: string[];
+  paymentMethods: string[];
   type: string;
   minPrice: string;
   maxPrice: string;
@@ -26,7 +28,9 @@ const EMPTY: FiltersState = {
   q: '',
   category: '',
   province: '',
+  city: '',
   conditions: [],
+  paymentMethods: [],
   type: '',
   minPrice: '',
   maxPrice: '',
@@ -44,7 +48,9 @@ export function ListingFilters() {
       q: sp.get('q') ?? '',
       category: sp.get('category') ?? '',
       province: sp.get('province') ?? '',
+      city: sp.get('city') ?? '',
       conditions: sp.get('condition')?.split(',').filter(Boolean) ?? [],
+      paymentMethods: sp.get('paymentMethods')?.split(',').filter(Boolean) ?? [],
       type: sp.get('type') ?? '',
       minPrice: sp.get('minPrice') ?? '',
       maxPrice: sp.get('maxPrice') ?? '',
@@ -62,8 +68,11 @@ export function ListingFilters() {
     if (state.q) params.set('q', state.q);
     if (state.category) params.set('category', state.category);
     if (state.province) params.set('province', state.province);
+    if (state.city) params.set('city', state.city);
     if (state.conditions.length)
       params.set('condition', state.conditions.join(','));
+    if (state.paymentMethods.length)
+      params.set('paymentMethods', state.paymentMethods.join(','));
     if (state.type) params.set('type', state.type);
     if (state.minPrice) params.set('minPrice', state.minPrice);
     if (state.maxPrice) params.set('maxPrice', state.maxPrice);
@@ -156,6 +165,13 @@ export function ListingFilters() {
               }
             />
 
+            <Input
+              label="Ciudad"
+              placeholder="Ej: Córdoba"
+              value={state.city}
+              onChange={(e) => setState({ ...state, city: e.target.value })}
+            />
+
             <div>
               <label className="block text-sm font-medium mb-2">Estado</label>
               <div className="space-y-2">
@@ -176,6 +192,33 @@ export function ListingFilters() {
                       className="w-4 h-4 rounded text-tradealo-primary focus:ring-tradealo-primary"
                     />
                     {c.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Formas de pago
+              </label>
+              <div className="space-y-2">
+                {PAYMENT_METHODS.map((m) => (
+                  <label
+                    key={m}
+                    className="flex items-center gap-2 cursor-pointer text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={state.paymentMethods.includes(m)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...state.paymentMethods, m]
+                          : state.paymentMethods.filter((p) => p !== m);
+                        setState({ ...state, paymentMethods: next });
+                      }}
+                      className="w-4 h-4 rounded text-tradealo-primary focus:ring-tradealo-primary"
+                    />
+                    {m}
                   </label>
                 ))}
               </div>
@@ -208,8 +251,50 @@ export function ListingFilters() {
               </div>
             </div>
 
-            <div>
+            <div className="space-y-3">
               <label className="block text-sm font-medium mb-2">Precio</label>
+              {/* Range values display */}
+              <div className="flex items-center justify-between text-xs text-tradealo-text-muted">
+                <span>$ {(Number(state.minPrice) || 0).toLocaleString('es-AR')}</span>
+                <span>$ {(Number(state.maxPrice) || 1000000).toLocaleString('es-AR')}</span>
+              </div>
+              {/* Dual range slider */}
+              <div className="relative h-6">
+                <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-gray-200 rounded-full" />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-tradealo-primary rounded-full"
+                  style={{
+                    left: `${((Number(state.minPrice) || 0) / 1000000) * 100}%`,
+                    width: `${((Number(state.maxPrice) || 1000000) - (Number(state.minPrice) || 0)) / 1000000 * 100}%`,
+                  }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={1000000}
+                  step={100}
+                  value={Number(state.minPrice) || 0}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    const max = Number(state.maxPrice) || 1000000;
+                    if (v <= max) setState({ ...state, minPrice: String(v) });
+                  }}
+                  className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none z-10 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-tradealo-primary [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-tradealo-primary [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={1000000}
+                  step={100}
+                  value={Number(state.maxPrice) || 1000000}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    const min = Number(state.minPrice) || 0;
+                    if (v >= min) setState({ ...state, maxPrice: String(v) });
+                  }}
+                  className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none z-20 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-tradealo-primary [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-tradealo-primary [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -231,7 +316,7 @@ export function ListingFilters() {
                   className="w-full h-10 rounded-lg border border-tradealo-border px-3 text-sm focus:outline-none focus:border-tradealo-primary"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-1 mt-2 p-1 bg-gray-100 rounded-lg">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 rounded-lg">
                 {[
                   { v: '', l: 'Ambas' },
                   { v: 'ARS', l: 'Pesos' },

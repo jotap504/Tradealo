@@ -8,3 +8,4 @@ export * from './notifications.schema';
 export * from './payments.schema';
 export * from './messages.schema';
 export * from './listings-bids.schema';
+export * from './listing-questions.schema';

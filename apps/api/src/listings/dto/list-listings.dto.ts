@@ -1,7 +1,7 @@
 import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator'
 import { Type } from 'class-transformer'
 
-export enum SortOrder { RECENT = 'recent', PRICE_ASC = 'price_asc', PRICE_DESC = 'price_desc' }
+export enum SortOrder { RECENT = 'recent', PRICE_ASC = 'price_asc', PRICE_DESC = 'price_desc', REPUTATION = 'reputation' }
 
 export class ListListingsDto {
   @IsOptional()
@@ -31,6 +31,22 @@ export class ListListingsDto {
   @IsOptional()
   @IsString()
   province?: string
+
+  @IsOptional()
+  @IsString()
+  city?: string
+
+  @IsOptional()
+  @IsString()
+  currency?: string
+
+  @IsOptional()
+  @IsString()
+  type?: string
+
+  @IsOptional()
+  @IsString()
+  paymentMethods?: string
 
   @IsOptional()
   @Type(() => Number)

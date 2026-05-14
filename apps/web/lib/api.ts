@@ -13,6 +13,7 @@ import type {
   Conversation,
   Message,
   Bid,
+  ListingQuestion,
   PaginatedResponse,
   SystemConfig,
   AdminStats,
@@ -221,6 +222,7 @@ export interface ListingsQuery {
   cursor?: string;
   limit?: number;
   isCollectible?: boolean;
+  sort?: 'recent' | 'price_asc' | 'price_desc' | 'reputation';
 }
 
 export const listings = {
@@ -246,6 +248,12 @@ export const listings = {
     post<{ bid: Bid; instantBuy: boolean; conversationId?: string }>(`/listings/${id}/bids`, payload),
   getBids: (id: string) =>
     get<Bid[]>(`/listings/${id}/bids`),
+  getQuestions: (id: string) =>
+    get<ListingQuestion[]>(`/listings/${id}/questions`),
+  askQuestion: (id: string, question: string) =>
+    post<ListingQuestion>(`/listings/${id}/questions`, { question }),
+  answerQuestion: (id: string, questionId: string, answer: string) =>
+    post<ListingQuestion>(`/listings/${id}/questions/${questionId}/answer`, { answer }),
 };
 
 export const categories = {

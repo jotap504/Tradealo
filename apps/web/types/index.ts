@@ -186,6 +186,16 @@ export interface Message {
   createdAt: string;
 }
 
+export interface ListingQuestion {
+  id: string;
+  listingId: string;
+  userId: string;
+  question: string;
+  answer: string | null;
+  answeredAt: string | null;
+  createdAt: string;
+}
+
 export interface SystemConfig {
   key: string;
   value: string;

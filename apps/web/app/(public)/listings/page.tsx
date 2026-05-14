@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowUpDown } from 'lucide-react';
 import { ListingGrid } from '@/components/listing/ListingGrid';
 import { ListingFilters } from '@/components/listing/ListingFilters';
 import { Suspense } from 'react';
@@ -16,15 +17,20 @@ function ListingsInner() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
 
+  const [sortOrder, setSortOrder] = useState<string>('recent');
+
   const queryParams = {
     q: sp.get('q') ?? undefined,
     categoryId: sp.get('category') ?? undefined,
     province: sp.get('province') ?? undefined,
+    city: sp.get('city') ?? undefined,
     condition: sp.get('condition') ?? undefined,
+    paymentMethods: sp.get('paymentMethods') ?? undefined,
     type: sp.get('type') ?? undefined,
     minPrice: sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined,
     maxPrice: sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined,
     currency: sp.get('currency') ?? undefined,
+    sort: sortOrder,
     limit: 24,
   };
 
@@ -69,13 +75,28 @@ function ListingsInner() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-tradealo-text">{title}</h1>
-        {data?.total !== undefined && (
-          <p className="text-sm text-tradealo-text-muted mt-1">
-            {data.total.toLocaleString('es-AR')} publicaciones encontradas
-          </p>
-        )}
+      <div className="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-tradealo-text">{title}</h1>
+          {data?.total !== undefined && (
+            <p className="text-sm text-tradealo-text-muted mt-1">
+              {data.total.toLocaleString('es-AR')} publicaciones encontradas
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <ArrowUpDown size={14} className="text-tradealo-text-muted" />
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="h-9 rounded-lg border border-tradealo-border px-3 text-sm bg-white focus:outline-none focus:border-tradealo-primary"
+          >
+            <option value="recent">Más recientes</option>
+            <option value="price_asc">Precio: menor a mayor</option>
+            <option value="price_desc">Precio: mayor a menor</option>
+            <option value="reputation">Mejor reputación</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex gap-6 items-start">
