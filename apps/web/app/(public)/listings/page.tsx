@@ -17,7 +17,7 @@ function ListingsInner() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
 
-  const [sortOrder, setSortOrder] = useState<string>('recent');
+  const [sortOrder, setSortOrder] = useState<'recent' | 'price_asc' | 'price_desc' | 'reputation'>('recent');
 
   const queryParams = {
     q: sp.get('q') ?? undefined,
@@ -88,7 +88,7 @@ function ListingsInner() {
           <ArrowUpDown size={14} className="text-tradealo-text-muted" />
           <select
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
+            onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
             className="h-9 rounded-lg border border-tradealo-border px-3 text-sm bg-white focus:outline-none focus:border-tradealo-primary"
           >
             <option value="recent">Más recientes</option>

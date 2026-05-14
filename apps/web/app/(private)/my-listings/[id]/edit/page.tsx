@@ -20,7 +20,10 @@ import {
   CONDITIONS,
   PAYMENT_METHODS,
   SHIPPING_OPTIONS,
-  LISTING_DURATION_OPTIONS,
+  LISTING_DURATION_PRESETS,
+  LISTING_DURATION_MIN,
+  LISTING_DURATION_MAX,
+  getDurationMultiplier,
   LISTING_BASE_COST,
 } from '@/lib/constants';
 import type { TokenPack } from '@/types';
@@ -39,7 +42,7 @@ interface FormData {
   province: string;
   city: string;
   type: 'standard' | 'premium';
-  durationDays: 30 | 60 | 90;
+  durationDays: number;
 }
 
 const TOTAL_STEPS = 5;
@@ -150,10 +153,8 @@ export default function EditListingPage() {
     );
   }
 
-  const durationOption = LISTING_DURATION_OPTIONS.find(
-    (d) => d.days === formData.durationDays
-  )!;
-  const totalCost = Math.ceil(LISTING_BASE_COST[formData.type] * durationOption.multiplier);
+  const multiplier = getDurationMultiplier(formData.durationDays);
+  const totalCost = Math.ceil(LISTING_BASE_COST[formData.type] * multiplier);
   const canAfford =
     (balanceData?.balance ?? 0) >= totalCost || formData.type === 'standard';
 
@@ -404,8 +405,8 @@ export default function EditListingPage() {
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {LISTING_DURATION_OPTIONS.map((d) => (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {LISTING_DURATION_PRESETS.map((d) => (
                   <button
                     key={d.days}
                     type="button"
@@ -420,6 +421,24 @@ export default function EditListingPage() {
                     {d.label}
                   </button>
                 ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-tradealo-text-muted">Personalizado:</label>
+                <input
+                  type="number"
+                  min={LISTING_DURATION_MIN}
+                  max={LISTING_DURATION_MAX}
+                  value={formData.durationDays}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value);
+                    const v = isNaN(raw) || raw < LISTING_DURATION_MIN
+                      ? LISTING_DURATION_MIN
+                      : Math.min(LISTING_DURATION_MAX, raw);
+                    update({ durationDays: v });
+                  }}
+                  className="w-24 h-10 rounded-lg border border-tradealo-border px-3 text-sm text-center focus:outline-none focus:border-tradealo-primary"
+                />
+                <span className="text-sm text-tradealo-text-muted">días (1-90)</span>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-tradealo-border">
                 <div className="flex items-center justify-between font-semibold text-sm">

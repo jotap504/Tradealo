@@ -156,19 +156,19 @@ export class ListingsService {
           ilike(schema.listings.description, `%${dto.q}%`),
         )!,
       );
-    if (dto.city)
-      conditions.push(
-        ilike(schema.listings.city, `%${dto.city}%`),
-      );
+    if (dto.city) conditions.push(ilike(schema.listings.city, `%${dto.city}%`));
     if (dto.currency)
-      conditions.push(eq(schema.listings.currency, dto.currency));
+      conditions.push(eq(schema.listings.currency, dto.currency as 'ARS' | 'USD'));
     if (dto.type)
-      conditions.push(eq(schema.listings.type, dto.type));
+      conditions.push(eq(schema.listings.type, dto.type as 'standard' | 'premium'));
     if (dto.paymentMethods) {
       const methods = dto.paymentMethods.split(',').filter(Boolean);
       if (methods.length > 0) {
         conditions.push(
-          sql`${schema.listings.paymentMethods} ?| ${sql`ARRAY[${sql.join(methods.map((m) => sql`${m}`), sql`, `)}]`}`,
+          sql`${schema.listings.paymentMethods} ?| ${sql`ARRAY[${sql.join(
+            methods.map((m) => sql`${m}`),
+            sql`, `,
+          )}]`}`,
         );
       }
     }
@@ -193,14 +193,14 @@ export class ListingsService {
           ? [desc(schema.listings.price), desc(schema.listings.createdAt)]
           : [desc(schema.listings.createdAt), desc(schema.listings.id)];
 
-    let rows: typeof schema.listings.$inferSelect[];
+    let rows: (typeof schema.listings.$inferSelect)[];
     if (dto.sort === 'reputation') {
       const result = await this.db
         .select()
         .from(schema.listings)
         .leftJoin(
           schema.reputationScores,
-          eq(schema.listings.sellerId, schema.reputationScores.userId),
+          eq(schema.listings.userId, schema.reputationScores.userId),
         )
         .where(and(...conditions))
         .orderBy(
