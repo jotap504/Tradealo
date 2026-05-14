@@ -321,10 +321,10 @@ export const images = {
   upload: (listingId: string, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
+    // No Content-Type header — let the browser set multipart boundary
     return post<ListingImage>(
       `/listings/${listingId}/images/upload`,
       fd,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
     );
   },
   getUploadUrl: (listingId: string, contentType: string) =>

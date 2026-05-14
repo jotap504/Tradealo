@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import {
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
@@ -21,6 +22,8 @@ type DB = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class ListingImagesService {
+  private readonly logger = new Logger(ListingImagesService.name);
+
   constructor(
     @Inject(DRIZZLE_TOKEN) private readonly db: DB,
     private readonly storage: StorageService,
@@ -46,7 +49,8 @@ export class ListingImagesService {
         .resize({ width: 400, withoutEnlargement: true })
         .jpeg({ quality: 70 })
         .toBuffer();
-    } catch {
+    } catch (err) {
+      this.logger.error(`Sharp processing failed: ${(err as Error).message}`, (err as Error).stack);
       throw new BadRequestException('INVALID_IMAGE_FORMAT');
     }
 
