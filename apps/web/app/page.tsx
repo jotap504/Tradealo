@@ -93,11 +93,11 @@ export default async function HomePage() {
             {rootCategories.map((cat) => (
               <Link key={cat.id} href={`/listings?category=${cat.id}`} className="group">
                 <div className="flex flex-col gap-3">
-                  <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center p-4 transition-all duration-300 group-hover:bg-gray-200 group-hover:shadow-md">
+                  <div className="aspect-square bg-white rounded-2xl border border-gray-100 overflow-hidden flex items-center justify-center p-4 transition-all duration-300 group-hover:border-gray-200 group-hover:shadow-md">
                     <img
                       src={getCategoryImage(cat.slug)}
                       alt={cat.name}
-                      className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
                   <span className="font-semibold text-sm text-tradealo-text text-center line-clamp-1">
