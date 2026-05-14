@@ -137,7 +137,7 @@ export function ImageUploader({
           Arrastrá tus fotos o hacé click para subirlas
         </p>
         <p className="text-xs text-tradealo-text-muted mt-1">
-          PNG, JPG o WebP — hasta {maxImages} imágenes — máx. 8MB c/u
+          JPG, PNG, WebP, GIF, AVIF, TIFF o SVG — hasta {maxImages} imágenes — máx. 8MB c/u
         </p>
         <input
           type="file"
