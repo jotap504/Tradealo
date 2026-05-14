@@ -64,6 +64,11 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
               negotiable={listing.negotiable}
               size="lg"
             />
+            {listing.saleType === 'stock' && listing.stock !== undefined && listing.stock !== null && (
+              <span className="text-xs text-tradealo-text-muted whitespace-nowrap">
+                {listing.stock > 0 ? `Stock: ${listing.stock}` : 'Agotado'}
+              </span>
+            )}
             <SellerStrip seller={seller} province={listing.province} createdAt={listing.createdAt} />
           </div>
         </div>
@@ -116,12 +121,19 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
         <h3 className="font-heading font-semibold text-[15px] leading-snug text-tradealo-text group-hover:text-tradealo-primary transition-colors line-clamp-2">
           {listing.title}
         </h3>
-        <PriceDisplay
-          amount={listing.price}
-          currency={listing.currency}
-          negotiable={listing.negotiable}
-          size="lg"
-        />
+        <div className="flex items-center justify-between gap-2">
+          <PriceDisplay
+            amount={listing.price}
+            currency={listing.currency}
+            negotiable={listing.negotiable}
+            size="lg"
+          />
+          {listing.saleType === 'stock' && listing.stock !== undefined && listing.stock !== null && (
+            <span className="text-xs text-tradealo-text-muted whitespace-nowrap">
+              {listing.stock > 0 ? `Stock: ${listing.stock}` : 'Agotado'}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1 text-xs text-tradealo-text-muted">
           <MapPin size={12} />
           <span className="truncate" data-testid="listing-location">
