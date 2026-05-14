@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 import {
   Injectable,
   Inject,
@@ -51,7 +51,10 @@ export class ListingImagesService {
         .toBuffer();
     } catch (err) {
       const msg = (err as Error).message;
-      this.logger.error(`Sharp processing failed: ${msg}`, (err as Error).stack);
+      this.logger.error(
+        `Sharp processing failed: ${msg}`,
+        (err as Error).stack,
+      );
       throw new BadRequestException(`Sharp: ${msg}`);
     }
 
