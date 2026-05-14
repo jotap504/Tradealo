@@ -158,9 +158,15 @@ export class ListingsService {
       );
     if (dto.city) conditions.push(ilike(schema.listings.city, `%${dto.city}%`));
     if (dto.currency)
-      conditions.push(eq(schema.listings.currency, dto.currency as 'ARS' | 'USD'));
+      conditions.push(
+        eq(schema.listings.currency, dto.currency as 'ARS' | 'USD'),
+      );
     if (dto.type)
-      conditions.push(eq(schema.listings.type, dto.type as 'standard' | 'premium'));
+      conditions.push(
+        eq(schema.listings.type, dto.type as 'standard' | 'premium'),
+      );
+    if (dto.saleType)
+      conditions.push(eq(schema.listings.saleType, dto.saleType));
     if (dto.paymentMethods) {
       const methods = dto.paymentMethods.split(',').filter(Boolean);
       if (methods.length > 0) {

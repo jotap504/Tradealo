@@ -26,7 +26,7 @@ function ListingsInner() {
     city: sp.get('city') ?? undefined,
     condition: sp.get('condition') ?? undefined,
     paymentMethods: sp.get('paymentMethods') ?? undefined,
-    type: sp.get('type') ?? undefined,
+    saleType: sp.get('saleType') ?? undefined,
     minPrice: sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined,
     maxPrice: sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined,
     currency: sp.get('currency') ?? undefined,

@@ -18,7 +18,7 @@ interface FiltersState {
   city: string;
   conditions: string[];
   paymentMethods: string[];
-  type: string;
+  saleType: string;
   minPrice: string;
   maxPrice: string;
   currency: string;
@@ -31,7 +31,7 @@ const EMPTY: FiltersState = {
   city: '',
   conditions: [],
   paymentMethods: [],
-  type: '',
+  saleType: '',
   minPrice: '',
   maxPrice: '',
   currency: '',
@@ -51,7 +51,7 @@ export function ListingFilters() {
       city: sp.get('city') ?? '',
       conditions: sp.get('condition')?.split(',').filter(Boolean) ?? [],
       paymentMethods: sp.get('paymentMethods')?.split(',').filter(Boolean) ?? [],
-      type: sp.get('type') ?? '',
+      saleType: sp.get('saleType') ?? '',
       minPrice: sp.get('minPrice') ?? '',
       maxPrice: sp.get('maxPrice') ?? '',
       currency: sp.get('currency') ?? '',
@@ -73,7 +73,7 @@ export function ListingFilters() {
       params.set('condition', state.conditions.join(','));
     if (state.paymentMethods.length)
       params.set('paymentMethods', state.paymentMethods.join(','));
-    if (state.type) params.set('type', state.type);
+    if (state.saleType) params.set('saleType', state.saleType);
     if (state.minPrice) params.set('minPrice', state.minPrice);
     if (state.maxPrice) params.set('maxPrice', state.maxPrice);
     if (state.currency) params.set('currency', state.currency);
@@ -226,21 +226,22 @@ export function ListingFilters() {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                Tipo de publicación
+                Tipo de venta
               </label>
-              <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 rounded-lg">
+              <div className="grid grid-cols-4 gap-1 p-1 bg-gray-100 rounded-lg">
                 {[
                   { v: '', l: 'Todos' },
-                  { v: 'standard', l: 'Estándar' },
-                  { v: 'premium', l: 'Premium' },
+                  { v: 'contact', l: 'Contacto' },
+                  { v: 'stock', l: 'Stock' },
+                  { v: 'auction', l: 'Remate' },
                 ].map((t) => (
                   <button
                     key={t.v}
                     type="button"
-                    onClick={() => setState({ ...state, type: t.v })}
+                    onClick={() => setState({ ...state, saleType: t.v })}
                     className={cn(
                       'h-8 rounded-md text-xs font-medium transition-colors',
-                      state.type === t.v
+                      state.saleType === t.v
                         ? 'bg-white text-tradealo-primary shadow-sm'
                         : 'text-tradealo-text-muted hover:text-tradealo-text'
                     )}

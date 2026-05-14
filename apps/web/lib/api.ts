@@ -215,7 +215,7 @@ export interface ListingsQuery {
   categoryId?: string;
   province?: string;
   condition?: string;
-  type?: string;
+  saleType?: string;
   minPrice?: number;
   maxPrice?: number;
   currency?: string;
