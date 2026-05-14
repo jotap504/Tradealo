@@ -62,16 +62,16 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-tradealo-border shadow-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center gap-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center gap-3">
         <Link
           href="/"
           className="flex items-center gap-2 shrink-0 group"
           aria-label="Tradealo inicio"
         >
-          <span className="w-9 h-9 rounded-lg bg-tradealo-primary flex items-center justify-center text-white shadow-sm group-hover:bg-tradealo-primary-hover transition-colors">
-            <Repeat size={18} strokeWidth={2.5} />
+          <span className="w-8 h-8 rounded-lg bg-tradealo-primary flex items-center justify-center text-white shadow-sm group-hover:bg-tradealo-primary-hover transition-colors">
+            <Repeat size={16} strokeWidth={2.5} />
           </span>
-          <span className="font-heading font-bold text-xl text-tradealo-primary tracking-tight">
+          <span className="font-heading font-bold text-lg text-tradealo-primary tracking-tight">
             Tradealo
           </span>
         </Link>
@@ -96,7 +96,7 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="hidden md:flex flex-1 max-w-md mx-4">
+        <div className="hidden md:flex flex-1 max-w-sm mx-3">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -107,13 +107,13 @@ export function Navbar() {
             className="relative w-full"
           >
             <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-tradealo-text-muted pointer-events-none"
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-tradealo-text-muted pointer-events-none"
             />
             <input
               name="q"
-              placeholder="Buscar productos, categorías…"
-              className="w-full h-10 pl-9 pr-3 rounded-lg border border-tradealo-border bg-gray-50 text-sm focus:outline-none focus:bg-white focus:border-tradealo-primary focus:ring-2 focus:ring-tradealo-primary-light"
+              placeholder="Buscar…"
+              className="w-full h-9 pl-8 pr-3 rounded-lg border border-tradealo-border bg-gray-50 text-sm focus:outline-none focus:bg-white focus:border-tradealo-primary focus:ring-2 focus:ring-tradealo-primary-light"
             />
           </form>
         </div>

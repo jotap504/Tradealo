@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 // --- Data for the marketplace accordion ---
 const CATEGORY_DATA = [
@@ -110,50 +110,26 @@ export function CategoryAccordionHero() {
     <section className="bg-gradient-to-br from-tradealo-primary-light to-white overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 py-12 md:py-20">
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-          {/* Left: Text + Search */}
+          {/* Left: Text + CTAs */}
           <div className="w-full lg:w-[420px] shrink-0 text-center lg:text-left">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-tradealo-text leading-tight mb-4">
-              Intercambiá lo que no usás
+              Vende, Subasta, Intercambia
             </h1>
             <p className="text-base md:text-lg text-tradealo-text-muted mb-6 max-w-md mx-auto lg:mx-0">
-              El marketplace argentino para intercambiar, comprar y vender.
+              Sin comisión, con la mejor seguridad.
             </p>
-
-            <form
-              action="/listings"
-              method="get"
-              className="flex gap-2 max-w-xl mx-auto lg:mx-0 mb-4"
-            >
-              <div className="flex-1 relative">
-                <Search
-                  size={18}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-tradealo-text-muted pointer-events-none"
-                />
-                <input
-                  name="q"
-                  placeholder="¿Qué estás buscando?"
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-tradealo-border bg-white text-base shadow-card focus:outline-none focus:border-tradealo-primary focus:ring-2 focus:ring-tradealo-primary-light"
-                />
-              </div>
-              <button
-                type="submit"
-                className="h-12 px-6 bg-tradealo-primary text-white font-semibold rounded-xl hover:bg-tradealo-primary-hover transition-colors shadow-sm shrink-0"
-              >
-                Buscar
-              </button>
-            </form>
 
             <div className="flex items-center gap-3 justify-center lg:justify-start flex-wrap">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 bg-tradealo-primary text-white rounded-xl px-5 py-2.5 font-medium text-sm hover:bg-tradealo-primary-hover transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 bg-tradealo-primary text-white rounded-xl px-6 py-3 font-medium text-sm hover:bg-tradealo-primary-hover transition-colors shadow-sm"
               >
                 Publicá gratis
                 <ArrowRight size={16} />
               </Link>
               <Link
                 href="/listings"
-                className="inline-flex items-center gap-2 text-tradealo-primary border border-tradealo-primary rounded-xl px-5 py-2.5 font-medium text-sm hover:bg-tradealo-primary-light transition-colors"
+                className="inline-flex items-center gap-2 text-tradealo-primary border border-tradealo-primary rounded-xl px-6 py-3 font-medium text-sm hover:bg-tradealo-primary-light transition-colors"
               >
                 Explorar
               </Link>
