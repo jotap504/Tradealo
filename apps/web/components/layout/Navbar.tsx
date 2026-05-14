@@ -94,7 +94,7 @@ export function Navbar() {
           : 'bg-white border-b border-tradealo-border shadow-sm'
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center gap-3">
+      <div className={cn('mx-auto max-w-7xl flex items-center gap-3', isHome && !scrolled ? 'px-8 lg:px-16 py-5' : 'px-4 sm:px-6 h-14')}>
         <Link
           href="/"
           className="flex items-center gap-2 shrink-0 group"
@@ -105,32 +105,28 @@ export function Navbar() {
           </span>
           <span
             className={cn(
-              'font-heading font-bold text-lg tracking-tight transition-colors duration-300',
-              isHome && !scrolled ? 'text-white' : 'text-tradealo-primary'
+              'font-bold text-lg tracking-tight transition-colors duration-300',
+              isHome && !scrolled ? 'text-white' : 'font-heading text-tradealo-primary'
             )}
+            style={isHome && !scrolled ? { fontFamily: "'Sora', sans-serif" } : undefined}
           >
             Tradealo
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1 ml-2">
+        <nav className={cn('hidden md:flex items-center', isHome && !scrolled ? 'gap-8' : 'gap-1 ml-2')}>
           {navLinks.map((l) => {
             const active = pathname === l.href;
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
+            const linkCls = isHome && !scrolled
+              ? 'text-sm uppercase tracking-widest text-white/70 hover:text-white font-medium transition-colors'
+              : cn(
                   'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                   active
-                    ? isHome && !scrolled
-                      ? 'text-white bg-white/10'
-                      : 'text-tradealo-primary bg-tradealo-primary-light'
-                    : isHome && !scrolled
-                      ? 'text-white/70 hover:text-white hover:bg-white/10'
-                      : 'text-tradealo-text hover:bg-gray-100'
-                )}
-              >
+                    ? 'text-tradealo-primary bg-tradealo-primary-light'
+                    : 'text-tradealo-text hover:bg-gray-100'
+                );
+            return (
+              <Link key={l.href} href={l.href} className={linkCls}>
                 {l.label}
               </Link>
             );
@@ -160,18 +156,18 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          {user ? (
+          {isHome && !scrolled ? (
+            <Link
+              href="/register"
+              className="hidden md:inline-flex h-10 px-6 rounded-lg text-xs uppercase tracking-widest font-medium items-center justify-center hover:brightness-110 active:scale-[0.97] transition-all"
+              style={{ background: 'hsl(0,0%,18%)', color: 'hsl(0,0%,96%)' }}
+            >
+              Publica gratis
+            </Link>
+          ) : user ? (
             <>
               <Link href="/my-listings/new" className="hidden sm:block">
-                <Button
-                  size="md"
-                  leftIcon={<Plus size={16} />}
-                  className={cn(
-                    isHome &&
-                      !scrolled &&
-                      'bg-white text-tradealo-primary hover:bg-gray-100 active:bg-gray-200'
-                  )}
-                >
+                <Button size="md" leftIcon={<Plus size={16} />}>
                   Publicar
                 </Button>
               </Link>
@@ -180,26 +176,14 @@ export function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className={cn(
-                    'flex items-center gap-2 p-1 pr-2 rounded-full transition-colors',
-                    isHome && !scrolled
-                      ? 'hover:bg-white/10'
-                      : 'hover:bg-gray-100'
-                  )}
+                  className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
                   <Avatar
                     src={user.avatarUrl}
                     username={user.username ?? user.email}
                     size="sm"
                   />
-                  <ChevronDown
-                    size={14}
-                    className={cn(
-                      isHome && !scrolled
-                        ? 'text-white'
-                        : 'text-tradealo-text-muted'
-                    )}
-                  />
+                  <ChevronDown size={14} className="text-tradealo-text-muted" />
                 </button>
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-tradealo-border rounded-xl shadow-lg z-50 overflow-hidden animate-slide-up">
@@ -255,27 +239,12 @@ export function Navbar() {
           ) : (
             <>
               <Link href="/login" className="hidden sm:block">
-                <Button
-                  variant="ghost"
-                  size="md"
-                  className={cn(
-                    isHome && !scrolled && 'text-white hover:bg-white/10'
-                  )}
-                >
+                <Button variant="ghost" size="md">
                   Ingresar
                 </Button>
               </Link>
               <Link href="/register">
-                <Button
-                  size="md"
-                  className={cn(
-                    isHome &&
-                      !scrolled &&
-                      'bg-white text-tradealo-primary hover:bg-gray-100 active:bg-gray-200'
-                  )}
-                >
-                  Registrarse
-                </Button>
+                <Button size="md">Registrarse</Button>
               </Link>
             </>
           )}
@@ -283,18 +252,14 @@ export function Navbar() {
           <button
             className={cn(
               'md:hidden p-2 rounded-lg transition-colors',
-              isHome && !scrolled
-                ? 'hover:bg-white/10'
-                : 'hover:bg-gray-100'
+              isHome && !scrolled ? 'hover:bg-white/10' : 'hover:bg-gray-100'
             )}
             onClick={() => setMobileOpen(true)}
             aria-label="Abrir menú"
           >
             <Menu
               size={20}
-              className={cn(
-                isHome && !scrolled ? 'text-white' : 'text-tradealo-text'
-              )}
+              className={cn(isHome && !scrolled ? 'text-white' : 'text-tradealo-text')}
             />
           </button>
         </div>

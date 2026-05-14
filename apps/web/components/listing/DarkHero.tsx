@@ -17,7 +17,10 @@ export function DarkHero() {
       style={{ background: C.heroBg }}
       className="relative min-h-screen flex items-end overflow-hidden"
     >
-      <style>{`@keyframes fadeUp { 0% { opacity: 0; transform: translateY(20px); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0); filter: blur(0); } }`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(20px); filter: blur(4px); } 100% { opacity: 1; transform: translateY(0); filter: blur(0); } }
+      `}</style>
 
       <div
         className="absolute inset-0"
@@ -37,11 +40,15 @@ export function DarkHero() {
       />
       <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none" />
 
-      <div className="relative z-10 pointer-events-none w-full max-w-[90%] sm:max-w-md lg:max-w-2xl px-6 md:px-10 pb-10 md:pb-10 pt-32">
+      <div
+        className="relative z-10 w-full max-w-[90%] sm:max-w-md lg:max-w-2xl px-6 md:px-10 pb-10 md:pb-10 pt-32 pointer-events-none"
+        style={{ fontFamily: "'Sora', sans-serif" }}
+      >
         <h1
           className="opacity-0"
           style={{
             animation: 'fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards',
+            fontFamily: "'Sora', sans-serif",
           }}
         >
           <span
@@ -71,6 +78,7 @@ export function DarkHero() {
             color: 'hsla(0,0%,96%,0.8)',
             fontSize: 'clamp(1.125rem,2.5vw,1.875rem)',
             animation: 'fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s forwards',
+            fontFamily: "'Sora', sans-serif",
           }}
           className="font-light mb-3 md:mb-6 opacity-0"
         >
@@ -82,6 +90,7 @@ export function DarkHero() {
             color: C.muted,
             fontSize: 'clamp(0.875rem,1.5vw,1.25rem)',
             animation: 'fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.55s forwards',
+            fontFamily: "'Sora', sans-serif",
           }}
           className="font-light mb-4 md:mb-8 opacity-0 max-w-xl"
         >
@@ -118,6 +127,7 @@ export function DarkHero() {
             color: 'hsla(0,0%,60%,0.6)',
             animation:
               'fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.85s forwards',
+            fontFamily: "'Sora', sans-serif",
           }}
           className="text-xs font-light mt-4 md:mt-6 opacity-0"
         >
