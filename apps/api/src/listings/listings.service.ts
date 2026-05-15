@@ -68,6 +68,7 @@ export class ListingsService {
       userId,
       type,
       isCollectible,
+      dto.saleType,
     );
 
     const durationDays =
@@ -555,12 +556,18 @@ export class ListingsService {
     userId: string,
     type: string,
     isCollectible: boolean,
+    saleType?: string,
   ): Promise<{ creditsSpent: number; wasFreeQuota: boolean }> {
     const quota = await this.walletService.getFreeQuota(userId);
 
     if (quota.remaining > 0) {
       await this.walletService.consumeFreeQuota(userId);
       return { creditsSpent: 0, wasFreeQuota: true };
+    }
+
+    if (saleType === 'live') {
+      await this.walletService.debit(userId, 1, 'listing_publish');
+      return { creditsSpent: 1, wasFreeQuota: false };
     }
 
     const costKey = isCollectible

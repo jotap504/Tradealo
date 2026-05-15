@@ -13,7 +13,7 @@ import { ImageUploader } from '@/components/listing/ImageUploader';
 import { AIGeneratorButton } from '@/components/listing/AIGeneratorButton';
 import { PurchaseModal } from '@/components/wallet/PurchaseModal';
 import { TokenBadge } from '@/components/wallet/TokenBadge';
-import { listings, wallet } from '@/lib/api';
+import { listings, wallet, categories as categoriesApi } from '@/lib/api';
 import { toast } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import {
@@ -95,9 +95,10 @@ const EMPTY_FORM: FormData = {
   youtubeLiveId: '',
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 function StepIndicator({ current, total }: { current: number; total: number }) {
+  const labels = ['Categoría', 'Tipo', 'Detalles', 'Fotos', 'Precio', 'Ubicación', 'Tipo'];
   return (
     <div className="flex items-center gap-2 mb-8">
       {Array.from({ length: total }).map((_, i) => {
@@ -105,23 +106,28 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
         const done = step < current;
         const active = step === current;
         return (
-          <div key={step} className="flex items-center gap-2 flex-1">
-            <div
-              className={cn(
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-all',
-                done
-                  ? 'bg-tradealo-success text-white'
-                  : active
-                  ? 'bg-tradealo-primary text-white'
-                  : 'bg-gray-200 text-gray-500'
-              )}
-            >
-              {done ? <Check size={14} strokeWidth={3} /> : step}
+          <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
+                  done
+                    ? 'bg-tradealo-success text-white'
+                    : active
+                    ? 'bg-tradealo-primary text-white'
+                    : 'bg-gray-200 text-gray-500'
+                )}
+              >
+                {done ? <Check size={12} strokeWidth={3} /> : step}
+              </div>
+              <span className="text-[10px] text-tradealo-text-muted hidden sm:block">
+                {labels[i]}
+              </span>
             </div>
             {step < total && (
               <div
                 className={cn(
-                  'flex-1 h-1 rounded-full transition-all',
+                  'flex-1 h-1 rounded-full mb-4',
                   done ? 'bg-tradealo-primary' : 'bg-gray-200'
                 )}
               />
@@ -137,11 +143,14 @@ export default function NewListingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
+  const [flowType, setFlowType] = useState<'traditional' | 'live' | null>(null);
   const [listingId, setListingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [purchaseModal, setPurchaseModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+
+  const maxStep = flowType === 'live' ? 3 : TOTAL_STEPS;
 
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -157,7 +166,14 @@ export default function NewListingPage() {
     queryKey: ['token-packs'],
     queryFn: () => wallet.getPacks(),
     staleTime: 300_000,
-    enabled: step === 6,
+    enabled: step === TOTAL_STEPS && flowType === 'traditional',
+  });
+
+  const { data: selectedCategory } = useQuery({
+    queryKey: ['category', formData.categoryId],
+    queryFn: () => categoriesApi.getCategory(formData.categoryId),
+    enabled: !!formData.categoryId,
+    staleTime: 300_000,
   });
 
   const update = (patch: Partial<FormData>) =>
@@ -198,6 +214,24 @@ export default function NewListingPage() {
       return;
     }
     if (step === 2) {
+      if (!flowType) {
+        toast.error('Seleccioná un tipo de publicación');
+        return;
+      }
+      if (flowType === 'live') {
+        update({
+          title: `En Vivo - ${selectedCategory?.name ?? formData.categoryId}`,
+          description: 'Publicación generada automáticamente para venta en vivo por YouTube. El vendedor se encuentra transmitiendo en este momento.',
+          price: '0',
+          saleType: 'live',
+          type: 'standard',
+          durationDays: 30,
+        });
+        setStep(3);
+        return;
+      }
+    }
+    if (step === 3 && flowType !== 'live') {
       if (!formData.title.trim() || formData.title.trim().length < 5) {
         toast.error('El título debe tener al menos 5 caracteres');
         return;
@@ -219,18 +253,40 @@ export default function NewListingPage() {
         setSaving(false);
       }
     }
-    if (step === 4 && (!formData.price || isNaN(Number(formData.price)))) {
+    if (step === 5 && (!formData.price || isNaN(Number(formData.price)))) {
       toast.error('Ingresá un precio válido');
       return;
     }
-    if (step === 5 && !formData.province) {
+    if (step === 6 && !formData.province) {
       toast.error('Seleccioná una provincia');
       return;
     }
-    setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    setStep((s) => Math.min(s + 1, maxStep));
   };
 
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
+
+  const handleCreateLive = async () => {
+    const youtubeId = extractYoutubeId(formData.youtubeLiveId);
+    if (!youtubeId) {
+      toast.error('Ingresá un link válido de YouTube');
+      return;
+    }
+    setSaving(true);
+    try {
+      const created = await listings.createListing(buildPayload());
+      await listings.publishListing(created.id, {
+        type: 'standard',
+        durationDays: 30,
+      });
+      toast.success('¡Publicación en vivo creada!');
+      router.push('/my-listings');
+    } catch {
+      toast.error('No se pudo crear la publicación en vivo');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handlePublish = async () => {
     if (!listingId) return;
@@ -279,11 +335,102 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 2 — Product info */}
+          {/* STEP 2 — Tipo de publicación */}
           {step === 2 && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 2: Información del producto
+                Paso 2: Tipo de publicación
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFlowType('traditional');
+                    update({ saleType: 'contact' });
+                  }}
+                  className={cn(
+                    'p-6 rounded-xl border-2 text-left transition-all',
+                    flowType === 'traditional'
+                      ? 'border-tradealo-primary bg-tradealo-primary-light'
+                      : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
+                  )}
+                >
+                  <h3 className="font-heading font-semibold text-lg mb-2">
+                    Venta Tradicional
+                  </h3>
+                  <p className="text-sm text-tradealo-text-muted leading-relaxed">
+                    Completá el formulario completo con fotos, precio, ubicación
+                    y más. Ideal para vender productos con todos los detalles.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFlowType('live');
+                    update({ saleType: 'live' });
+                  }}
+                  className={cn(
+                    'p-6 rounded-xl border-2 text-left transition-all',
+                    flowType === 'live'
+                      ? 'border-tradealo-primary bg-tradealo-primary-light'
+                      : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
+                  )}
+                >
+                  <h3 className="font-heading font-semibold text-lg mb-2">
+                    Venta en Vivo
+                  </h3>
+                  <p className="text-sm text-tradealo-text-muted leading-relaxed">
+                    Creamos la publicación automáticamente. Solo necesitás el
+                    link de tu transmisión de YouTube. Consume 1 token.
+                  </p>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 — Live branch */}
+          {step === 3 && flowType === 'live' && (
+            <div className="space-y-5">
+              <h2 className="font-heading font-semibold text-lg">
+                Link de tu transmisión
+              </h2>
+              <Input
+                label="Link o ID de YouTube"
+                placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
+                value={formData.youtubeLiveId}
+                onChange={(e) => update({ youtubeLiveId: e.target.value })}
+                helper="Pegá el link de tu transmisión en vivo de YouTube."
+              />
+              {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
+                <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
+                    className="w-full h-full"
+                    allow="encrypted-media"
+                    allowFullScreen
+                    title="Vista previa del video"
+                  />
+                </div>
+              )}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-tradealo-border">
+                <div className="flex items-center justify-between font-semibold text-sm">
+                  <span>Costo</span>
+                  <span className="text-tradealo-primary">1 token</span>
+                </div>
+                <p className="text-xs text-tradealo-text-muted">
+                  La publicación se crea automáticamente con datos básicos y se
+                  publica de inmediato por 30 días. El título será &ldquo;En
+                  Vivo - {selectedCategory?.name ?? '...'}&rdquo;.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 — Traditional: Product info */}
+          {step === 3 && flowType !== 'live' && (
+            <div className="space-y-5">
+              <h2 className="font-heading font-semibold text-lg">
+                Paso 3: Información del producto
               </h2>
               <div className="space-y-1">
                 <Input
@@ -419,11 +566,11 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 3 — Photos */}
-          {step === 3 && (
+          {/* STEP 4 — Photos */}
+          {step === 4 && (
             <div className="space-y-4">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 3: Fotos del producto
+                Paso 4: Fotos del producto
               </h2>
               <p className="text-sm text-tradealo-text-muted">
                 Subí al menos 1 foto. Las primeras fotos son las más vistas.
@@ -438,11 +585,11 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 4 — Price & contact */}
-          {step === 4 && (
+          {/* STEP 5 — Price & contact */}
+          {step === 5 && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 4: Precio y contacto
+                Paso 5: Precio y contacto
               </h2>
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -613,11 +760,11 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 5 — Location */}
-          {step === 5 && (
+          {/* STEP 6 — Location */}
+          {step === 6 && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 5: Ubicación
+                Paso 6: Ubicación
               </h2>
               <ProvinceSelector
                 label="Provincia"
@@ -647,11 +794,11 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 6 — Type & duration */}
-          {step === 6 && (
+          {/* STEP 7 — Type & duration */}
+          {step === 7 && (
             <div className="space-y-6">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 6: Tipo y duración
+                Paso 7: Tipo y duración
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {(['standard', 'premium'] as const).map((t) => (
@@ -791,7 +938,11 @@ export default function NewListingPage() {
         >
           Anterior
         </Button>
-        {step < TOTAL_STEPS ? (
+        {step === 3 && flowType === 'live' ? (
+          <Button onClick={handleCreateLive} loading={saving}>
+            Crear publicación en vivo
+          </Button>
+        ) : step < maxStep ? (
           <Button
             onClick={goNext}
             loading={saving}

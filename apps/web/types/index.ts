@@ -29,7 +29,7 @@ export interface ListingImage {
   sortOrder: number;
 }
 
-export type SaleType = 'contact' | 'stock' | 'auction';
+export type SaleType = 'contact' | 'stock' | 'auction' | 'live';
 
 export interface Listing {
   id: string;

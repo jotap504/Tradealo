@@ -29,6 +29,7 @@ export enum SaleType {
   CONTACT = 'contact',
   STOCK = 'stock',
   AUCTION = 'auction',
+  LIVE = 'live',
 }
 
 export class CreateListingDto {
