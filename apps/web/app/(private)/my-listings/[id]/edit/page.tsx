@@ -28,6 +28,21 @@ import {
 } from '@/lib/constants';
 import type { TokenPack } from '@/types';
 
+function extractYoutubeId(input: string): string | null {
+  if (!input) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+    /^([\w-]{11})$/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 interface FormData {
   title: string;
   description: string;
@@ -43,6 +58,7 @@ interface FormData {
   city: string;
   type: 'standard' | 'premium';
   durationDays: number;
+  youtubeLiveId: string;
 }
 
 const TOTAL_STEPS = 5;
@@ -142,6 +158,7 @@ export default function EditListingPage() {
         city: listing.city ?? '',
         type: listing.type ?? 'standard',
         durationDays: 30,
+        youtubeLiveId: listing.youtubeLiveId ?? '',
       });
     }
   }, [listing, formData]);
@@ -193,6 +210,7 @@ export default function EditListingPage() {
         shippingDescription: formData.shippingDescription,
         province: formData.province,
         city: formData.city,
+        youtubeLiveId: extractYoutubeId(formData.youtubeLiveId) || undefined,
       });
       toast.success('Publicación actualizada');
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
@@ -243,6 +261,29 @@ export default function EditListingPage() {
                   context={{ title: formData.title }}
                   onGenerate={(text) => update({ description: text })}
                 />
+              </div>
+              <div className="border-t border-tradealo-border pt-4">
+                <h3 className="font-heading font-semibold text-sm mb-2">
+                  Video de presentación (opcional)
+                </h3>
+                <Input
+                  label="Link o ID de YouTube"
+                  placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
+                  value={formData.youtubeLiveId}
+                  onChange={(e) => update({ youtubeLiveId: e.target.value })}
+                  helper="Mostrá tu producto en video. Acepta link de YouTube o ID del video."
+                />
+                {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
+                  <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
+                      className="w-full h-full"
+                      allow="encrypted-media"
+                      allowFullScreen
+                      title="Vista previa del video"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-tradealo-text mb-2">

@@ -116,6 +116,7 @@ export class ListingsService {
           dto.desiredPrice !== undefined
             ? Math.round(dto.desiredPrice * 100)
             : undefined,
+        youtubeLiveId: dto.youtubeLiveId,
       })
       .returning();
 
@@ -401,6 +402,9 @@ export class ListingsService {
           desiredPrice: Math.round(dto.desiredPrice * 100),
         }),
         ...(dto.contactInfo !== undefined && { contactInfo: dto.contactInfo }),
+        ...(dto.youtubeLiveId !== undefined && {
+          youtubeLiveId: dto.youtubeLiveId || null,
+        }),
         updatedAt: new Date(),
       })
       .where(eq(schema.listings.id, id))

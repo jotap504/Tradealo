@@ -125,4 +125,9 @@ export class CreateListingDto {
 
   @IsOptional()
   contactInfo?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  youtubeLiveId?: string;
 }

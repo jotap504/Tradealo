@@ -28,6 +28,21 @@ import {
 } from '@/lib/constants';
 import type { Category, TokenPack, SaleType } from '@/types';
 
+function extractYoutubeId(input: string): string | null {
+  if (!input) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+    /^([\w-]{11})$/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 interface FormData {
   categoryId: string;
   isCollectible: boolean;
@@ -51,6 +66,7 @@ interface FormData {
   desiredPrice: string;
   contactPhone: string;
   showWhatsApp: boolean;
+  youtubeLiveId: string;
 }
 
 const EMPTY_FORM: FormData = {
@@ -76,6 +92,7 @@ const EMPTY_FORM: FormData = {
   desiredPrice: '',
   contactPhone: '',
   showWhatsApp: false,
+  youtubeLiveId: '',
 };
 
 const TOTAL_STEPS = 6;
@@ -172,6 +189,7 @@ export default function NewListingPage() {
     contactInfo: formData.contactPhone
       ? { phone: formData.contactPhone, showWhatsApp: formData.showWhatsApp }
       : undefined,
+    youtubeLiveId: extractYoutubeId(formData.youtubeLiveId) || undefined,
   });
 
   const goNext = async () => {
@@ -321,6 +339,29 @@ export default function NewListingPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="border-t border-tradealo-border pt-4">
+                <h3 className="font-heading font-semibold text-sm mb-2">
+                  Video de presentación (opcional)
+                </h3>
+                <Input
+                  label="Link o ID de YouTube"
+                  placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
+                  value={formData.youtubeLiveId}
+                  onChange={(e) => update({ youtubeLiveId: e.target.value })}
+                  helper="Mostrá tu producto en video. Acepta link de YouTube o ID del video."
+                />
+                {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
+                  <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
+                      className="w-full h-full"
+                      allow="encrypted-media"
+                      allowFullScreen
+                      title="Vista previa del video"
+                    />
+                  </div>
+                )}
               </div>
               {formData.categoryAttributes && formData.categoryAttributes.length > 0 && (
                 <div className="space-y-4">
