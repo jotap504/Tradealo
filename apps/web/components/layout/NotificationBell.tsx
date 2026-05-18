@@ -6,7 +6,7 @@ import { Bell, Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 export function NotificationBell() {
   const user = useAuthStore((s) => s.user);
@@ -100,7 +100,7 @@ export function NotificationBell() {
                         {n.message}
                       </p>
                       <p className="text-[11px] text-tradealo-text-muted mt-1">
-                        {formatRelative(n.createdAt)}
+                        <RelativeTime iso={n.createdAt} />
                       </p>
                     </div>
                   </div>

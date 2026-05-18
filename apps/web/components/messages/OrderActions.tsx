@@ -73,10 +73,11 @@ export function OrderActions({ conversationId }: Props) {
   const reviewMutation = useMutation({
     mutationFn: () =>
       reviews.createReview({
-        revieweeId: order!.sellerId,
+        reviewedId: order!.sellerId,
         listingId: order!.listingId,
-        rating,
-        comment,
+        direction: 'buyer_to_seller',
+        overallRating: rating,
+        comment: comment.trim() || undefined,
       }),
     onSuccess: async () => {
       await orders.complete(order!.id);

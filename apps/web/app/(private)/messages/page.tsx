@@ -7,7 +7,8 @@ import { ArrowLeft, MessageCircle, Loader2, ChevronRight } from 'lucide-react';
 import { conversations } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { cn, formatRelative } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Conversation } from '@/types';
 
 export default function MessagesPage() {
@@ -99,9 +100,7 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
             {c.otherParticipant.username ?? c.otherParticipant.email ?? 'Usuario'}
           </p>
           {c.lastMessageAt && (
-            <span className="text-[11px] text-tradealo-text-muted shrink-0">
-              {formatRelative(c.lastMessageAt)}
-            </span>
+            <RelativeTime iso={c.lastMessageAt} className="text-[11px] text-tradealo-text-muted shrink-0" />
           )}
         </div>
         {c.listingTitle && (

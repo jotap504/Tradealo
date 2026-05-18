@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PriceDisplay } from '@/components/listing/PriceDisplay';
-import { cn, formatRelative } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Listing } from '@/types';
 
 type Tab = 'active' | 'expired' | 'draft';
@@ -217,7 +218,7 @@ function ListingRow({
             size="sm"
           />
           <p className="text-xs text-tradealo-text-muted mt-1">
-            {formatRelative(listing.createdAt)}
+            <RelativeTime iso={listing.createdAt} />
           </p>
         </div>
 

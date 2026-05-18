@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { reviews } from '@/lib/api';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 interface Props {
   sellerId: string;
@@ -74,9 +74,7 @@ export function ListingReviews({ sellerId }: Props) {
                       />
                     ))}
                   </div>
-                  <span className="text-xs text-tradealo-text-muted">
-                    {formatRelative(review.createdAt)}
-                  </span>
+                  <RelativeTime iso={review.createdAt} className="text-xs text-tradealo-text-muted" />
                 </div>
                 <p className="text-sm text-tradealo-text leading-relaxed">
                   {review.comment}

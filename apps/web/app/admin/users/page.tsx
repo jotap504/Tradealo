@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Avatar } from '@/components/ui/Avatar';
 import { toast } from '@/lib/store';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 type RoleFilter = '' | 'user' | 'super_admin' | 'moderator';
 type KycFilter = '' | '0' | '1' | '2';
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                           </div>
                         </td>
                         <td className="py-3 pr-4 text-tradealo-text-muted whitespace-nowrap">
-                          {u.createdAt ? formatRelative(u.createdAt) : '—'}
+                          {u.createdAt ? <RelativeTime iso={u.createdAt} /> : '—'}
                         </td>
                         <td className="py-3">
                           <Button

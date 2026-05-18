@@ -15,7 +15,7 @@ import {
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { notifications } from '@/lib/api';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Notification } from '@/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +109,7 @@ export default function NotificationsPage() {
                   {notif.message}
                 </p>
                 <p className="text-xs text-tradealo-text-muted mt-1">
-                  {formatRelative(notif.createdAt)}
+                  <RelativeTime iso={notif.createdAt} />
                 </p>
               </div>
             </li>

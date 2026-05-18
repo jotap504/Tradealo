@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/lib/store';
-import { formatPrice, formatRelative } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -197,7 +198,7 @@ export default function AdminDashboardPage() {
                         {l.seller?.username ?? '—'}
                       </td>
                       <td className="py-2.5 pr-4 text-tradealo-text-muted whitespace-nowrap">
-                        {formatRelative(l.createdAt)}
+                        <RelativeTime iso={l.createdAt} />
                       </td>
                       <td className="py-2.5">
                         <div className="flex gap-2">

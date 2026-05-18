@@ -299,10 +299,11 @@ export const reviews = {
   getReviews: (userId: string) =>
     get<PaginatedResponse<Review>>(`/reviews/user/${userId}`),
   createReview: (payload: {
-    revieweeId: string;
-    listingId?: string;
-    rating: number;
-    comment: string;
+    reviewedId: string;
+    listingId: string;
+    direction: 'buyer_to_seller' | 'seller_to_buyer';
+    overallRating: number;
+    comment?: string;
   }) => post<Review>('/reviews', payload),
 };
 

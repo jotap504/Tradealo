@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/Badge';
 import { TokenBadge } from '@/components/wallet/TokenBadge';
 import { ListingCard } from '@/components/listing/ListingCard';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                         {n.message}
                       </p>
                       <p className="text-[10px] text-tradealo-text-muted mt-0.5">
-                        {formatRelative(n.createdAt)}
+                        <RelativeTime iso={n.createdAt} />
                       </p>
                     </div>
                     {!n.read && (

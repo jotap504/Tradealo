@@ -3,7 +3,8 @@ import { MapPin, ShieldCheck, Image as ImageIcon, Sparkles } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { PriceDisplay } from './PriceDisplay';
-import { cn, formatRelative, truncate } from '@/lib/utils';
+import { cn, truncate } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Listing } from '@/types';
 
 interface Props {
@@ -161,9 +162,7 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
               )}
             </div>
           </div>
-          <span className="text-[10px] text-tradealo-text-muted shrink-0">
-            {formatRelative(listing.createdAt)}
-          </span>
+          <RelativeTime iso={listing.createdAt} className="text-[10px] text-tradealo-text-muted shrink-0" />
         </div>
       </div>
     </Link>
@@ -198,7 +197,7 @@ function SellerStrip({
           <ShieldCheck size={11} className="text-tradealo-primary" />
         )}
       </div>
-      <span className="mt-1 text-[10px]">{formatRelative(createdAt)}</span>
+      <RelativeTime iso={createdAt} className="mt-1 text-[10px]" />
     </div>
   );
 }

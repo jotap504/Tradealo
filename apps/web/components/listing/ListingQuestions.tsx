@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { listings } from '@/lib/api';
 import { useAuthStore, toast } from '@/lib/store';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { ListingQuestion } from '@/types';
 
 interface Props {
@@ -102,7 +102,7 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                   <div>
                     <p className="text-sm font-medium text-tradealo-text">{q.question}</p>
                     <p className="text-[10px] text-tradealo-text-muted mt-0.5">
-                      {formatRelative(q.createdAt)}
+                      <RelativeTime iso={q.createdAt} />
                     </p>
                   </div>
                   {q.answer ? (
@@ -110,7 +110,7 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                       <p className="text-sm text-tradealo-text">{q.answer}</p>
                       {q.answeredAt && (
                         <p className="text-[10px] text-tradealo-text-muted mt-0.5">
-                          Respondido {formatRelative(q.answeredAt)}
+                          Respondido <RelativeTime iso={q.answeredAt} />
                         </p>
                       )}
                     </div>

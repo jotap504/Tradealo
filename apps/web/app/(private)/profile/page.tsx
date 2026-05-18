@@ -12,7 +12,8 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { ReputationStars } from '@/components/ui/ReputationStars';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { KycProgress } from '@/components/kyc/KycProgress';
-import { formatDate, formatRelative } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
@@ -162,9 +163,7 @@ export default function ProfilePage() {
                           />
                         ))}
                       </div>
-                      <span className="text-xs text-tradealo-text-muted">
-                        {formatRelative(review.createdAt)}
-                      </span>
+                      <RelativeTime iso={review.createdAt} className="text-xs text-tradealo-text-muted" />
                     </div>
                     <p className="text-sm text-tradealo-text">{review.comment}</p>
                   </div>

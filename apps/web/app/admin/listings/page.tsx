@@ -17,7 +17,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/lib/store';
-import { formatPrice, formatRelative } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 
 function RiskBadge({ score }: { score: number | undefined }) {
   if (score === undefined || score === null) return null;
@@ -150,7 +151,7 @@ export default function AdminListingsPage() {
                           <RiskBadge score={l.riskScore} />
                         </td>
                         <td className="py-3 pr-4 text-tradealo-text-muted whitespace-nowrap">
-                          {formatRelative(l.createdAt)}
+                          <RelativeTime iso={l.createdAt} />
                         </td>
                         <td className="py-3">
                           <div className="flex gap-1.5">

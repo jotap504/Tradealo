@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { formatRelative } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { LiveChatMessage as LiveChatMessageType } from '@/types';
 
 interface Props {
@@ -32,9 +32,7 @@ export function LiveChatMessage({ message }: Props) {
               Anfitrión
             </span>
           )}
-          <span className="text-[10px] text-tradealo-text-muted shrink-0">
-            {formatRelative(message.createdAt)}
-          </span>
+          <RelativeTime iso={message.createdAt} className="text-[10px] text-tradealo-text-muted shrink-0" />
         </div>
         <p className="text-sm text-tradealo-text break-words">{message.content}</p>
       </div>
