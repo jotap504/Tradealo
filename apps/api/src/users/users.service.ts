@@ -93,6 +93,26 @@ export class UsersService {
     return { ...updated, completenessPct: completeness }
   }
 
+  async uploadAvatar(userId: string, base64: string, mimetype: string) {
+    const buffer = Buffer.from(base64, 'base64')
+    if (buffer.byteLength > 5 * 1024 * 1024) {
+      throw new BadRequestException('La imagen no puede superar 5 MB')
+    }
+
+    const ext = mimetype.split('/')[1] ?? 'jpg'
+    const key = `avatars/${userId}/${randomUUID()}.${ext}`
+    const avatarUrl = await this.storage.uploadBuffer(key, buffer, mimetype)
+
+    const [updated] = await this.db
+      .update(schema.userProfiles)
+      .set({ avatarUrl, updatedAt: new Date() })
+      .where(eq(schema.userProfiles.userId, userId))
+      .returning({ avatarUrl: schema.userProfiles.avatarUrl })
+
+    if (!updated) throw new NotFoundException('USER_NOT_FOUND')
+    return { avatarUrl: updated.avatarUrl }
+  }
+
   async getAvatarUploadUrl(userId: string) {
     const key = `avatars/${userId}/${randomUUID()}.jpg`
     return this.storage.getPresignedPut(key, 'image/jpeg')

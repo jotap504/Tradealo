@@ -19,8 +19,15 @@ export default function ProfilePage() {
 
   const { data: kycStatus, isLoading: loadingKyc } = useQuery({
     queryKey: ['kyc-status'],
-    queryFn: () => kyc.getKycStatus(),
+    queryFn: async () => {
+      try {
+        return await kyc.getKycStatus();
+      } catch {
+        return null;
+      }
+    },
     staleTime: 60_000,
+    retry: false,
   });
 
   const { data: reviewsData, isLoading: loadingReviews } = useQuery({

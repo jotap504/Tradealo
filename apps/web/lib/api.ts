@@ -348,10 +348,8 @@ export const users = {
     get<User>(`/users/by-username/${username}`),
   updateProfile: (payload: Partial<User>) =>
     patch<User>('/users/me', payload),
-  uploadAvatar: (data: FormData) =>
-    post<{ avatarUrl: string }>('/users/me/avatar', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  uploadAvatar: (data: string, mimetype: string) =>
+    post<{ avatarUrl: string }>('/users/me/avatar/upload', { data, mimetype }),
 };
 
 export const conversations = {

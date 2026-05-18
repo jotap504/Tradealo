@@ -1,11 +1,16 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
 import { ListingCard } from '@/components/listing/ListingCard';
 import { ListingGrid } from '@/components/listing/ListingGrid';
 import { Badge } from '@/components/ui/Badge';
 import { CategoryAccordionHero } from '@/components/ui/interactive-image-accordion';
-import { LiveVideosSection } from '@/components/listing/LiveVideosSection';
 import { API_URL } from '@/lib/constants';
+
+const LiveVideosSection = dynamic(
+  () => import('@/components/listing/LiveVideosSection').then((m) => m.LiveVideosSection),
+  { ssr: false },
+);
 import type { Listing, Category } from '@/types';
 
 async function fetchListings(params: string): Promise<Listing[]> {

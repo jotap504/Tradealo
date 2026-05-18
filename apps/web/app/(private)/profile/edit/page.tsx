@@ -63,9 +63,19 @@ export default function EditProfilePage() {
     setAvatarPreview(URL.createObjectURL(file));
     setUploadingAvatar(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await users.uploadAvatar(fd);
+      const reader = new FileReader();
+      const result = await new Promise<{ base64: string; mimetype: string }>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve({
+            base64: result.split(',')[1],
+            mimetype: file.type || 'image/jpeg',
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await users.uploadAvatar(result.base64, result.mimetype);
       setUser({ ...user!, avatarUrl: res.avatarUrl });
       toast.success('Avatar actualizado');
     } catch {

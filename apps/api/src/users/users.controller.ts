@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Post, Body, Param, HttpCode, HttpStatus } from 
 import { UsersService } from './users.service'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { ConfirmAvatarDto } from './dto/confirm-avatar.dto'
+import { UploadAvatarDto } from './dto/upload-avatar.dto'
 import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator'
 
 @Controller('users')
@@ -22,6 +23,12 @@ export class UsersController {
   @Get(':id')
   getPublicProfile(@Param('id') id: string) {
     return this.usersService.getPublicProfile(id)
+  }
+
+  @Post('me/avatar/upload')
+  @HttpCode(HttpStatus.OK)
+  uploadAvatar(@CurrentUser() user: JwtPayload, @Body() dto: UploadAvatarDto) {
+    return this.usersService.uploadAvatar(user.sub, dto.data, dto.mimetype)
   }
 
   @Post('me/avatar/upload-url')
