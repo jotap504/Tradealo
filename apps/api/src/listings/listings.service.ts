@@ -19,6 +19,7 @@ import {
   inArray,
   ilike,
   isNotNull,
+  isNull,
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
@@ -155,8 +156,7 @@ export class ListingsService {
       eq(schema.listings.moderationStatus, 'approved' as string),
     ];
 
-    if (categoryId)
-      conditions.push(eq(schema.listings.categoryId, categoryId));
+    if (categoryId) conditions.push(eq(schema.listings.categoryId, categoryId));
     if (dto.condition)
       conditions.push(
         eq(
@@ -209,6 +209,10 @@ export class ListingsService {
 
     if (dto.hasYoutubeLive) {
       conditions.push(isNotNull(schema.listings.youtubeLiveId));
+    }
+
+    if (dto.excludeYoutubeLive) {
+      conditions.push(isNull(schema.listings.youtubeLiveId));
     }
 
     if (dto.cursor) {

@@ -94,6 +94,11 @@ export class ListListingsDto {
   hasYoutubeLive?: boolean;
 
   @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  excludeYoutubeLive?: boolean;
+
+  @IsOptional()
   @IsEnum(SortOrder)
   sort?: SortOrder;
 

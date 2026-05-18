@@ -78,7 +78,7 @@ export default async function HomePage() {
     categories,
   ] = await Promise.all([
     fetchListings('type=premium&limit=6'),
-    fetchListings('limit=12&sort=recent'),
+    fetchListings('limit=12&sort=recent&excludeYoutubeLive=true'),
     fetchListings('isCollectible=true&limit=6'),
     fetchListings('saleType=auction&endingSoon=24&limit=6&sort=recent'),
     fetchListings('hasYoutubeLive=true&limit=10'),
