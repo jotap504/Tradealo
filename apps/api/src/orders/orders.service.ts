@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -72,6 +72,65 @@ export class OrdersService {
       .orderBy(schema.orders.createdAt);
 
     return { asBuyer, asSeller };
+  }
+
+  async findMyPurchases(userId: string) {
+    const rows = await this.db
+      .select({
+        order: schema.orders,
+        listing: {
+          id: schema.listings.id,
+          title: schema.listings.title,
+          price: schema.listings.price,
+          currency: schema.listings.currency,
+          status: schema.listings.status,
+        },
+        seller: {
+          id: schema.users.id,
+        },
+        sellerProfile: {
+          username: schema.userProfiles.username,
+          avatarUrl: schema.userProfiles.avatarUrl,
+        },
+      })
+      .from(schema.orders)
+      .innerJoin(schema.listings, eq(schema.orders.listingId, schema.listings.id))
+      .innerJoin(schema.users, eq(schema.orders.sellerId, schema.users.id))
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.orders.sellerId),
+      )
+      .where(eq(schema.orders.buyerId, userId))
+      .orderBy(sql`${schema.orders.createdAt} DESC`);
+
+    if (rows.length === 0) return [];
+
+    const listingIds = rows.map((r) => r.listing.id);
+    const allImages = await this.db
+      .select()
+      .from(schema.listingImages)
+      .where(inArray(schema.listingImages.listingId, listingIds))
+      .orderBy(schema.listingImages.sortOrder);
+
+    const imageByListing = new Map<string, string>();
+    for (const img of allImages) {
+      if (!imageByListing.has(img.listingId)) {
+        imageByListing.set(img.listingId, img.thumbnailUrl ?? img.url);
+      }
+    }
+
+    return rows.map((r) => ({
+      ...r.order,
+      listing: {
+        ...r.listing,
+        primaryImageUrl: imageByListing.get(r.listing.id) ?? null,
+      },
+      seller: {
+        id: r.seller.id,
+        username: r.sellerProfile?.username ?? null,
+        avatarUrl: r.sellerProfile?.avatarUrl ?? null,
+      },
+    }));
   }
 
   async markDelivered(orderId: string, userId: string) {

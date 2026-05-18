@@ -3,6 +3,7 @@ import { MapPin, ShieldCheck, Image as ImageIcon, Sparkles } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { PriceDisplay } from './PriceDisplay';
+import { FavoriteButton } from './FavoriteButton';
 import { cn, truncate } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Listing } from '@/types';
@@ -48,6 +49,7 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
               Destacado
             </Badge>
           )}
+          <FavoriteButton listingId={listing.id} className="absolute top-2 right-2" />
         </div>
         <div className="flex-1 p-4 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-3">
@@ -109,6 +111,7 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
             Destacado
           </Badge>
         )}
+        <FavoriteButton listingId={listing.id} className="absolute top-2 right-2" />
         {listing.isCollectible && (
           <Badge
             variant="primary"

@@ -11,6 +11,7 @@ import { ListingGallery } from './ListingGallery';
 import { ListingReviews } from './ListingReviews';
 import { ListingQuestions } from '@/components/listing/ListingQuestions';
 import { ShareButton } from '@/components/listing/ShareButton';
+import { FavoriteButton } from '@/components/listing/FavoriteButton';
 
 async function getListing(id: string): Promise<Listing | null> {
   try {
@@ -188,7 +189,10 @@ export default async function ListingDetailPage({
             sellerUsername={listing.seller?.username}
           />
           <SellerCard user={listing.seller} />
-          <ShareButton url={`/listing/${listing.id}`} title={listing.title} />
+          <div className="flex gap-2">
+            <FavoriteButton listingId={listing.id} variant="pill" />
+            <ShareButton url={`/listing/${listing.id}`} title={listing.title} />
+          </div>
         </aside>
       </div>
     </div>

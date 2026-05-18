@@ -295,6 +295,17 @@ export const kyc = {
     post<{ ok: true }>('/kyc/address', { data, mimetype }),
 };
 
+export interface FavoriteListing extends Listing {
+  favoritedAt: string;
+}
+
+export const favorites = {
+  list: () => get<FavoriteListing[]>('/favorites'),
+  listIds: () => get<string[]>('/favorites/ids'),
+  add: (listingId: string) => post<{ ok: true }>(`/favorites/${listingId}`),
+  remove: (listingId: string) => del<{ ok: true }>(`/favorites/${listingId}`),
+};
+
 export const reviews = {
   getReviews: (userId: string) =>
     get<PaginatedResponse<Review>>(`/reviews/user/${userId}`),
@@ -374,10 +385,27 @@ export const liveChat = {
     post<LiveChatMessage>(`/listings/${listingId}/live-chat/messages`, payload),
 };
 
+export interface PurchaseOrder extends Order {
+  listing: {
+    id: string;
+    title: string;
+    price: string;
+    currency: 'ARS' | 'USD';
+    status: string;
+    primaryImageUrl: string | null;
+  };
+  seller: {
+    id: string;
+    username: string | null;
+    avatarUrl: string | null;
+  };
+}
+
 export const orders = {
   getByConversation: (conversationId: string) =>
     get<Order>(`/orders/by-conversation/${conversationId}`),
   getMine: () => get<{ asBuyer: Order[]; asSeller: Order[] }>('/orders/mine'),
+  getMyPurchases: () => get<PurchaseOrder[]>('/orders/my-purchases'),
   markDelivered: (id: string) =>
     patch<Order>(`/orders/${id}/deliver`),
   cancel: (id: string) =>

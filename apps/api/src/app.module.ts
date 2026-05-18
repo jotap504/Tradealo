@@ -17,10 +17,11 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { LiveChatModule } from './live-chat/live-chat.module';
 import { OrdersModule } from './orders/orders.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { KycModule } from './kyc/kyc.module';
 // Disabled until external services are configured:
 // import { AiModule } from './ai/ai.module'
 // import { SearchModule } from './search/search.module'
-// import { KycModule } from './kyc/kyc.module'
 // import { ModerationModule } from './moderation/moderation.module'
 // import { JobsModule } from './jobs/jobs.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -47,6 +48,8 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     MessagingModule,
     LiveChatModule,
     OrdersModule,
+    FavoritesModule,
+    KycModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

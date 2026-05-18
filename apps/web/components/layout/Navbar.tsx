@@ -16,6 +16,8 @@ import {
   Search,
   Repeat,
   MessageCircle,
+  Heart,
+  ShoppingBag,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
@@ -166,6 +168,16 @@ export function Navbar() {
                       label="Mis publicaciones"
                     />
                     <DropdownLink
+                      href="/my-purchases"
+                      icon={<ShoppingBag size={15} />}
+                      label="Mis compras"
+                    />
+                    <DropdownLink
+                      href="/favorites"
+                      icon={<Heart size={15} />}
+                      label="Favoritos"
+                    />
+                    <DropdownLink
                       href="/messages"
                       icon={<MessageCircle size={15} />}
                       label="Mensajes"
@@ -256,6 +268,18 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Mis publicaciones
+                  </Link>
+                  <Link
+                    href="/my-purchases"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Mis compras
+                  </Link>
+                  <Link
+                    href="/favorites"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Favoritos
                   </Link>
                   <Link
                     href="/messages"

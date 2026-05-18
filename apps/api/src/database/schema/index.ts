@@ -11,3 +11,4 @@ export * from './listings-bids.schema';
 export * from './listing-questions.schema';
 export * from './live-chat.schema';
 export * from './orders.schema';
+export * from './favorites.schema';
