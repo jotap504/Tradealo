@@ -4,6 +4,7 @@ import { KycService } from './kyc.service'
 import { DRIZZLE_TOKEN } from '../database/database.module'
 import { ConfigService } from '../config/config.service'
 import { WalletService } from '../wallet/wallet.service'
+import { StorageService } from '../storage/storage.service'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function qb(result: unknown): any {
@@ -48,6 +49,12 @@ const mockDb = {
 
 const mockConfigService = { getNumber: jest.fn() }
 const mockWalletService = { credit: jest.fn() }
+const mockStorageService = {
+  uploadBuffer: jest.fn(),
+  getPublicUrl: jest.fn(),
+  getPresignedPut: jest.fn(),
+  deleteObject: jest.fn(),
+}
 
 describe('KycService', () => {
   let service: KycService
@@ -63,6 +70,7 @@ describe('KycService', () => {
         { provide: DRIZZLE_TOKEN, useValue: mockDb },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: WalletService, useValue: mockWalletService },
+        { provide: StorageService, useValue: mockStorageService },
       ],
     }).compile()
 

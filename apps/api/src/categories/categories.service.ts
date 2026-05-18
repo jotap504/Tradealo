@@ -8,6 +8,8 @@ type DB = NodePgDatabase<typeof schema>
 type Category = typeof schema.categories.$inferSelect
 type CategoryAttribute = typeof schema.categoryAttributes.$inferSelect
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export interface CategoryNode extends Omit<Category, 'parentId'> {
   children: CategoryNode[]
 }
@@ -33,14 +35,19 @@ export class CategoriesService {
     return this.buildTree(all)
   }
 
-  async getBySlug(slug: string): Promise<CategoryDetail> {
+  async getBySlug(idOrSlug: string): Promise<CategoryDetail> {
+    const isUuid = UUID_REGEX.test(idOrSlug)
+    const predicate = isUuid
+      ? eq(schema.categories.id, idOrSlug)
+      : eq(schema.categories.slug, idOrSlug)
+
     const [category] = await this.db
       .select()
       .from(schema.categories)
-      .where(eq(schema.categories.slug, slug))
+      .where(predicate)
       .limit(1)
 
-    if (!category) throw new NotFoundException(`Category not found: ${slug}`)
+    if (!category) throw new NotFoundException(`Category not found: ${idOrSlug}`)
 
     const attributes = category.isCollectible
       ? await this.db

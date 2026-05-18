@@ -287,18 +287,12 @@ export const notifications = {
 
 export const kyc = {
   getKycStatus: () => get<KycStatus>('/kyc/status'),
-  uploadSelfie: (data: FormData) =>
-    post<{ ok: true }>('/kyc/selfie', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  uploadId: (data: FormData) =>
-    post<{ ok: true }>('/kyc/id', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  uploadAddress: (data: FormData) =>
-    post<{ ok: true }>('/kyc/address', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  uploadSelfie: (data: string, mimetype: string) =>
+    post<{ ok: true }>('/kyc/selfie', { data, mimetype }),
+  uploadId: (data: string, mimetype: string) =>
+    post<{ ok: true }>('/kyc/id', { data, mimetype }),
+  uploadAddress: (data: string, mimetype: string) =>
+    post<{ ok: true }>('/kyc/address', { data, mimetype }),
 };
 
 export const reviews = {

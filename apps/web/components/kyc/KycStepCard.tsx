@@ -68,13 +68,28 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
   const handle = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('El documento no puede superar 5 MB');
+      e.target.value = '';
+      return;
+    }
     setLoading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      if (type === 'id') await kycApi.uploadId(fd);
-      else if (type === 'selfie') await kycApi.uploadSelfie(fd);
-      else await kycApi.uploadAddress(fd);
+      const reader = new FileReader();
+      const { base64, mimetype } = await new Promise<{ base64: string; mimetype: string }>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve({
+            base64: result.split(',')[1],
+            mimetype: file.type || 'application/octet-stream',
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      if (type === 'id') await kycApi.uploadId(base64, mimetype);
+      else if (type === 'selfie') await kycApi.uploadSelfie(base64, mimetype);
+      else await kycApi.uploadAddress(base64, mimetype);
       toast.success('Documento subido. Te avisaremos cuando se verifique.');
       onUploaded?.();
     } catch {
