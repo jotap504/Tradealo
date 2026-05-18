@@ -15,6 +15,7 @@ import type {
   Message,
   Bid,
   ListingQuestion,
+  LiveChatMessage,
   PaginatedResponse,
   SystemConfig,
   AdminStats,
@@ -370,6 +371,15 @@ export const conversations = {
     ),
 };
 
+export const liveChat = {
+  getMessages: (listingId: string, params: { cursor?: string; limit?: number } = {}) =>
+    get<{ messages: LiveChatMessage[]; nextCursor?: string }>(
+      `/listings/${listingId}/live-chat/messages`, { params }
+    ),
+  sendMessage: (listingId: string, payload: { content: string }) =>
+    post<LiveChatMessage>(`/listings/${listingId}/live-chat/messages`, payload),
+};
+
 export const admin = {
   getStats: () => get<AdminStats>('/admin/stats'),
   getUsers: (params: { cursor?: string; role?: string; kycLevel?: number } = {}) =>
@@ -405,5 +415,6 @@ export default {
   images,
   users,
   conversations,
+  liveChat,
   admin,
 };

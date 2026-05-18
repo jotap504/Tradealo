@@ -188,6 +188,17 @@ export interface Message {
   createdAt: string;
 }
 
+export interface LiveChatMessage {
+  id: string;
+  listingId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  username: string | null;
+  avatarUrl: string | null;
+  isHost: boolean;
+}
+
 export interface ListingQuestion {
   id: string;
   listingId: string;

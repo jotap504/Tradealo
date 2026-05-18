@@ -15,6 +15,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { LiveChatModule } from './live-chat/live-chat.module';
 // Disabled until external services are configured:
 // import { AiModule } from './ai/ai.module'
 // import { SearchModule } from './search/search.module'
@@ -43,6 +44,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     AdminModule,
     NotificationsModule,
     MessagingModule,
+    LiveChatModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Play, Tv, AlertCircle } from 'lucide-react';
 import type { Listing } from '@/types';
+import { LiveVideoModal } from '../live-chat/LiveVideoModal';
 
 interface Props {
   listings: Listing[];
@@ -10,10 +11,11 @@ interface Props {
 
 function LiveVideoCard({
   listing,
+  onPlay,
 }: {
   listing: Listing;
+  onPlay: (listing: Listing) => void;
 }) {
-  const [playing, setPlaying] = useState(false);
   const [thumbError, setThumbError] = useState(false);
   const image = listing.images?.[0];
   const youtubeId = listing.youtubeLiveId;
@@ -23,52 +25,40 @@ function LiveVideoCard({
 
   return (
     <div className="relative w-64 shrink-0 snap-start rounded-xl overflow-hidden border border-tradealo-border bg-white hover:shadow-md transition-shadow">
-      {playing && youtubeId ? (
-        <div className="aspect-video bg-black">
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
-            className="w-full h-full"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            title={listing.title}
-          />
-        </div>
-      ) : (
-        <button
-          onClick={() => setPlaying(true)}
-          className="block w-full text-left"
-        >
-          <div className="aspect-video bg-gray-100 relative">
-            {youtubeThumb && !thumbError ? (
-              <img
-                src={youtubeThumb}
-                alt={listing.title}
-                className="w-full h-full object-cover"
-                onError={() => setThumbError(true)}
-              />
-            ) : image ? (
-              <img
-                src={image.url}
-                alt={listing.title}
-                className="w-full h-full object-contain bg-gray-50"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-tradealo-text-muted">
-                <Tv size={32} />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
-              <div className="p-3 rounded-full bg-white/90 shadow-md">
-                <Play size={24} className="text-tradealo-primary ml-1" />
-              </div>
+      <button
+        onClick={() => onPlay(listing)}
+        className="block w-full text-left"
+      >
+        <div className="aspect-video bg-gray-100 relative">
+          {youtubeThumb && !thumbError ? (
+            <img
+              src={youtubeThumb}
+              alt={listing.title}
+              className="w-full h-full object-cover"
+              onError={() => setThumbError(true)}
+            />
+          ) : image ? (
+            <img
+              src={image.url}
+              alt={listing.title}
+              className="w-full h-full object-contain bg-gray-50"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-tradealo-text-muted">
+              <Tv size={32} />
             </div>
-            <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-              EN VIVO
+          )}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
+            <div className="p-3 rounded-full bg-white/90 shadow-md">
+              <Play size={24} className="text-tradealo-primary ml-1" />
             </div>
           </div>
-        </button>
-      )}
+          <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+            EN VIVO
+          </div>
+        </div>
+      </button>
       <div className="p-3">
         <p className="font-medium text-sm text-tradealo-text line-clamp-1">
           {listing.title}
@@ -82,6 +72,8 @@ function LiveVideoCard({
 }
 
 export function LiveVideosSection({ listings }: Props) {
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+
   if (listings.length === 0) {
     return (
       <section className="px-4 mx-auto w-full max-w-7xl">
@@ -121,10 +113,17 @@ export function LiveVideosSection({ listings }: Props) {
             <LiveVideoCard
               key={listing.id}
               listing={listing}
+              onPlay={setSelectedListing}
             />
           ))}
         </div>
       </div>
+
+      <LiveVideoModal
+        listing={selectedListing!}
+        open={!!selectedListing}
+        onClose={() => setSelectedListing(null)}
+      />
     </section>
   );
 }
