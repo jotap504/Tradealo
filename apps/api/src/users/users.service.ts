@@ -86,6 +86,11 @@ export class UsersService {
         ...(dto.showPhone !== undefined && { showPhone: dto.showPhone }),
         ...(dto.province !== undefined && { province: dto.province }),
         ...(dto.city !== undefined && { city: dto.city }),
+        ...(dto.cbu !== undefined && { cbu: dto.cbu }),
+        ...(dto.alias !== undefined && { alias: dto.alias }),
+        ...(dto.bankName !== undefined && { bankName: dto.bankName }),
+        ...(dto.bankAccountType !== undefined && { bankAccountType: dto.bankAccountType }),
+        ...(dto.bankAccountNumber !== undefined && { bankAccountNumber: dto.bankAccountNumber }),
         updatedAt: new Date(),
       })
       .where(eq(schema.userProfiles.userId, userId))

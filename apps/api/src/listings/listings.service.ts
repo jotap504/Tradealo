@@ -27,6 +27,7 @@ import { ConfigService } from '../config/config.service';
 import { WalletService } from '../wallet/wallet.service';
 import { MessagingService } from '../messaging/messaging.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { OrdersService } from '../orders/orders.service';
 import * as schema from '../database/schema';
 import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 import { LISTING } from '../common/constants/listing.constants';
@@ -48,6 +49,7 @@ export class ListingsService {
     private readonly walletService: WalletService,
     private readonly messagingService: MessagingService,
     private readonly notificationsService: NotificationsService,
+    private readonly ordersService: OrdersService,
   ) {}
 
   async create(userId: string, dto: CreateListingDto): Promise<Listing> {
@@ -119,6 +121,7 @@ export class ListingsService {
             ? Math.round(dto.desiredPrice * 100)
             : undefined,
         youtubeLiveId: dto.youtubeLiveId,
+        paymentInfo: dto.paymentInfo,
       })
       .returning();
 
@@ -428,6 +431,7 @@ export class ListingsService {
         ...(dto.youtubeLiveId !== undefined && {
           youtubeLiveId: dto.youtubeLiveId || null,
         }),
+        ...(dto.paymentInfo !== undefined && { paymentInfo: dto.paymentInfo }),
         updatedAt: new Date(),
       })
       .where(eq(schema.listings.id, id))
@@ -713,7 +717,7 @@ export class ListingsService {
   async buyNow(
     listingId: string,
     userId: string,
-  ): Promise<{ conversationId: string }> {
+  ): Promise<{ conversationId: string; orderId: string }> {
     const [listing] = await this.db
       .select()
       .from(schema.listings)
@@ -788,7 +792,44 @@ export class ListingsService {
       data: { listingId, conversationId: conversation.id },
     });
 
-    return { conversationId: conversation.id };
+    // Resolve payment info (listing override > seller profile defaults)
+    const listingPaymentInfo = listing.paymentInfo as Record<string, unknown> | null;
+    let resolvedPaymentInfo = listingPaymentInfo;
+
+    if (!resolvedPaymentInfo) {
+      const [sellerProfile] = await this.db
+        .select({
+          cbu: schema.userProfiles.cbu,
+          alias: schema.userProfiles.alias,
+          bankName: schema.userProfiles.bankName,
+          bankAccountType: schema.userProfiles.bankAccountType,
+          bankAccountNumber: schema.userProfiles.bankAccountNumber,
+        })
+        .from(schema.userProfiles)
+        .where(eq(schema.userProfiles.userId, listing.userId))
+        .limit(1);
+
+      if (sellerProfile) {
+        const profilePayment: Record<string, unknown> = {};
+        if (sellerProfile.cbu) profilePayment.cbu = sellerProfile.cbu;
+        if (sellerProfile.alias) profilePayment.alias = sellerProfile.alias;
+        if (sellerProfile.bankName) profilePayment.bankName = sellerProfile.bankName;
+        if (sellerProfile.bankAccountType) profilePayment.bankAccountType = sellerProfile.bankAccountType;
+        if (sellerProfile.bankAccountNumber) profilePayment.bankAccountNumber = sellerProfile.bankAccountNumber;
+        if (Object.keys(profilePayment).length > 0) resolvedPaymentInfo = profilePayment;
+      }
+    }
+
+    // Create the order
+    const order = await this.ordersService.create({
+      listingId,
+      buyerId: userId,
+      sellerId: listing.userId,
+      conversationId: conversation.id,
+      paymentInfo: resolvedPaymentInfo,
+    });
+
+    return { conversationId: conversation.id, orderId: order.id };
   }
 
   async placeBid(

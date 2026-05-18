@@ -1,47 +1,79 @@
 import {
-  IsString, IsBoolean, IsOptional,
-  MinLength, MaxLength, Matches,
-} from 'class-validator'
+  IsString,
+  IsBoolean,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @MinLength(3)
   @MaxLength(30)
-  @Matches(/^[a-z0-9_]+$/, { message: 'Username can only contain lowercase letters, numbers and underscores' })
-  username?: string
+  @Matches(/^[a-z0-9_]+$/, {
+    message:
+      'Username can only contain lowercase letters, numbers and underscores',
+  })
+  username?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  firstName?: string
+  firstName?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  lastName?: string
+  lastName?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  bio?: string
+  bio?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(20)
-  whatsapp?: string
+  whatsapp?: string;
 
   @IsOptional()
   @IsBoolean()
-  showPhone?: boolean
+  showPhone?: boolean;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  province?: string
+  province?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  city?: string
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(22)
+  cbu?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  alias?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  bankName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  bankAccountType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  bankAccountNumber?: string;
 }

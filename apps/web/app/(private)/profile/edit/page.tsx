@@ -23,6 +23,11 @@ const schema = z.object({
   bio: z.string().max(300, 'Máximo 300 caracteres').optional(),
   province: z.string().optional(),
   city: z.string().optional(),
+  cbu: z.string().max(22).optional(),
+  alias: z.string().max(50).optional(),
+  bankName: z.string().max(100).optional(),
+  bankAccountType: z.string().max(30).optional(),
+  bankAccountNumber: z.string().max(30).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -50,6 +55,11 @@ export default function EditProfilePage() {
         bio: user.bio ?? '',
         province: user.province ?? '',
         city: user.city ?? '',
+        cbu: user.cbu ?? '',
+        alias: user.alias ?? '',
+        bankName: user.bankName ?? '',
+        bankAccountType: user.bankAccountType ?? '',
+        bankAccountNumber: user.bankAccountNumber ?? '',
       });
     }
   }, [user, reset]);
@@ -94,6 +104,11 @@ export default function EditProfilePage() {
         bio: values.bio,
         province: values.province,
         city: values.city,
+        cbu: values.cbu || undefined,
+        alias: values.alias || undefined,
+        bankName: values.bankName || undefined,
+        bankAccountType: values.bankAccountType || undefined,
+        bankAccountNumber: values.bankAccountNumber || undefined,
       });
       setUser(updated);
       toast.success('Perfil actualizado');
@@ -175,6 +190,54 @@ export default function EditProfilePage() {
               {...register('city')}
               error={errors.city?.message}
             />
+
+            {/* Payment info section */}
+            <div className="border-t border-tradealo-border pt-6">
+              <h2 className="font-heading text-lg font-semibold text-tradealo-text mb-1">
+                Datos de pago para ventas
+              </h2>
+              <p className="text-sm text-tradealo-text-muted mb-4">
+                Estos datos se compartirán automáticamente con el comprador al vender un producto con stock.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="CBU"
+                  placeholder="0000000000000000000000"
+                  maxLength={22}
+                  {...register('cbu')}
+                  error={errors.cbu?.message}
+                />
+                <Input
+                  label="Alias"
+                  placeholder="mi.alias.de.cbu"
+                  maxLength={50}
+                  {...register('alias')}
+                  error={errors.alias?.message}
+                />
+                <Input
+                  label="Banco"
+                  placeholder="Ej: Banco Nación"
+                  maxLength={100}
+                  {...register('bankName')}
+                  error={errors.bankName?.message}
+                />
+                <Input
+                  label="Tipo de cuenta"
+                  placeholder="corriente / caja de ahorro"
+                  maxLength={30}
+                  {...register('bankAccountType')}
+                  error={errors.bankAccountType?.message}
+                />
+                <Input
+                  label="Número de cuenta"
+                  placeholder="Ej: 123456789"
+                  maxLength={30}
+                  {...register('bankAccountNumber')}
+                  error={errors.bankAccountNumber?.message}
+                />
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button
                 type="button"

@@ -131,4 +131,7 @@ export class CreateListingDto {
   @IsString()
   @MaxLength(50)
   youtubeLiveId?: string;
+
+  @IsOptional()
+  paymentInfo?: Record<string, unknown>;
 }

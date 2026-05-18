@@ -20,6 +20,11 @@ export interface User {
     average: number;
     count: number;
   };
+  cbu?: string;
+  alias?: string;
+  bankName?: string;
+  bankAccountType?: string;
+  bankAccountNumber?: string;
 }
 
 export interface ListingImage {
@@ -65,6 +70,7 @@ export interface Listing {
   riskScore?: number;
   stock?: number;
   desiredPrice?: number;
+  paymentInfo?: PaymentInfo;
 }
 
 export interface Bid {
@@ -222,4 +228,28 @@ export interface AdminStats {
   activeListings: number;
   tokensIssued: number;
   revenueArs: number;
+}
+
+export type OrderStatus = 'pending' | 'delivered' | 'completed' | 'cancelled';
+
+export interface PaymentInfo {
+  cbu?: string;
+  alias?: string;
+  bankName?: string;
+  bankAccountType?: string;
+  bankAccountNumber?: string;
+}
+
+export interface Order {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  conversationId: string;
+  status: OrderStatus;
+  paymentInfo?: PaymentInfo;
+  deliveredAt?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

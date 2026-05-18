@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import type { Message, Conversation } from '@/types';
+import { OrderActions } from '@/components/messages/OrderActions';
 
 export default function ConversationPage({
   params,
@@ -114,6 +115,9 @@ export default function ConversationPage({
           <div className="h-8 w-48 rounded-md bg-gray-200 animate-pulse" />
         )}
       </div>
+
+      {/* Order actions (for stock purchases) */}
+      <OrderActions conversationId={conversationId} />
 
       {/* Messages */}
       <div className="rounded-xl border border-tradealo-border bg-white h-[60vh] flex flex-col">

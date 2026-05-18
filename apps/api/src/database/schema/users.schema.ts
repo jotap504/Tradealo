@@ -31,18 +31,23 @@ export const users = pgTable('users', {
 ])
 
 export const userProfiles = pgTable('user_profiles', {
-  userId:          uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-  username:        varchar('username', { length: 30 }).unique(),
-  firstName:       varchar('first_name', { length: 100 }),
-  lastName:        varchar('last_name', { length: 100 }),
-  avatarUrl:       varchar('avatar_url', { length: 500 }),
-  bio:             text('bio'),
-  whatsapp:        varchar('whatsapp', { length: 20 }),
-  showPhone:       boolean('show_phone').notNull().default(false),
-  province:        varchar('province', { length: 50 }),
-  city:            varchar('city', { length: 100 }),
-  completenessPct: smallint('completeness_pct').notNull().default(0),
-  updatedAt:       timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  userId:             uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  username:           varchar('username', { length: 30 }).unique(),
+  firstName:          varchar('first_name', { length: 100 }),
+  lastName:           varchar('last_name', { length: 100 }),
+  avatarUrl:          varchar('avatar_url', { length: 500 }),
+  bio:                text('bio'),
+  whatsapp:           varchar('whatsapp', { length: 20 }),
+  showPhone:          boolean('show_phone').notNull().default(false),
+  province:           varchar('province', { length: 50 }),
+  city:               varchar('city', { length: 100 }),
+  cbu:                varchar('cbu', { length: 22 }),
+  alias:              varchar('alias', { length: 50 }),
+  bankName:           varchar('bank_name', { length: 100 }),
+  bankAccountType:    varchar('bank_account_type', { length: 30 }),
+  bankAccountNumber:  varchar('bank_account_number', { length: 30 }),
+  completenessPct:    smallint('completeness_pct').notNull().default(0),
+  updatedAt:          timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export const userVerifications = pgTable('user_verifications', {

@@ -67,6 +67,12 @@ interface FormData {
   contactPhone: string;
   showWhatsApp: boolean;
   youtubeLiveId: string;
+  usePaymentDefaults: boolean;
+  paymentCbu: string;
+  paymentAlias: string;
+  paymentBankName: string;
+  paymentBankAccountType: string;
+  paymentBankAccountNumber: string;
 }
 
 const EMPTY_FORM: FormData = {
@@ -93,6 +99,12 @@ const EMPTY_FORM: FormData = {
   contactPhone: '',
   showWhatsApp: false,
   youtubeLiveId: '',
+  usePaymentDefaults: true,
+  paymentCbu: '',
+  paymentAlias: '',
+  paymentBankName: '',
+  paymentBankAccountType: '',
+  paymentBankAccountNumber: '',
 };
 
 const TOTAL_STEPS = 7;
@@ -206,6 +218,15 @@ export default function NewListingPage() {
       ? { phone: formData.contactPhone, showWhatsApp: formData.showWhatsApp }
       : undefined,
     youtubeLiveId: extractYoutubeId(formData.youtubeLiveId) || undefined,
+    paymentInfo: formData.saleType === 'stock' && !formData.usePaymentDefaults
+      ? {
+          cbu: formData.paymentCbu || undefined,
+          alias: formData.paymentAlias || undefined,
+          bankName: formData.paymentBankName || undefined,
+          bankAccountType: formData.paymentBankAccountType || undefined,
+          bankAccountNumber: formData.paymentBankAccountNumber || undefined,
+        }
+      : undefined,
   });
 
   const goNext = async () => {
@@ -652,7 +673,7 @@ export default function NewListingPage() {
                   ))}
                 </div>
                 {formData.saleType === 'stock' && (
-                  <div className="mt-3">
+                  <div className="mt-3 space-y-3">
                     <Input
                       label="Cantidad en stock"
                       type="number"
@@ -661,6 +682,54 @@ export default function NewListingPage() {
                       value={formData.stock}
                       onChange={(e) => update({ stock: e.target.value })}
                     />
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.usePaymentDefaults}
+                        onChange={(e) => update({ usePaymentDefaults: e.target.checked })}
+                        className="w-4 h-4 rounded text-tradealo-primary"
+                      />
+                      <span className="text-sm">Usar mis datos de pago guardados</span>
+                    </label>
+                    {!formData.usePaymentDefaults && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl">
+                        <Input
+                          label="CBU"
+                          placeholder="0000000000000000000000"
+                          maxLength={22}
+                          value={formData.paymentCbu}
+                          onChange={(e) => update({ paymentCbu: e.target.value })}
+                        />
+                        <Input
+                          label="Alias"
+                          placeholder="mi.alias.de.cbu"
+                          maxLength={50}
+                          value={formData.paymentAlias}
+                          onChange={(e) => update({ paymentAlias: e.target.value })}
+                        />
+                        <Input
+                          label="Banco"
+                          placeholder="Ej: Banco Nación"
+                          maxLength={100}
+                          value={formData.paymentBankName}
+                          onChange={(e) => update({ paymentBankName: e.target.value })}
+                        />
+                        <Input
+                          label="Tipo de cuenta"
+                          placeholder="corriente / caja de ahorro"
+                          maxLength={30}
+                          value={formData.paymentBankAccountType}
+                          onChange={(e) => update({ paymentBankAccountType: e.target.value })}
+                        />
+                        <Input
+                          label="Número de cuenta"
+                          placeholder="Ej: 123456789"
+                          maxLength={30}
+                          value={formData.paymentBankAccountNumber}
+                          onChange={(e) => update({ paymentBankAccountNumber: e.target.value })}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
                 {formData.saleType === 'auction' && (

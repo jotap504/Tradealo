@@ -1,0 +1,250 @@
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { eq, and, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import { NotificationsService } from '../notifications/notifications.service';
+import { MessagingService } from '../messaging/messaging.service';
+import * as schema from '../database/schema';
+
+type DB = NodePgDatabase<typeof schema>;
+
+@Injectable()
+export class OrdersService {
+  constructor(
+    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
+    private readonly notificationsService: NotificationsService,
+    private readonly messagingService: MessagingService,
+  ) {}
+
+  async create(data: {
+    listingId: string;
+    buyerId: string;
+    sellerId: string;
+    conversationId: string;
+    paymentInfo?: Record<string, unknown> | null;
+  }) {
+    const [order] = await this.db
+      .insert(schema.orders)
+      .values({
+        listingId: data.listingId,
+        buyerId: data.buyerId,
+        sellerId: data.sellerId,
+        conversationId: data.conversationId,
+        paymentInfo: data.paymentInfo ?? null,
+      })
+      .returning();
+
+    return order;
+  }
+
+  async findByConversation(conversationId: string, userId: string) {
+    const [order] = await this.db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.conversationId, conversationId))
+      .limit(1);
+
+    if (!order) return null;
+    if (order.buyerId !== userId && order.sellerId !== userId) {
+      throw new ForbiddenException('NOT_ORDER_PARTICIPANT');
+    }
+
+    return order;
+  }
+
+  async findMine(userId: string) {
+    const asBuyer = await this.db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.buyerId, userId))
+      .orderBy(schema.orders.createdAt);
+
+    const asSeller = await this.db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.sellerId, userId))
+      .orderBy(schema.orders.createdAt);
+
+    return { asBuyer, asSeller };
+  }
+
+  async markDelivered(orderId: string, userId: string) {
+    const order = await this.assertSeller(orderId, userId);
+
+    if (order.status !== 'pending') {
+      throw new BadRequestException('ORDER_NOT_PENDING');
+    }
+
+    const [updated] = await this.db
+      .update(schema.orders)
+      .set({ status: 'delivered', deliveredAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.orders.id, orderId))
+      .returning();
+
+    await this.notificationsService.send({
+      userId: order.buyerId,
+      channel: 'in_app',
+      type: 'order_delivered',
+      title: 'Producto entregado',
+      body: 'El vendedor marcó el producto como entregado. ¡Calificá tu experiencia!',
+      data: { orderId, listingId: order.listingId, conversationId: order.conversationId },
+    });
+
+    return updated;
+  }
+
+  async cancel(orderId: string, userId: string) {
+    const order = await this.assertSeller(orderId, userId);
+
+    if (order.status === 'completed') {
+      throw new BadRequestException('ORDER_ALREADY_COMPLETED');
+    }
+    if (order.status === 'cancelled') {
+      throw new BadRequestException('ORDER_ALREADY_CANCELLED');
+    }
+
+    const [updated] = await this.db
+      .update(schema.orders)
+      .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.orders.id, orderId))
+      .returning();
+
+    // Restore stock
+    await this.db
+      .update(schema.listings)
+      .set({
+        stock: sql`${schema.listings.stock} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.listings.id, order.listingId));
+
+    // If listing was set to sold, revert to active
+    await this.db
+      .update(schema.listings)
+      .set({ status: 'active', soldAt: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(schema.listings.id, order.listingId),
+          eq(schema.listings.status, 'sold'),
+        ),
+      );
+
+    await this.notificationsService.send({
+      userId: order.buyerId,
+      channel: 'in_app',
+      type: 'order_cancelled',
+      title: 'Venta cancelada',
+      body: 'El vendedor canceló la venta.',
+      data: { orderId, listingId: order.listingId, conversationId: order.conversationId },
+    });
+
+    return updated;
+  }
+
+  async sendPaymentInfo(orderId: string, userId: string) {
+    const order = await this.assertSeller(orderId, userId);
+
+    const [profile] = await this.db
+      .select()
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.userId, userId))
+      .limit(1);
+
+    if (!profile) throw new NotFoundException('PROFILE_NOT_FOUND');
+
+    const lines: string[] = ['📌 Datos de pago:'];
+    if (profile.cbu) lines.push(`CBU: ${profile.cbu}`);
+    if (profile.alias) lines.push(`Alias: ${profile.alias}`);
+    if (profile.bankName) lines.push(`Banco: ${profile.bankName}`);
+    if (profile.bankAccountType && profile.bankAccountNumber) {
+      lines.push(`Cuenta ${profile.bankAccountType}: ${profile.bankAccountNumber}`);
+    }
+
+    if (lines.length === 1) {
+      throw new BadRequestException('NO_PAYMENT_INFO_CONFIGURED');
+    }
+
+    await this.messagingService.sendMessage(
+      order.conversationId,
+      userId,
+      lines.join('\n'),
+    );
+
+    return { sent: true };
+  }
+
+  async sendContactInfo(orderId: string, userId: string) {
+    const order = await this.assertSeller(orderId, userId);
+
+    const [profile] = await this.db
+      .select()
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.userId, userId))
+      .limit(1);
+
+    if (!profile) throw new NotFoundException('PROFILE_NOT_FOUND');
+
+    const lines: string[] = ['📌 Datos de contacto:'];
+
+    const [user] = await this.db
+      .select({ email: schema.users.email })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (user?.email) lines.push(`Email: ${user.email}`);
+    if (profile.whatsapp) {
+      lines.push(`WhatsApp: https://wa.me/${String(profile.whatsapp).replace(/[^0-9]/g, '')}`);
+    }
+
+    if (lines.length === 1) {
+      throw new BadRequestException('NO_CONTACT_INFO_CONFIGURED');
+    }
+
+    await this.messagingService.sendMessage(
+      order.conversationId,
+      userId,
+      lines.join('\n'),
+    );
+
+    return { sent: true };
+  }
+
+  async completeByReview(orderId: string, userId: string) {
+    const [order] = await this.db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.id, orderId))
+      .limit(1);
+
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
+    if (order.buyerId !== userId) throw new ForbiddenException('NOT_BUYER');
+    if (order.status !== 'delivered') throw new BadRequestException('ORDER_NOT_DELIVERED');
+
+    const [updated] = await this.db
+      .update(schema.orders)
+      .set({ status: 'completed', updatedAt: new Date() })
+      .where(eq(schema.orders.id, orderId))
+      .returning();
+
+    return updated;
+  }
+
+  private async assertSeller(orderId: string, userId: string) {
+    const [order] = await this.db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.id, orderId))
+      .limit(1);
+
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
+    if (order.sellerId !== userId) throw new ForbiddenException('NOT_SELLER');
+    return order;
+  }
+}

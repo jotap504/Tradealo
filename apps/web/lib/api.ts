@@ -19,6 +19,7 @@ import type {
   PaginatedResponse,
   SystemConfig,
   AdminStats,
+  Order,
 } from '@/types';
 
 export const apiClient = axios.create({
@@ -245,7 +246,7 @@ export const listings = {
   contactSeller: (id: string, payload: { message: string }) =>
     post<{ conversationId: string }>(`/listings/${id}/contact`, payload),
   buyNow: (id: string) =>
-    post<{ conversationId: string }>(`/listings/${id}/buy`),
+    post<{ conversationId: string; orderId: string }>(`/listings/${id}/buy`),
   placeBid: (id: string, payload: { amount: number }) =>
     post<{ bid: Bid; instantBuy: boolean; conversationId?: string }>(`/listings/${id}/bids`, payload),
   getBids: (id: string) =>
@@ -378,6 +379,22 @@ export const liveChat = {
     post<LiveChatMessage>(`/listings/${listingId}/live-chat/messages`, payload),
 };
 
+export const orders = {
+  getByConversation: (conversationId: string) =>
+    get<Order>(`/orders/by-conversation/${conversationId}`),
+  getMine: () => get<{ asBuyer: Order[]; asSeller: Order[] }>('/orders/mine'),
+  markDelivered: (id: string) =>
+    patch<Order>(`/orders/${id}/deliver`),
+  cancel: (id: string) =>
+    patch<Order>(`/orders/${id}/cancel`),
+  sendPaymentInfo: (id: string) =>
+    post<{ sent: boolean }>(`/orders/${id}/send-payment-info`),
+  sendContact: (id: string) =>
+    post<{ sent: boolean }>(`/orders/${id}/send-contact`),
+  complete: (id: string) =>
+    patch<Order>(`/orders/${id}/complete`),
+};
+
 export const admin = {
   getStats: () => get<AdminStats>('/admin/stats'),
   getUsers: (params: { cursor?: string; role?: string; kycLevel?: number } = {}) =>
@@ -414,5 +431,6 @@ export default {
   users,
   conversations,
   liveChat,
+  orders,
   admin,
 };

@@ -108,3 +108,10 @@ export const conversationStatusEnum = pgEnum('conversation_status', [
   'archived',
   'blocked',
 ]);
+
+export const orderStatusEnum = pgEnum('order_status', [
+  'pending',
+  'delivered',
+  'completed',
+  'cancelled',
+]);
