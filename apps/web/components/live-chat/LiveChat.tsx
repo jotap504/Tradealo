@@ -2,11 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Send, Loader2, MessageSquare, LogIn } from 'lucide-react';
+import { Send, Loader2, MessageSquare, LogIn, Smile } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { liveChat } from '@/lib/api';
 import { useAuthStore, toast } from '@/lib/store';
 import { LiveChatMessage as LiveChatMessageComponent } from './LiveChatMessage';
 import type { LiveChatMessage as LiveChatMessageType } from '@/types';
+
+const EMOJIS = [
+  '😀', '😂', '🤣', '😊', '😍', '🥰', '😎', '🤩',
+  '👍', '🔥', '💯', '🎉', '❤️', '💪', '🙌', '👏',
+  '✨', '🌟', '💡', '🎯', '🚀', '💰', '🙏', '🤝',
+];
 
 interface Props {
   listingId: string;
@@ -14,8 +21,10 @@ interface Props {
 
 export function LiveChat({ listingId }: Props) {
   const [content, setContent] = useState('');
+  const [showEmojis, setShowEmojis] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
@@ -33,8 +42,12 @@ export function LiveChat({ listingId }: Props) {
       queryClient.invalidateQueries({ queryKey: ['live-chat', listingId] });
       inputRef.current?.focus();
     },
-    onError: () => {
-      toast.error('No pudimos enviar el mensaje. Probá de nuevo.');
+    onError: (err: Error) => {
+      if (err instanceof AxiosError && err.response?.status === 429) {
+        toast.error('Enviaste muchos mensajes. Esperá un momento antes de enviar otro.');
+      } else {
+        toast.error('No pudimos enviar el mensaje. Probá de nuevo.');
+      }
     },
   });
 
@@ -42,10 +55,36 @@ export function LiveChat({ listingId }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [data]);
 
+  useEffect(() => {
+    if (!showEmojis) return;
+    const onClick = (e: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setShowEmojis(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [showEmojis]);
+
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const next = content.slice(0, start) + emoji + content.slice(end);
+    setContent(next);
+    setShowEmojis(false);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = content.trim();
     if (!trimmed || sendMutation.isPending) return;
+    setShowEmojis(false);
     sendMutation.mutate(trimmed);
   };
 
@@ -92,17 +131,47 @@ export function LiveChat({ listingId }: Props) {
       {/* Input */}
       {user ? (
         <form onSubmit={handleSubmit} className="shrink-0 border-t border-tradealo-border p-3">
-          <div className="flex gap-2 items-end">
-            <textarea
-              ref={inputRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribí un mensaje..."
-              rows={1}
-              maxLength={500}
-              className="flex-1 resize-none rounded-lg border border-tradealo-border bg-gray-50 px-3 py-2 text-sm text-tradealo-text placeholder:text-tradealo-text-muted focus:outline-none focus:ring-2 focus:ring-tradealo-primary/30 focus:border-tradealo-primary"
-            />
+          <div className="flex gap-2 items-end relative">
+            <div className="flex-1 flex items-end gap-1.5">
+              {/* Emoji button */}
+              <div ref={emojiRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojis(!showEmojis)}
+                  className="shrink-0 rounded-lg p-2 text-tradealo-text-muted hover:text-tradealo-text hover:bg-gray-100 transition-colors"
+                  aria-label="Emojis"
+                >
+                  <Smile size={18} />
+                </button>
+
+                {showEmojis && (
+                  <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-lg border border-tradealo-border p-2 grid grid-cols-6 gap-1 z-30">
+                    {EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => insertEmoji(emoji)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-lg transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <textarea
+                ref={inputRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Escribí un mensaje..."
+                rows={1}
+                maxLength={500}
+                className="flex-1 resize-none rounded-lg border border-tradealo-border bg-gray-50 px-3 py-2 text-sm text-tradealo-text placeholder:text-tradealo-text-muted focus:outline-none focus:ring-2 focus:ring-tradealo-primary/30 focus:border-tradealo-primary"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={!content.trim() || sendMutation.isPending}

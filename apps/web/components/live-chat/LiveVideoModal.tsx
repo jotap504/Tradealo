@@ -54,7 +54,7 @@ export function LiveVideoModal({ listing, open, onClose }: Props) {
         </button>
 
         {/* Video */}
-        <div className="relative w-full lg:w-[60%] h-[45vh] lg:h-full bg-black flex items-center justify-center overflow-hidden">
+        <div className="relative w-full lg:w-[60%] h-[40vh] lg:h-full bg-black flex items-center justify-center overflow-hidden shrink-0">
           {listing.youtubeLiveId ? (
             <YouTubePlayer videoId={listing.youtubeLiveId} />
           ) : (
@@ -63,7 +63,7 @@ export function LiveVideoModal({ listing, open, onClose }: Props) {
         </div>
 
         {/* Chat */}
-        <div className="w-full lg:w-[40%] h-[55vh] lg:h-full bg-white">
+        <div className="w-full lg:w-[40%] flex-1 min-h-0 lg:h-full bg-white">
           <LiveChat listingId={listing.id} />
         </div>
       </div>
