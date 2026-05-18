@@ -429,16 +429,37 @@ export class ListingsService {
 
     if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
 
-    // Recalculate risk & moderation status with current listing data
-    const recalculatedRisk = this.computeRiskScoreFromListing(listing);
-    const recalculatedModeration =
-      this.resolveModerationStatus(recalculatedRisk);
-
     const durationDays = dto.durationDays ?? listing.durationDays;
     const publishedAt = new Date();
     const expiresAt = new Date(
       publishedAt.getTime() + durationDays * 24 * 60 * 60 * 1000,
     );
+
+    // Live listings auto-approve regardless of risk score
+    if (listing.saleType === 'live') {
+      const [updated] = await this.db
+        .update(schema.listings)
+        .set({
+          ...(dto.type && { type: dto.type as 'standard' | 'premium' }),
+          durationDays,
+          status: 'active',
+          moderationStatus: 'approved',
+          riskScore: 0,
+          publishedAt,
+          expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.listings.id, id))
+        .returning();
+
+      return updated;
+    }
+
+    // Recalculate risk & moderation status with current listing data
+    const recalculatedRisk = this.computeRiskScoreFromListing(listing);
+    const recalculatedModeration =
+      this.resolveModerationStatus(recalculatedRisk);
+
     const moderatorApproved = listing.moderationStatus === 'approved';
     const newStatus =
       moderatorApproved || recalculatedModeration === 'approved'
