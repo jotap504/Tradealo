@@ -4,22 +4,21 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-} from '@nestjs/common'
-import { eq, and } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { randomUUID } from 'crypto'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import { StorageService } from '../storage/storage.service'
-import * as schema from '../database/schema'
-import type { UpdateProfileDto } from './dto/update-profile.dto'
+} from '@nestjs/common';
+import { eq, and } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { randomUUID } from 'crypto';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import { StorageService } from '../storage/storage.service';
+import * as schema from '../database/schema';
+import type { UpdateProfileDto } from './dto/update-profile.dto';
 
-type DB = NodePgDatabase<typeof schema>
-type User = typeof schema.users.$inferSelect
-type UserProfile = typeof schema.userProfiles.$inferSelect
+type DB = NodePgDatabase<typeof schema>;
+type User = typeof schema.users.$inferSelect;
+type UserProfile = typeof schema.userProfiles.$inferSelect;
 
-const KYC_UPLOAD_TYPES = ['dni', 'address', 'selfie'] as const
-type KycUploadType = (typeof KYC_UPLOAD_TYPES)[number]
-
+const KYC_UPLOAD_TYPES = ['dni', 'address', 'selfie'] as const;
+type KycUploadType = (typeof KYC_UPLOAD_TYPES)[number];
 
 @Injectable()
 export class UsersService {
@@ -29,15 +28,26 @@ export class UsersService {
   ) {}
 
   async getMyProfile(userId: string) {
-    const row = await this.fetchFullProfile(userId)
-    if (!row) throw new NotFoundException('USER_NOT_FOUND')
-    return row
+    const row = await this.fetchFullProfile(userId);
+    if (!row) throw new NotFoundException('USER_NOT_FOUND');
+    return row;
   }
 
   async getPublicProfile(userId: string) {
-    const row = await this.fetchPublicProfile(userId)
-    if (!row) throw new NotFoundException('USER_NOT_FOUND')
-    return row
+    const row = await this.fetchPublicProfile(userId);
+    if (!row) throw new NotFoundException('USER_NOT_FOUND');
+    return row;
+  }
+
+  async getByUsername(username: string) {
+    const [profile] = await this.db
+      .select({ userId: schema.userProfiles.userId })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.username, username))
+      .limit(1);
+
+    if (!profile) throw new NotFoundException('USER_NOT_FOUND');
+    return this.getPublicProfile(profile.userId);
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -46,10 +56,10 @@ export class UsersService {
         .select({ id: schema.userProfiles.userId })
         .from(schema.userProfiles)
         .where(eq(schema.userProfiles.username, dto.username))
-        .limit(1)
+        .limit(1);
 
       if (taken && taken.id !== userId) {
-        throw new ConflictException('USERNAME_TAKEN')
+        throw new ConflictException('USERNAME_TAKEN');
       }
     }
 
@@ -61,9 +71,9 @@ export class UsersService {
       })
       .from(schema.users)
       .where(eq(schema.users.id, userId))
-      .limit(1)
+      .limit(1);
 
-    if (!user) throw new NotFoundException('USER_NOT_FOUND')
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
     const [updated] = await this.db
       .update(schema.userProfiles)
@@ -79,84 +89,94 @@ export class UsersService {
         updatedAt: new Date(),
       })
       .where(eq(schema.userProfiles.userId, userId))
-      .returning()
+      .returning();
 
-    if (!updated) throw new NotFoundException('USER_NOT_FOUND')
+    if (!updated) throw new NotFoundException('USER_NOT_FOUND');
 
-    const completeness = this.calculateCompleteness(user, updated)
+    const completeness = this.calculateCompleteness(user, updated);
 
     await this.db
       .update(schema.userProfiles)
       .set({ completenessPct: completeness })
-      .where(eq(schema.userProfiles.userId, userId))
+      .where(eq(schema.userProfiles.userId, userId));
 
-    return { ...updated, completenessPct: completeness }
+    return { ...updated, completenessPct: completeness };
   }
 
   async uploadAvatar(userId: string, base64: string, mimetype: string) {
-    const buffer = Buffer.from(base64, 'base64')
+    const buffer = Buffer.from(base64, 'base64');
     if (buffer.byteLength > 5 * 1024 * 1024) {
-      throw new BadRequestException('La imagen no puede superar 5 MB')
+      throw new BadRequestException('La imagen no puede superar 5 MB');
     }
 
-    const ext = mimetype.split('/')[1] ?? 'jpg'
-    const key = `avatars/${userId}/${randomUUID()}.${ext}`
-    const avatarUrl = await this.storage.uploadBuffer(key, buffer, mimetype)
+    const ext = mimetype.split('/')[1] ?? 'jpg';
+    const key = `avatars/${userId}/${randomUUID()}.${ext}`;
+    const avatarUrl = await this.storage.uploadBuffer(key, buffer, mimetype);
 
     const [updated] = await this.db
       .update(schema.userProfiles)
       .set({ avatarUrl, updatedAt: new Date() })
       .where(eq(schema.userProfiles.userId, userId))
-      .returning({ avatarUrl: schema.userProfiles.avatarUrl })
+      .returning({ avatarUrl: schema.userProfiles.avatarUrl });
 
-    if (!updated) throw new NotFoundException('USER_NOT_FOUND')
-    return { avatarUrl: updated.avatarUrl }
+    if (!updated) throw new NotFoundException('USER_NOT_FOUND');
+    return { avatarUrl: updated.avatarUrl };
   }
 
   async getAvatarUploadUrl(userId: string) {
-    const key = `avatars/${userId}/${randomUUID()}.jpg`
-    return this.storage.getPresignedPut(key, 'image/jpeg')
+    const key = `avatars/${userId}/${randomUUID()}.jpg`;
+    return this.storage.getPresignedPut(key, 'image/jpeg');
   }
 
   async confirmAvatarUpload(userId: string, key: string) {
     if (!key.startsWith(`avatars/${userId}/`)) {
-      throw new BadRequestException('INVALID_AVATAR_KEY')
+      throw new BadRequestException('INVALID_AVATAR_KEY');
     }
 
-    const avatarUrl = this.storage.getPublicUrl(key)
+    const avatarUrl = this.storage.getPublicUrl(key);
 
     const [updated] = await this.db
       .update(schema.userProfiles)
       .set({ avatarUrl, updatedAt: new Date() })
       .where(eq(schema.userProfiles.userId, userId))
-      .returning({ avatarUrl: schema.userProfiles.avatarUrl })
+      .returning({ avatarUrl: schema.userProfiles.avatarUrl });
 
-    if (!updated) throw new NotFoundException('USER_NOT_FOUND')
-    return { avatarUrl: updated.avatarUrl }
+    if (!updated) throw new NotFoundException('USER_NOT_FOUND');
+    return { avatarUrl: updated.avatarUrl };
   }
 
   async getKycUploadUrl(userId: string, type: string) {
     if (!KYC_UPLOAD_TYPES.includes(type as KycUploadType)) {
-      throw new BadRequestException(`Invalid KYC type. Valid: ${KYC_UPLOAD_TYPES.join(', ')}`)
+      throw new BadRequestException(
+        `Invalid KYC type. Valid: ${KYC_UPLOAD_TYPES.join(', ')}`,
+      );
     }
 
-    const key = `kyc/${userId}/${type}/${randomUUID()}`
-    const contentType = type === 'selfie' ? 'image/jpeg' : 'application/pdf'
+    const key = `kyc/${userId}/${type}/${randomUUID()}`;
+    const contentType = type === 'selfie' ? 'image/jpeg' : 'application/pdf';
 
     await this.db
       .insert(schema.userVerifications)
       .values({
         userId,
-        type: type as typeof schema.userVerifications.$inferInsert['type'],
+        type: type as (typeof schema.userVerifications.$inferInsert)['type'],
         status: 'pending',
         s3Key: key,
       })
       .onConflictDoUpdate({
-        target: [schema.userVerifications.userId, schema.userVerifications.type],
-        set: { status: 'pending', s3Key: key, rejectionReason: null, verifiedAt: null },
-      })
+        target: [
+          schema.userVerifications.userId,
+          schema.userVerifications.type,
+        ],
+        set: {
+          status: 'pending',
+          s3Key: key,
+          rejectionReason: null,
+          verifiedAt: null,
+        },
+      });
 
-    return this.storage.getPresignedPut(key, contentType)
+    return this.storage.getPresignedPut(key, contentType);
   }
 
   private async fetchFullProfile(userId: string) {
@@ -176,12 +196,18 @@ export class UsersService {
         reputation: schema.reputationScores,
       })
       .from(schema.users)
-      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
-      .leftJoin(schema.reputationScores, eq(schema.reputationScores.userId, schema.users.id))
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
+      .leftJoin(
+        schema.reputationScores,
+        eq(schema.reputationScores.userId, schema.users.id),
+      )
       .where(eq(schema.users.id, userId))
-      .limit(1)
+      .limit(1);
 
-    return rows[0] ?? null
+    return rows[0] ?? null;
   }
 
   private async fetchPublicProfile(userId: string) {
@@ -202,27 +228,38 @@ export class UsersService {
         reputation: schema.reputationScores,
       })
       .from(schema.users)
-      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
-      .leftJoin(schema.reputationScores, eq(schema.reputationScores.userId, schema.users.id))
-      .where(and(eq(schema.users.id, userId), eq(schema.users.status, 'active')))
-      .limit(1)
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
+      .leftJoin(
+        schema.reputationScores,
+        eq(schema.reputationScores.userId, schema.users.id),
+      )
+      .where(
+        and(eq(schema.users.id, userId), eq(schema.users.status, 'active')),
+      )
+      .limit(1);
 
-    return rows[0] ?? null
+    return rows[0] ?? null;
   }
 
   private calculateCompleteness(
     user: Pick<User, 'emailVerified' | 'phoneVerified' | 'kycLevel'>,
-    profile: Pick<UserProfile, 'firstName' | 'lastName' | 'avatarUrl' | 'bio' | 'province' | 'whatsapp'>,
+    profile: Pick<
+      UserProfile,
+      'firstName' | 'lastName' | 'avatarUrl' | 'bio' | 'province' | 'whatsapp'
+    >,
   ): number {
-    let pct = 0
-    if (user.emailVerified) pct += 15
-    if (profile.firstName && profile.lastName) pct += 15
-    if (profile.avatarUrl) pct += 15
-    if (profile.bio) pct += 10
-    if (user.phoneVerified) pct += 10
-    if (profile.province) pct += 10
-    if (profile.whatsapp) pct += 5
-    if (user.kycLevel >= 2) pct += 20
-    return Math.min(100, pct)
+    let pct = 0;
+    if (user.emailVerified) pct += 15;
+    if (profile.firstName && profile.lastName) pct += 15;
+    if (profile.avatarUrl) pct += 15;
+    if (profile.bio) pct += 10;
+    if (user.phoneVerified) pct += 10;
+    if (profile.province) pct += 10;
+    if (profile.whatsapp) pct += 5;
+    if (user.kycLevel >= 2) pct += 20;
+    return Math.min(100, pct);
   }
 }

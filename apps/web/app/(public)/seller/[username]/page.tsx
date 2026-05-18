@@ -16,7 +16,9 @@ async function getProfile(username: string): Promise<User | null> {
     });
     if (res.status === 404) return null;
     if (!res.ok) return null;
-    return res.json();
+    const json = await res.json();
+    // API wraps: { success: true, data: User }
+    return json?.data ?? json;
   } catch {
     return null;
   }

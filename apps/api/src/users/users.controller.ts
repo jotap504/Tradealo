@@ -1,9 +1,22 @@
-import { Controller, Get, Patch, Post, Body, Param, HttpCode, HttpStatus } from '@nestjs/common'
-import { UsersService } from './users.service'
-import { UpdateProfileDto } from './dto/update-profile.dto'
-import { ConfirmAvatarDto } from './dto/confirm-avatar.dto'
-import { UploadAvatarDto } from './dto/upload-avatar.dto'
-import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator'
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ConfirmAvatarDto } from './dto/confirm-avatar.dto';
+import { UploadAvatarDto } from './dto/upload-avatar.dto';
+import {
+  CurrentUser,
+  type JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -11,41 +24,56 @@ export class UsersController {
 
   @Get('me')
   getMyProfile(@CurrentUser() user: JwtPayload) {
-    return this.usersService.getMyProfile(user.sub)
+    return this.usersService.getMyProfile(user.sub);
   }
 
   @Patch('me')
   @HttpCode(HttpStatus.OK)
-  updateProfile(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
-    return this.usersService.updateProfile(user.sub, dto)
+  updateProfile(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.sub, dto);
+  }
+
+  @Get('by-username/:username')
+  @Public()
+  getByUsername(@Param('username') username: string) {
+    return this.usersService.getByUsername(username);
   }
 
   @Get(':id')
   getPublicProfile(@Param('id') id: string) {
-    return this.usersService.getPublicProfile(id)
+    return this.usersService.getPublicProfile(id);
   }
 
   @Post('me/avatar/upload')
   @HttpCode(HttpStatus.OK)
   uploadAvatar(@CurrentUser() user: JwtPayload, @Body() dto: UploadAvatarDto) {
-    return this.usersService.uploadAvatar(user.sub, dto.data, dto.mimetype)
+    return this.usersService.uploadAvatar(user.sub, dto.data, dto.mimetype);
   }
 
   @Post('me/avatar/upload-url')
   @HttpCode(HttpStatus.OK)
   getAvatarUploadUrl(@CurrentUser() user: JwtPayload) {
-    return this.usersService.getAvatarUploadUrl(user.sub)
+    return this.usersService.getAvatarUploadUrl(user.sub);
   }
 
   @Post('me/avatar/confirm')
   @HttpCode(HttpStatus.OK)
-  confirmAvatarUpload(@CurrentUser() user: JwtPayload, @Body() dto: ConfirmAvatarDto) {
-    return this.usersService.confirmAvatarUpload(user.sub, dto.key)
+  confirmAvatarUpload(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ConfirmAvatarDto,
+  ) {
+    return this.usersService.confirmAvatarUpload(user.sub, dto.key);
   }
 
   @Post('me/kyc/:type/upload-url')
   @HttpCode(HttpStatus.OK)
-  getKycUploadUrl(@CurrentUser() user: JwtPayload, @Param('type') type: string) {
-    return this.usersService.getKycUploadUrl(user.sub, type)
+  getKycUploadUrl(
+    @CurrentUser() user: JwtPayload,
+    @Param('type') type: string,
+  ) {
+    return this.usersService.getKycUploadUrl(user.sub, type);
   }
 }
