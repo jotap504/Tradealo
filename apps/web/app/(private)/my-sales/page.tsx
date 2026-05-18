@@ -34,7 +34,6 @@ const STATUS_BADGE: Record<OrderStatus, { label: string; variant: 'default' | 'p
 
 export default function MySalesPage() {
   const [tab, setTab] = useState<Tab>('all');
-  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['orders', 'my-sales'],
