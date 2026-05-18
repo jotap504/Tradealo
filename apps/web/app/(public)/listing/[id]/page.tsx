@@ -70,7 +70,7 @@ export default async function ListingDetailPage({
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left column 60% */}
         <div className="flex-1 min-w-0 space-y-6">
-          <ListingGallery images={listing.images} title={listing.title} />
+          <ListingGallery images={listing.images} title={listing.title} listingId={listing.id} />
 
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-2">

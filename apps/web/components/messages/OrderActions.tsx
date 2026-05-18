@@ -71,21 +71,35 @@ export function OrderActions({ conversationId }: Props) {
   });
 
   const reviewMutation = useMutation({
-    mutationFn: () =>
-      reviews.createReview({
-        reviewedId: order!.sellerId,
+    mutationFn: () => {
+      const direction = isBuyer ? 'buyer_to_seller' : 'seller_to_buyer';
+      const reviewedId = isBuyer ? order!.sellerId : order!.buyerId;
+      return reviews.createReview({
+        reviewedId,
         listingId: order!.listingId,
-        direction: 'buyer_to_seller',
+        direction,
         overallRating: rating,
         comment: comment.trim() || undefined,
-      }),
+      });
+    },
     onSuccess: async () => {
-      await orders.complete(order!.id);
+      if (isBuyer) {
+        await orders.complete(order!.id);
+      }
       toast.success('¡Gracias por calificar!');
       setShowReviewForm(false);
+      setRating(0);
+      setComment('');
       qc.invalidateQueries({ queryKey: ['order', conversationId] });
     },
-    onError: () => toast.error('No se pudo enviar la calificación'),
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 409) {
+        toast.error('Ya calificaste esta operación');
+      } else {
+        toast.error('No se pudo enviar la calificación');
+      }
+    },
   });
 
   if (isLoading || !order) return null;
@@ -151,7 +165,7 @@ export function OrderActions({ conversationId }: Props) {
         </div>
       )}
 
-      {/* Buyer: delivered — show review form */}
+      {/* Buyer: review CTA (delivered) */}
       {isBuyer && order.status === 'delivered' && !showReviewForm && (
         <div className="text-sm text-tradealo-text">
           <p className="mb-2">El vendedor marcó el producto como entregado.</p>
@@ -161,10 +175,33 @@ export function OrderActions({ conversationId }: Props) {
         </div>
       )}
 
-      {isBuyer && order.status === 'delivered' && showReviewForm && (
+      {/* Seller: review CTA (delivered or completed) */}
+      {isSeller &&
+        (order.status === 'delivered' || order.status === 'completed') &&
+        !showReviewForm && (
+          <div className="text-sm text-tradealo-text">
+            <p className="mb-2">
+              {order.status === 'delivered'
+                ? 'Marcaste el producto como entregado. Calificá al comprador para cerrar la operación.'
+                : 'La operación fue completada. Podés calificar al comprador.'}
+            </p>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowReviewForm(true)}
+            >
+              Calificar comprador
+            </Button>
+          </div>
+        )}
+
+      {/* Shared review form (buyer or seller) */}
+      {showReviewForm && (isBuyer || isSeller) && (
         <div className="space-y-3">
           <p className="text-sm font-medium text-tradealo-text">
-            Calificá tu experiencia con el vendedor
+            {isBuyer
+              ? 'Calificá tu experiencia con el vendedor'
+              : 'Calificá tu experiencia con el comprador'}
           </p>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -201,7 +238,11 @@ export function OrderActions({ conversationId }: Props) {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => setShowReviewForm(false)}
+              onClick={() => {
+                setShowReviewForm(false);
+                setRating(0);
+                setComment('');
+              }}
             >
               Cancelar
             </Button>
@@ -210,9 +251,9 @@ export function OrderActions({ conversationId }: Props) {
       )}
 
       {/* Status info for completed/cancelled */}
-      {order.status === 'completed' && (
+      {order.status === 'completed' && !showReviewForm && !(isSeller) && (
         <p className="text-xs text-tradealo-text-muted">
-          Venta completada. El comprador calificó la transacción.
+          Operación completada.
         </p>
       )}
       {order.status === 'cancelled' && (

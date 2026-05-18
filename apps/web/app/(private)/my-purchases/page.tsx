@@ -115,10 +115,10 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
   const price = Number(order.listing.price);
 
   return (
-    <li className="bg-white rounded-2xl border border-tradealo-border p-4 flex gap-4">
+    <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4">
       <Link
         href={`/listing/${order.listing.id}`}
-        className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center"
+        className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center"
       >
         {order.listing.primaryImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -133,9 +133,9 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
       </Link>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2">
           <Link href={`/listing/${order.listing.id}`} className="min-w-0 flex-1">
-            <h3 className="font-medium text-tradealo-text truncate hover:text-tradealo-primary">
+            <h3 className="font-medium text-tradealo-text text-sm sm:text-base truncate hover:text-tradealo-primary">
               {order.listing.title}
             </h3>
           </Link>
@@ -144,14 +144,13 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-center gap-1.5 mt-1 min-w-0">
           <Avatar
             src={order.seller.avatarUrl ?? undefined}
             username={order.seller.username ?? undefined}
             size="sm"
           />
-          <span className="text-xs text-tradealo-text-muted">
-            Vendedor:{' '}
+          <span className="text-xs text-tradealo-text-muted truncate min-w-0">
             {order.seller.username ? (
               <Link
                 href={`/seller/${order.seller.username}`}
@@ -160,13 +159,13 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
                 {order.seller.username}
               </Link>
             ) : (
-              <span className="font-medium text-tradealo-text">Usuario</span>
+              <span className="font-medium text-tradealo-text">Vendedor</span>
             )}
           </span>
         </div>
 
-        <div className="flex items-center justify-between mt-2">
-          <span className="font-heading font-semibold text-tradealo-text">
+        <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+          <span className="font-heading font-semibold text-tradealo-text text-sm sm:text-base">
             {formatPrice(price, order.listing.currency)}
           </span>
           <RelativeTime
