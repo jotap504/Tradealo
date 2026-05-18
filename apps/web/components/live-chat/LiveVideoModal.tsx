@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { LiveChat } from './LiveChat';
+import { YouTubePlayer } from './YouTubePlayer';
 import type { Listing } from '@/types';
 
 interface Props {
@@ -33,7 +34,7 @@ export function LiveVideoModal({ listing, open, onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex"
+      className="fixed inset-0 z-[100] flex h-screen"
     >
       {/* Overlay */}
       <div
@@ -53,15 +54,9 @@ export function LiveVideoModal({ listing, open, onClose }: Props) {
         </button>
 
         {/* Video */}
-        <div className="relative w-full lg:w-[60%] h-[45vh] lg:h-full bg-black flex items-center justify-center">
+        <div className="relative w-full lg:w-[60%] h-[45vh] lg:h-full bg-black flex items-center justify-center overflow-hidden">
           {listing.youtubeLiveId ? (
-            <iframe
-              src={`https://www.youtube.com/embed/${listing.youtubeLiveId}?autoplay=1&rel=0`}
-              className="w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              title={listing.title}
-            />
+            <YouTubePlayer videoId={listing.youtubeLiveId} />
           ) : (
             <div className="text-white/60 text-sm">Video no disponible</div>
           )}
