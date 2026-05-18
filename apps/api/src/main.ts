@@ -75,7 +75,7 @@ async function bootstrap(): Promise<void> {
         sendCommand: async (...args: string[]) => {
           if (redisClient.status !== 'ready') return 0;
           try {
-            return await redisClient.call(args[0], ...args.slice(1));
+            return await (redisClient.call(args[0], ...args.slice(1)) as Promise<number>);
           } catch {
             return 0;
           }
