@@ -4,6 +4,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { PriceDisplay } from './PriceDisplay';
 import { FavoriteButton } from './FavoriteButton';
+import { ShareButton } from './ShareButton';
 import { cn, truncate } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { Listing } from '@/types';
@@ -49,7 +50,14 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
               Destacado
             </Badge>
           )}
-          <FavoriteButton listingId={listing.id} className="absolute top-2 right-2" />
+          <div className="absolute top-2 right-2 flex gap-1.5">
+            <ShareButton
+              url={`/listing/${listing.id}`}
+              title={listing.title}
+              variant="icon"
+            />
+            <FavoriteButton listingId={listing.id} />
+          </div>
         </div>
         <div className="flex-1 p-4 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-3">
@@ -111,7 +119,14 @@ export function ListingCard({ listing, variant = 'grid', className }: Props) {
             Destacado
           </Badge>
         )}
-        <FavoriteButton listingId={listing.id} className="absolute top-2 right-2" />
+        <div className="absolute top-2 right-2 flex gap-1.5">
+          <ShareButton
+            url={`/listing/${listing.id}`}
+            title={listing.title}
+            variant="icon"
+          />
+          <FavoriteButton listingId={listing.id} />
+        </div>
         {listing.isCollectible && (
           <Badge
             variant="primary"
