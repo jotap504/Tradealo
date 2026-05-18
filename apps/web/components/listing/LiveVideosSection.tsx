@@ -14,8 +14,12 @@ function LiveVideoCard({
   listing: Listing;
 }) {
   const [playing, setPlaying] = useState(false);
+  const [thumbError, setThumbError] = useState(false);
   const image = listing.images?.[0];
   const youtubeId = listing.youtubeLiveId;
+  const youtubeThumb = youtubeId
+    ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
+    : null;
 
   return (
     <div className="relative w-64 shrink-0 snap-start rounded-xl overflow-hidden border border-tradealo-border bg-white hover:shadow-md transition-shadow">
@@ -35,7 +39,14 @@ function LiveVideoCard({
           className="block w-full text-left"
         >
           <div className="aspect-video bg-gray-100 relative">
-            {image ? (
+            {youtubeThumb && !thumbError ? (
+              <img
+                src={youtubeThumb}
+                alt={listing.title}
+                className="w-full h-full object-cover"
+                onError={() => setThumbError(true)}
+              />
+            ) : image ? (
               <img
                 src={image.url}
                 alt={listing.title}
