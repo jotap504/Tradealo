@@ -1,8 +1,9 @@
 import {
-  Controller, Post, Get, Body, Param, Query, HttpCode, HttpStatus,
+  Controller, Post, Get, Patch, Body, Param, Query, HttpCode, HttpStatus,
 } from '@nestjs/common'
 import { ReviewsService } from './reviews.service'
 import { CreateReviewDto } from './dto/create-review.dto'
+import { ReplyReviewDto } from './dto/reply-review.dto'
 import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator'
 import { Public } from '../common/decorators/public.decorator'
 
@@ -14,6 +15,16 @@ export class ReviewsController {
   @HttpCode(HttpStatus.CREATED)
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateReviewDto) {
     return this.reviewsService.create(user.sub, dto)
+  }
+
+  @Patch(':id/reply')
+  @HttpCode(HttpStatus.OK)
+  reply(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ReplyReviewDto,
+  ) {
+    return this.reviewsService.reply(id, user.sub, dto.replyText)
   }
 
   @Public()

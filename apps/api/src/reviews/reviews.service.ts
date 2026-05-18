@@ -1,5 +1,5 @@
 import {
-  Injectable, Inject, NotFoundException, BadRequestException, ConflictException,
+  Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException, ConflictException,
 } from '@nestjs/common'
 import { eq, and, desc, lt, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
@@ -106,6 +106,26 @@ export class ReviewsService {
       asBuyerCount: 0,
       updatedAt: new Date(),
     }
+  }
+
+  async reply(reviewId: string, userId: string, replyText: string) {
+    const [review] = await this.db
+      .select()
+      .from(schema.reviews)
+      .where(eq(schema.reviews.id, reviewId))
+      .limit(1);
+
+    if (!review) throw new NotFoundException('REVIEW_NOT_FOUND');
+    if (review.reviewedId !== userId) throw new ForbiddenException('NOT_REVIEWED_USER');
+    if (review.direction !== 'buyer_to_seller') throw new BadRequestException('CANNOT_REPLY');
+
+    const [updated] = await this.db
+      .update(schema.reviews)
+      .set({ replyText, replyCreatedAt: new Date() })
+      .where(eq(schema.reviews.id, reviewId))
+      .returning();
+
+    return updated;
   }
 
   private async updateReputation(

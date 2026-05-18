@@ -14,6 +14,8 @@ export const reviews = pgTable('reviews', {
   overallRating: smallint('overall_rating').notNull(),
   comment:       text('comment'),
   isPublic:      boolean('is_public').notNull().default(true),
+  replyText:     text('reply_text'),
+  replyCreatedAt: timestamp('reply_created_at', { withTimezone: true }),
   createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex('idx_reviews_unique').on(table.listingId, table.reviewerId, table.direction),

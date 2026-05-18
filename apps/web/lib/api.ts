@@ -316,6 +316,8 @@ export const reviews = {
     overallRating: number;
     comment?: string;
   }) => post<Review>('/reviews', payload),
+  replyToReview: (reviewId: string, replyText: string) =>
+    patch<Review>(`/reviews/${reviewId}/reply`, { replyText }),
 };
 
 export const ai = {
@@ -385,6 +387,36 @@ export const liveChat = {
     post<LiveChatMessage>(`/listings/${listingId}/live-chat/messages`, payload),
 };
 
+export interface SaleOrder extends Order {
+  listing: {
+    id: string;
+    title: string;
+    price: string;
+    currency: 'ARS' | 'USD';
+    status: string;
+    primaryImageUrl: string | null;
+  };
+  buyer: {
+    id: string;
+    username: string | null;
+    avatarUrl: string | null;
+  };
+  buyerReview: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    replyText: string | null;
+    replyCreatedAt: string | null;
+  } | null;
+  sellerReview: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+  } | null;
+}
+
 export interface PurchaseOrder extends Order {
   listing: {
     id: string;
@@ -406,6 +438,7 @@ export const orders = {
     get<Order>(`/orders/by-conversation/${conversationId}`),
   getMine: () => get<{ asBuyer: Order[]; asSeller: Order[] }>('/orders/mine'),
   getMyPurchases: () => get<PurchaseOrder[]>('/orders/my-purchases'),
+  getMySales: () => get<SaleOrder[]>('/orders/my-sales'),
   markDelivered: (id: string) =>
     patch<Order>(`/orders/${id}/deliver`),
   cancel: (id: string) =>

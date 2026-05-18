@@ -134,6 +134,8 @@ export interface Review {
   reviewer: User;
   reviewee?: User;
   createdAt: string;
+  replyText?: string;
+  replyCreatedAt?: string;
 }
 
 export interface Notification {

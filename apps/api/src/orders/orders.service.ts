@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { eq, and, sql, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -130,6 +131,116 @@ export class OrdersService {
         username: r.sellerProfile?.username ?? null,
         avatarUrl: r.sellerProfile?.avatarUrl ?? null,
       },
+    }));
+  }
+
+  async findMySales(userId: string) {
+    const buyerReviewAlias = alias(schema.reviews, 'buyer_review');
+    const sellerReviewAlias = alias(schema.reviews, 'seller_review');
+
+    const rows = await this.db
+      .select({
+        order: schema.orders,
+        listing: {
+          id: schema.listings.id,
+          title: schema.listings.title,
+          price: schema.listings.price,
+          currency: schema.listings.currency,
+          status: schema.listings.status,
+        },
+        buyer: {
+          id: schema.users.id,
+        },
+        buyerProfile: {
+          username: schema.userProfiles.username,
+          avatarUrl: schema.userProfiles.avatarUrl,
+        },
+        buyerReview: {
+          id: buyerReviewAlias.id,
+          rating: buyerReviewAlias.overallRating,
+          comment: buyerReviewAlias.comment,
+          createdAt: buyerReviewAlias.createdAt,
+          replyText: buyerReviewAlias.replyText,
+          replyCreatedAt: buyerReviewAlias.replyCreatedAt,
+        },
+        sellerReview: {
+          id: sellerReviewAlias.id,
+          rating: sellerReviewAlias.overallRating,
+          comment: sellerReviewAlias.comment,
+          createdAt: sellerReviewAlias.createdAt,
+        },
+      })
+      .from(schema.orders)
+      .innerJoin(schema.listings, eq(schema.orders.listingId, schema.listings.id))
+      .innerJoin(schema.users, eq(schema.orders.buyerId, schema.users.id))
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.orders.buyerId),
+      )
+      .leftJoin(
+        buyerReviewAlias,
+        and(
+          eq(schema.orders.listingId, buyerReviewAlias.listingId),
+          eq(schema.orders.buyerId, buyerReviewAlias.reviewerId),
+          eq(buyerReviewAlias.direction, 'buyer_to_seller'),
+        ),
+      )
+      .leftJoin(
+        sellerReviewAlias,
+        and(
+          eq(schema.orders.listingId, sellerReviewAlias.listingId),
+          eq(schema.orders.buyerId, sellerReviewAlias.reviewedId),
+          eq(sellerReviewAlias.direction, 'seller_to_buyer'),
+        ),
+      )
+      .where(eq(schema.orders.sellerId, userId))
+      .orderBy(sql`${schema.orders.createdAt} DESC`);
+
+    if (rows.length === 0) return [];
+
+    const listingIds = rows.map((r) => r.listing.id);
+    const allImages = await this.db
+      .select()
+      .from(schema.listingImages)
+      .where(inArray(schema.listingImages.listingId, listingIds))
+      .orderBy(schema.listingImages.sortOrder);
+
+    const imageByListing = new Map<string, string>();
+    for (const img of allImages) {
+      if (!imageByListing.has(img.listingId)) {
+        imageByListing.set(img.listingId, img.thumbnailUrl ?? img.url);
+      }
+    }
+
+    return rows.map((r) => ({
+      ...r.order,
+      listing: {
+        ...r.listing,
+        primaryImageUrl: imageByListing.get(r.listing.id) ?? null,
+      },
+      buyer: {
+        id: r.buyer.id,
+        username: r.buyerProfile?.username ?? null,
+        avatarUrl: r.buyerProfile?.avatarUrl ?? null,
+      },
+      buyerReview: r.buyerReview?.id
+        ? {
+            id: r.buyerReview.id,
+            rating: r.buyerReview.rating!,
+            comment: r.buyerReview.comment,
+            createdAt: r.buyerReview.createdAt!,
+            replyText: r.buyerReview.replyText,
+            replyCreatedAt: r.buyerReview.replyCreatedAt,
+          }
+        : null,
+      sellerReview: r.sellerReview?.id
+        ? {
+            id: r.sellerReview.id,
+            rating: r.sellerReview.rating!,
+            comment: r.sellerReview.comment,
+            createdAt: r.sellerReview.createdAt!,
+          }
+        : null,
     }));
   }
 

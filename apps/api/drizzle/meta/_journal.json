@@ -43,6 +43,13 @@
       "when": 1779134794095,
       "tag": "0005_reflective_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779147125814,
+      "tag": "0006_fat_marvel_zombies",
+      "breakpoints": true
     }
   ]
 }

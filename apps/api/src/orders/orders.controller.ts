@@ -24,6 +24,11 @@ export class OrdersController {
     return this.ordersService.findMyPurchases(user.sub);
   }
 
+  @Get('my-sales')
+  findMySales(@CurrentUser() user: JwtPayload) {
+    return this.ordersService.findMySales(user.sub);
+  }
+
   @Get('by-conversation/:conversationId')
   findByConversation(
     @Param('conversationId') conversationId: string,

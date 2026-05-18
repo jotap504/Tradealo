@@ -10,6 +10,7 @@ import {
   ChevronDown,
   User as UserIcon,
   ListChecks,
+  TrendingUp,
   Wallet,
   ShieldCheck,
   LogOut,
@@ -168,6 +169,11 @@ export function Navbar() {
                       label="Mis publicaciones"
                     />
                     <DropdownLink
+                      href="/my-sales"
+                      icon={<TrendingUp size={15} />}
+                      label="Mis ventas"
+                    />
+                    <DropdownLink
                       href="/my-purchases"
                       icon={<ShoppingBag size={15} />}
                       label="Mis compras"
@@ -268,6 +274,12 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Mis publicaciones
+                  </Link>
+                  <Link
+                    href="/my-sales"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Mis ventas
                   </Link>
                   <Link
                     href="/my-purchases"
