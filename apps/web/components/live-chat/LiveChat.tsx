@@ -10,10 +10,9 @@ import type { LiveChatMessage as LiveChatMessageType } from '@/types';
 
 interface Props {
   listingId: string;
-  sellerId: string;
 }
 
-export function LiveChat({ listingId, sellerId }: Props) {
+export function LiveChat({ listingId }: Props) {
   const [content, setContent] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -41,7 +40,7 @@ export function LiveChat({ listingId, sellerId }: Props) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [data]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

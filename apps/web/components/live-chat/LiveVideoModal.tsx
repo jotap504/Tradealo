@@ -64,7 +64,7 @@ export function LiveVideoModal({ listing, open, onClose }: Props) {
 
         {/* Chat */}
         <div className="w-full lg:w-[40%] h-[55vh] lg:h-full bg-white">
-          <LiveChat listingId={listing.id} sellerId={listing.seller?.id ?? ''} />
+          <LiveChat listingId={listing.id} />
         </div>
       </div>
     </div>,
