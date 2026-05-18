@@ -124,6 +124,20 @@ export class ListingsService {
     return listing;
   }
 
+  private async resolveCategoryId(
+    categoryId: string,
+  ): Promise<string | undefined> {
+    // Try slug first, then fall back to treating it as a UUID
+    const [cat] = await this.db
+      .select({ id: schema.categories.id })
+      .from(schema.categories)
+      .where(eq(schema.categories.slug, categoryId))
+      .limit(1);
+    if (cat) return cat.id;
+    // Not a valid slug either — return as-is so DB query yields empty
+    return categoryId;
+  }
+
   async findAll(dto: ListListingsDto): Promise<{
     data: Listing[];
     nextCursor: string | null;
@@ -132,13 +146,17 @@ export class ListingsService {
     const limit = Math.min(dto.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const fetchCount = limit + 1;
 
+    const categoryId = dto.categoryId
+      ? await this.resolveCategoryId(dto.categoryId)
+      : undefined;
+
     const conditions = [
       eq(schema.listings.status, 'active'),
       eq(schema.listings.moderationStatus, 'approved' as string),
     ];
 
-    if (dto.categoryId)
-      conditions.push(eq(schema.listings.categoryId, dto.categoryId));
+    if (categoryId)
+      conditions.push(eq(schema.listings.categoryId, categoryId));
     if (dto.condition)
       conditions.push(
         eq(
