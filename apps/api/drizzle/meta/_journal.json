@@ -50,6 +50,13 @@
       "when": 1779147125814,
       "tag": "0006_fat_marvel_zombies",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779206241891,
+      "tag": "0007_cuddly_lifeguard",
+      "breakpoints": true
     }
   ]
 }
