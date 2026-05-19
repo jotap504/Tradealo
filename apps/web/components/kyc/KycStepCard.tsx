@@ -107,8 +107,10 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
       else if (type === 'address') await kycApi.uploadAddress(base64, mimetype);
       toast.success('Documento subido. Te avisaremos cuando se verifique.');
       onUploaded?.();
-    } catch {
-      toast.error('Falló la subida. Probá de nuevo.');
+    } catch (err) {
+      const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
+      toast.error(`Error: ${msg}`);
     } finally {
       setLoading(false);
       e.target.value = '';
@@ -163,8 +165,14 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
       onUploaded?.();
       frontData.current = null;
       backData.current = null;
-    } catch {
-      toast.error('Falló la subida. Probá de nuevo.');
+    } catch (err) {
+      const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
+      toast.error(`Error: ${msg}`);
+      setFrontDone(false);
+      setBackDone(false);
+      frontData.current = null;
+      backData.current = null;
     } finally {
       setLoading(false);
     }
