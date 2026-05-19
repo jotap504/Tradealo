@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { GooeyText } from '@/components/ui/gooey-text-morphing';
 
 // --- Data for the marketplace accordion ---
 const CATEGORY_DATA = [
@@ -112,9 +113,13 @@ export function CategoryAccordionHero() {
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
           {/* Left: Text + CTAs */}
           <div className="w-full lg:w-[420px] shrink-0 text-center lg:text-left">
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-tradealo-text leading-tight mb-4">
-              Vende, Subasta, Intercambia
-            </h1>
+            <GooeyText
+              texts={["Vende", "Subasta", "Intercambia"]}
+              morphTime={1}
+              cooldownTime={0.25}
+              className="font-heading font-bold leading-tight mb-4 min-h-[2.25rem] sm:min-h-[2.5rem] md:min-h-[3rem]"
+              textClassName="text-3xl sm:text-4xl md:text-5xl text-tradealo-text"
+            />
             <p className="text-base md:text-lg text-tradealo-text-muted mb-6 max-w-md mx-auto lg:mx-0">
               Sin comisión, con la mejor seguridad.
             </p>
