@@ -78,7 +78,13 @@ export class KycController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: SilverPhoneCameraDto,
   ) {
-    return this.kycService.uploadPhoneCamera(user.sub, dto.data, dto.mimetype);
+    return this.kycService.uploadPhoneCamera(
+      user.sub,
+      dto.frontData,
+      dto.frontMimetype,
+      dto.backData,
+      dto.backMimetype,
+    );
   }
 
   @Post('silver/bcra-consent')

@@ -121,18 +121,31 @@ export class KycService {
     };
   }
 
-  async uploadPhoneCamera(userId: string, base64: string, mimetype: string) {
-    const buffer = Buffer.from(base64, 'base64');
-    if (buffer.byteLength === 0) {
+  async uploadPhoneCamera(
+    userId: string,
+    frontBase64: string,
+    frontMimetype: string,
+    backBase64: string,
+    backMimetype: string,
+  ) {
+    const frontBuffer = Buffer.from(frontBase64, 'base64');
+    const backBuffer = Buffer.from(backBase64, 'base64');
+    if (frontBuffer.byteLength === 0 || backBuffer.byteLength === 0) {
       throw new BadRequestException('Empty document');
     }
-    if (buffer.byteLength > MAX_KYC_DOCUMENT_BYTES) {
+    if (
+      frontBuffer.byteLength > MAX_KYC_DOCUMENT_BYTES ||
+      backBuffer.byteLength > MAX_KYC_DOCUMENT_BYTES
+    ) {
       throw new BadRequestException('El documento no puede superar 5 MB');
     }
 
-    const ext = mimetype.split('/')[1] ?? 'bin';
-    const key = `kyc/${userId}/phone_camera/${randomUUID()}.${ext}`;
-    await this.storage.uploadBuffer(key, buffer, mimetype);
+    const frontExt = frontMimetype.split('/')[1] ?? 'bin';
+    const backExt = backMimetype.split('/')[1] ?? 'bin';
+    const frontKey = `kyc/${userId}/phone_camera/front/${randomUUID()}.${frontExt}`;
+    const backKey = `kyc/${userId}/phone_camera/back/${randomUUID()}.${backExt}`;
+    await this.storage.uploadBuffer(frontKey, frontBuffer, frontMimetype);
+    await this.storage.uploadBuffer(backKey, backBuffer, backMimetype);
 
     await this.db.transaction(async (tx) => {
       await tx
@@ -150,12 +163,13 @@ export class KycService {
         userId,
         type: 'phone_camera' as UserVerificationType,
         status: 'pending',
-        s3Key: key,
+        s3Key: frontKey,
+        verificationData: JSON.stringify({ backKey }),
       });
     });
 
     // Auto-validate with DeepSeek Vision (fire-and-forget)
-    this.autoValidateDni(userId, base64).catch((err) =>
+    this.autoValidateDni(userId, frontBase64).catch((err) =>
       console.error('DeepSeek DNI validation error:', err),
     );
 
@@ -195,9 +209,7 @@ export class KycService {
         .update(schema.users)
         .set({
           bcraConsentGrantedAt: new Date(),
-          bcraConsentExpiresAt: new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000,
-          ),
+          bcraConsentExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, userId));
@@ -310,10 +322,8 @@ export class KycService {
     const [stats] = await this.db
       .select({
         totalReviews: sql<number>`count(*)::int`,
-        positiveReviews:
-          sql<number>`count(*) filter (where overall_rating >= 4)::int`,
-        badReviews:
-          sql<number>`count(*) filter (where overall_rating = 1)::int`,
+        positiveReviews: sql<number>`count(*) filter (where overall_rating >= 4)::int`,
+        badReviews: sql<number>`count(*) filter (where overall_rating = 1)::int`,
       })
       .from(schema.reviews)
       .where(

@@ -3,9 +3,17 @@ import { IsString, IsNotEmpty } from 'class-validator';
 export class SilverPhoneCameraDto {
   @IsString()
   @IsNotEmpty()
-  data!: string;
+  frontData!: string;
 
   @IsString()
   @IsNotEmpty()
-  mimetype!: string;
+  frontMimetype!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  backData!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  backMimetype!: string;
 }

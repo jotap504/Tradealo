@@ -50,7 +50,7 @@ const META: Record<
   },
   phone_camera: {
     title: 'Validación con celular',
-    description: 'Foto de tu DNI tomada con la cámara del celular.',
+    description: 'Fotos del frente y dorso de tu DNI tomadas con la cámara.',
     icon: Camera,
   },
 };
@@ -64,14 +64,35 @@ const STATUS_BADGE: Record<
   rejected: { label: 'Rechazado', variant: 'danger' },
 };
 
+async function fileToBase64(file: File): Promise<{ base64: string; mimetype: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve({
+        base64: result.split(',')[1],
+        mimetype: file.type || 'application/octet-stream',
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function KycStepCard({ type, status, onUploaded }: Props) {
   const meta = META[type];
   const Icon = meta.icon;
   const badge = STATUS_BADGE[status];
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [frontDone, setFrontDone] = useState(false);
+  const [backDone, setBackDone] = useState(false);
+  const frontRef = useRef<HTMLInputElement>(null);
+  const backRef = useRef<HTMLInputElement>(null);
+  const singleRef = useRef<HTMLInputElement>(null);
+  const frontData = useRef<{ base64: string; mimetype: string } | null>(null);
+  const backData = useRef<{ base64: string; mimetype: string } | null>(null);
 
-  const handle = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleSingle = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -81,22 +102,9 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
     }
     setLoading(true);
     try {
-      const reader = new FileReader();
-      const { base64, mimetype } = await new Promise<{ base64: string; mimetype: string }>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve({
-            base64: result.split(',')[1],
-            mimetype: file.type || 'application/octet-stream',
-          });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      if (type === 'id') await kycApi.uploadId(base64, mimetype);
-      else if (type === 'selfie') await kycApi.uploadSelfie(base64, mimetype);
+      const { base64, mimetype } = await fileToBase64(file);
+      if (type === 'selfie') await kycApi.uploadSelfie(base64, mimetype);
       else if (type === 'address') await kycApi.uploadAddress(base64, mimetype);
-      else if (type === 'phone_camera') await kycApi.uploadPhoneCamera(base64, mimetype);
       toast.success('Documento subido. Te avisaremos cuando se verifique.');
       onUploaded?.();
     } catch {
@@ -107,15 +115,96 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
     }
   };
 
+  const handleFront = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('El documento no puede superar 5 MB');
+      e.target.value = '';
+      return;
+    }
+    const data = await fileToBase64(file);
+    frontData.current = data;
+    setFrontDone(true);
+    e.target.value = '';
+    if (backData.current) {
+      await doPhoneCameraUpload();
+    }
+  };
+
+  const handleBack = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('El documento no puede superar 5 MB');
+      e.target.value = '';
+      return;
+    }
+    const data = await fileToBase64(file);
+    backData.current = data;
+    setBackDone(true);
+    e.target.value = '';
+    if (frontData.current) {
+      await doPhoneCameraUpload();
+    }
+  };
+
+  const doPhoneCameraUpload = async () => {
+    if (!frontData.current || !backData.current) return;
+    setLoading(true);
+    try {
+      await kycApi.uploadPhoneCamera(
+        frontData.current.base64,
+        frontData.current.mimetype,
+        backData.current.base64,
+        backData.current.mimetype,
+      );
+      toast.success('Documentos subidos. En segundos te confirmamos si son válidos.');
+      onUploaded?.();
+      frontData.current = null;
+      backData.current = null;
+    } catch {
+      toast.error('Falló la subida. Probá de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*,application/pdf"
-        onChange={handle}
-        className="hidden"
-      />
+      {/* Hidden file inputs for phone_camera dual mode */}
+      {type === 'phone_camera' && (
+        <>
+          <input
+            ref={frontRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFront}
+            className="hidden"
+          />
+          <input
+            ref={backRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleBack}
+            className="hidden"
+          />
+        </>
+      )}
+
+      {/* Hidden file input for single-upload types */}
+      {type !== 'phone_camera' && (
+        <input
+          ref={singleRef}
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={handleSingle}
+          className="hidden"
+        />
+      )}
+
       <div className="flex items-start justify-between">
         <div className="w-11 h-11 rounded-lg bg-tradealo-primary-light flex items-center justify-center text-tradealo-primary">
           <Icon size={20} />
@@ -132,11 +221,41 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
           {meta.description}
         </p>
       </div>
-      <div className="mt-auto pt-2">
+      <div className="mt-auto pt-2 space-y-2">
         {status === 'verified' ? (
           <Button variant="ghost" fullWidth disabled>
             Documento verificado
           </Button>
+        ) : type === 'phone_camera' ? (
+          <>
+            <Button
+              fullWidth
+              variant={frontDone ? 'ghost' : status === 'rejected' ? 'danger' : 'primary'}
+              leftIcon={frontDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
+              type="button"
+              disabled={loading}
+              onClick={() => frontRef.current?.click()}
+            >
+              {frontDone ? 'Frente listo' : 'Foto frente'}
+            </Button>
+            <Button
+              fullWidth
+              variant={backDone ? 'ghost' : 'primary'}
+              leftIcon={backDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
+              type="button"
+              disabled={loading}
+              onClick={() => backRef.current?.click()}
+            >
+              {backDone ? 'Dorso listo' : 'Foto dorso'}
+            </Button>
+            {(frontDone || backDone) && !loading && (
+              <p className="text-xs text-tradealo-text-muted text-center">
+                {frontDone && backDone
+                  ? 'Subiendo...'
+                  : 'Tomá ambas fotos para continuar'}
+              </p>
+            )}
+          </>
         ) : (
           <Button
             fullWidth
@@ -144,7 +263,7 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
             loading={loading}
             leftIcon={<Upload size={15} />}
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => singleRef.current?.click()}
           >
             {status === 'rejected'
               ? 'Volver a intentarlo'

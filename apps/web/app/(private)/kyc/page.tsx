@@ -19,13 +19,15 @@ export default function KycPage() {
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
     queryFn: () => kyc.getKycStatus(),
-    staleTime: 60_000,
+    staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
   const { data: tiers } = useQuery({
     queryKey: ['kyc-tiers'],
     queryFn: () => kyc.getTierProgress(),
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
   const refresh = () => {

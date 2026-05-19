@@ -295,8 +295,8 @@ export const kyc = {
     post<{ ok: true }>('/kyc/id', { data, mimetype }),
   uploadAddress: (data: string, mimetype: string) =>
     post<{ ok: true }>('/kyc/address', { data, mimetype }),
-  uploadPhoneCamera: (data: string, mimetype: string) =>
-    post<{ ok: true }>('/kyc/silver/phone-camera', { data, mimetype }),
+  uploadPhoneCamera: (frontData: string, frontMimetype: string, backData: string, backMimetype: string) =>
+    post<{ ok: true }>('/kyc/silver/phone-camera', { frontData, frontMimetype, backData, backMimetype }),
   recordBcraConsent: (consent: string) =>
     post<{ ok: true }>('/kyc/silver/bcra-consent', { consent }),
   getGoldEligibility: () => get<TierProgress['gold']['progress']>('/kyc/gold/eligibility'),
