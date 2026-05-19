@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { GooeyText } from '@/components/ui/gooey-text-morphing';
+import { TextScramble } from '@/components/ui/text-scramble';
 
 // --- Data for the marketplace accordion ---
 const CATEGORY_DATA = [
@@ -103,6 +103,39 @@ function AccordionItem({
   );
 }
 
+// --- Scramble cycling through words ---
+function ScrambleWords({
+  texts,
+  className,
+}: {
+  texts: string[];
+  className?: string;
+}) {
+  const [index, setIndex] = useState(0);
+  const [key, setKey] = useState(0);
+
+  const handleComplete = () => {
+    setTimeout(() => {
+      setIndex((prev) => (prev + 1) % texts.length);
+      setKey((prev) => prev + 1);
+    }, 5000);
+  };
+
+  return (
+    <TextScramble
+      key={key}
+      className={className}
+      as="h1"
+      trigger={true}
+      onScrambleComplete={handleComplete}
+      duration={1.5}
+      speed={0.03}
+    >
+      {texts[index]}
+    </TextScramble>
+  );
+}
+
 // --- Main Component ---
 export function CategoryAccordionHero() {
   const [activeIndex, setActiveIndex] = useState(2);
@@ -113,12 +146,9 @@ export function CategoryAccordionHero() {
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
           {/* Left: Text + CTAs */}
           <div className="w-full lg:w-[420px] shrink-0 text-center lg:text-left">
-            <GooeyText
+            <ScrambleWords
               texts={["Vende", "Subasta", "Intercambia"]}
-              morphTime={1}
-              cooldownTime={0.25}
-              className="font-heading font-bold leading-tight mb-4 min-h-[2.25rem] sm:min-h-[2.5rem] md:min-h-[3rem]"
-              textClassName="text-3xl sm:text-4xl md:text-5xl text-tradealo-text"
+              className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-tradealo-text leading-tight mb-4"
             />
             <p className="text-base md:text-lg text-tradealo-text-muted mb-6 max-w-md mx-auto lg:mx-0">
               Sin comisión, con la mejor seguridad.
