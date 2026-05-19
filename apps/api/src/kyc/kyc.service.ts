@@ -12,6 +12,7 @@ import { ConfigService } from '../config/config.service';
 import { WalletService } from '../wallet/wallet.service';
 import { StorageService } from '../storage/storage.service';
 import { BcraProvider } from './bcra-provider';
+import { VisionProvider } from './vision-provider';
 import * as schema from '../database/schema';
 
 type DB = NodePgDatabase<typeof schema>;
@@ -48,6 +49,7 @@ export class KycService {
     private readonly walletService: WalletService,
     private readonly storage: StorageService,
     private readonly bcraProvider: BcraProvider,
+    private readonly visionProvider: VisionProvider,
   ) {}
 
   async getStatus(userId: string) {
@@ -93,7 +95,6 @@ export class KycService {
     const status = await this.getStatus(userId);
 
     const silverSteps = {
-      dni: status.id,
       selfie: status.selfie,
       phoneCamera: status.phoneCamera,
       bcraConsent: status.bcraConsent,
@@ -153,7 +154,19 @@ export class KycService {
       });
     });
 
+    // Auto-validate with DeepSeek Vision (fire-and-forget)
+    this.autoValidateDni(userId, base64).catch((err) =>
+      console.error('DeepSeek DNI validation error:', err),
+    );
+
     return { ok: true as const };
+  }
+
+  private async autoValidateDni(userId: string, base64: string) {
+    const result = await this.visionProvider.validateDniPhoto(base64);
+    if (result.valid) {
+      await this.autoApproveVerification(userId, 'phone_camera');
+    }
   }
 
   async recordBcraConsent(userId: string, consentText: string) {
@@ -252,7 +265,7 @@ export class KycService {
     const status = await this.getStatus(userId);
 
     const allSilverSteps =
-      status.id && status.selfie && status.phoneCamera && status.bcraConsent;
+      status.selfie && status.phoneCamera && status.bcraConsent;
 
     if (!allSilverSteps) return { upgraded: false };
 
@@ -432,7 +445,21 @@ export class KycService {
       });
     });
 
+    // Auto-validate selfie with DeepSeek Vision (fire-and-forget)
+    if (type === 'selfie') {
+      this.autoValidateSelfie(userId, base64).catch((err) =>
+        console.error('DeepSeek selfie validation error:', err),
+      );
+    }
+
     return { ok: true as const };
+  }
+
+  private async autoValidateSelfie(userId: string, base64: string) {
+    const result = await this.visionProvider.validateSelfie(base64);
+    if (result.valid) {
+      await this.autoApproveVerification(userId, 'selfie');
+    }
   }
 
   async listPending(type?: string) {

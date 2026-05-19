@@ -8,9 +8,8 @@ interface Props {
 }
 
 const STEPS = [
-  { key: 'id', label: 'Identidad' },
-  { key: 'selfie', label: 'Selfie' },
-  { key: 'address', label: 'Domicilio' },
+  { key: 'phoneCamera', label: 'Foto del DNI' },
+  { key: 'selfie', label: 'Selfie con DNI' },
 ] as const;
 
 export function KycProgress({ status, className }: Props) {

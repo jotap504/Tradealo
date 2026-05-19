@@ -96,18 +96,13 @@ export default function KycPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <KycStepCard
-            type="id"
-            status={stepStatus(status?.id ?? false)}
+            type="phone_camera"
+            status={stepStatus(status?.phoneCamera ?? false)}
             onUploaded={refresh}
           />
           <KycStepCard
             type="selfie"
             status={stepStatus(status?.selfie ?? false)}
-            onUploaded={refresh}
-          />
-          <KycStepCard
-            type="phone_camera"
-            status={stepStatus(status?.phoneCamera ?? false)}
             onUploaded={refresh}
           />
           <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
