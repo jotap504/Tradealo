@@ -222,13 +222,15 @@ export function Navbar() {
             </>
           )}
 
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <Menu size={20} />
-          </button>
+          {!user && (
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menú"
+            >
+              <Menu size={20} />
+            </button>
+          )}
         </div>
       </div>
 
