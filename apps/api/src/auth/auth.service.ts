@@ -39,6 +39,7 @@ export interface UserSummary {
   username?: string;
   role: string;
   kycLevel: number;
+  accountType: string;
   referralCode: string | null;
   createdAt: Date;
 }
@@ -100,6 +101,7 @@ export class AuthService {
           email: schema.users.email,
           role: schema.users.role,
           kycLevel: schema.users.kycLevel,
+          accountType: schema.users.accountType,
           referralCode: schema.users.referralCode,
           createdAt: schema.users.createdAt,
         });
@@ -132,6 +134,7 @@ export class AuthService {
       user.email,
       user.role,
       user.kycLevel,
+      user.accountType,
     );
     return {
       ...tokens,
@@ -141,6 +144,7 @@ export class AuthService {
         username: user.username,
         role: user.role,
         kycLevel: user.kycLevel,
+        accountType: user.accountType,
         referralCode: user.referralCode,
         createdAt: user.createdAt,
       },
@@ -182,6 +186,7 @@ export class AuthService {
       user.email,
       user.role,
       user.kycLevel,
+      user.accountType,
     );
     return {
       ...tokens,
@@ -191,6 +196,7 @@ export class AuthService {
         username: profile?.username || undefined,
         role: user.role,
         kycLevel: user.kycLevel,
+        accountType: user.accountType,
         referralCode: user.referralCode,
         createdAt: user.createdAt,
       },
@@ -218,6 +224,7 @@ export class AuthService {
         email: schema.users.email,
         role: schema.users.role,
         kycLevel: schema.users.kycLevel,
+        accountType: schema.users.accountType,
         status: schema.users.status,
       })
       .from(schema.users)
@@ -233,7 +240,7 @@ export class AuthService {
       .set({ revokedAt: new Date() })
       .where(eq(schema.refreshTokens.tokenHash, tokenHash));
 
-    return this.createTokenPair(user.id, user.email, user.role, user.kycLevel);
+    return this.createTokenPair(user.id, user.email, user.role, user.kycLevel, user.accountType);
   }
 
   async logout(userId: string, rawToken: string): Promise<void> {
@@ -274,6 +281,7 @@ export class AuthService {
       username: profile?.username || undefined,
       role: user.role,
       kycLevel: user.kycLevel,
+      accountType: user.accountType,
       referralCode: user.referralCode,
       createdAt: user.createdAt,
     };
@@ -284,8 +292,9 @@ export class AuthService {
     email: string,
     role: string,
     kycLevel: number,
+    accountType: string,
   ): Promise<TokenPair> {
-    const payload: JwtPayload = { sub: userId, email, role, kycLevel };
+    const payload: JwtPayload = { sub: userId, email, role, kycLevel, accountType };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET ?? 'changeme_dev_only',

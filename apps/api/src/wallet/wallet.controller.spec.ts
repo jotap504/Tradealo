@@ -3,7 +3,7 @@ import { WalletController } from './wallet.controller'
 import { WalletService } from './wallet.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
-const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0 }
+const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0, accountType: 'individual' }
 
 const mockWalletService = {
   getBalance: jest.fn().mockResolvedValue({ userId: 'user-1', balance: 10, lifetimeEarned: 15, lifetimeSpent: 5, updatedAt: new Date() }),

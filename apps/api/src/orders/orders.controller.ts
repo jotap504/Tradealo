@@ -8,7 +8,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type JwtPayload,
+} from '../common/decorators/current-user.decorator';
 
 @Controller('orders')
 export class OrdersController {
@@ -39,46 +42,31 @@ export class OrdersController {
 
   @Patch(':id/deliver')
   @HttpCode(HttpStatus.OK)
-  markDelivered(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  markDelivered(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.ordersService.markDelivered(id, user.sub);
   }
 
   @Patch(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  cancel(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  cancel(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.ordersService.cancel(id, user.sub);
   }
 
   @Post(':id/send-payment-info')
   @HttpCode(HttpStatus.OK)
-  sendPaymentInfo(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  sendPaymentInfo(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.ordersService.sendPaymentInfo(id, user.sub);
   }
 
   @Post(':id/send-contact')
   @HttpCode(HttpStatus.OK)
-  sendContactInfo(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  sendContactInfo(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.ordersService.sendContactInfo(id, user.sub);
   }
 
   @Patch(':id/complete')
   @HttpCode(HttpStatus.OK)
-  complete(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  complete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.ordersService.completeByReview(id, user.sub);
   }
 }

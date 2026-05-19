@@ -10,6 +10,7 @@ export interface User {
   username?: string;
   role: Role;
   kycLevel: number;
+  accountType?: string;
   avatarUrl?: string;
   bio?: string;
   province?: string;
@@ -152,7 +153,39 @@ export interface KycStatus {
   id: boolean;
   selfie: boolean;
   address: boolean;
+  phoneCamera: boolean;
+  bcraConsent: boolean;
   level: number;
+  accountType: string;
+  silverGrantedAt: string | null;
+  goldGrantedAt: string | null;
+}
+
+export interface TierProgress {
+  currentTier: number;
+  accountType: string;
+  silver: {
+    granted: boolean;
+    grantedAt: string | null;
+    steps: Record<string, boolean>;
+    stepsCompleted: number;
+    stepsTotal: number;
+  };
+  gold: {
+    granted: boolean;
+    grantedAt: string | null;
+    eligible: boolean;
+    progress: GoldEligibility;
+  };
+}
+
+export interface GoldEligibility {
+  eligible: boolean;
+  reason: string | null;
+  totalReviews: number;
+  positiveReviews: number;
+  badReviews: number;
+  badPct: number;
 }
 
 export interface PaginatedResponse<T> {

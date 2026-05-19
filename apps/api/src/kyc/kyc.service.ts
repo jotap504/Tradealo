@@ -4,13 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { randomUUID } from 'crypto';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import { ConfigService } from '../config/config.service';
 import { WalletService } from '../wallet/wallet.service';
 import { StorageService } from '../storage/storage.service';
+import { BcraProvider } from './bcra-provider';
 import * as schema from '../database/schema';
 
 type DB = NodePgDatabase<typeof schema>;
@@ -19,13 +20,17 @@ type UserVerificationType =
 type UserUploadType = 'dni' | 'address' | 'selfie';
 
 const MAX_KYC_DOCUMENT_BYTES = 5 * 1024 * 1024;
+const GOLD_MIN_REVIEWS = 50;
+const GOLD_MAX_BAD_PCT = 10;
 
 const KYC_LEVEL_MAP: Record<string, number> = {
   email: 1,
   phone: 1,
-  dni: 2,
-  address: 2,
-  selfie: 2,
+  dni: 1,
+  address: 1,
+  selfie: 1,
+  phone_camera: 1,
+  bcra_consent: 1,
 };
 
 const KYC_REWARD_KEY: Record<string, string> = {
@@ -42,6 +47,7 @@ export class KycService {
     private readonly configService: ConfigService,
     private readonly walletService: WalletService,
     private readonly storage: StorageService,
+    private readonly bcraProvider: BcraProvider,
   ) {}
 
   async getStatus(userId: string) {
@@ -54,7 +60,12 @@ export class KycService {
       .where(eq(schema.userVerifications.userId, userId));
 
     const [user] = await this.db
-      .select({ kycLevel: schema.users.kycLevel })
+      .select({
+        kycLevel: schema.users.kycLevel,
+        accountType: schema.users.accountType,
+        silverGrantedAt: schema.users.silverGrantedAt,
+        goldGrantedAt: schema.users.goldGrantedAt,
+      })
       .from(schema.users)
       .where(eq(schema.users.id, userId))
       .limit(1);
@@ -63,12 +74,327 @@ export class KycService {
       verifications.filter((v) => v.status === 'approved').map((v) => v.type),
     );
 
+    const tier = user?.kycLevel ?? 0;
+
     return {
       id: approved.has('dni'),
       selfie: approved.has('selfie'),
       address: approved.has('address'),
-      level: user?.kycLevel ?? 0,
+      phoneCamera: approved.has('phone_camera'),
+      bcraConsent: approved.has('bcra_consent'),
+      level: tier,
+      accountType: user?.accountType ?? 'individual',
+      silverGrantedAt: user?.silverGrantedAt ?? null,
+      goldGrantedAt: user?.goldGrantedAt ?? null,
     };
+  }
+
+  async getTierProgress(userId: string) {
+    const status = await this.getStatus(userId);
+
+    const silverSteps = {
+      dni: status.id,
+      selfie: status.selfie,
+      phoneCamera: status.phoneCamera,
+      bcraConsent: status.bcraConsent,
+    };
+
+    const goldEligibility = await this.checkGoldEligibility(userId);
+
+    return {
+      currentTier: status.level,
+      accountType: status.accountType,
+      silver: {
+        granted: status.level >= 1,
+        grantedAt: status.silverGrantedAt,
+        steps: silverSteps,
+        stepsCompleted: Object.values(silverSteps).filter(Boolean).length,
+        stepsTotal: Object.keys(silverSteps).length,
+      },
+      gold: {
+        granted: status.level >= 2,
+        grantedAt: status.goldGrantedAt,
+        eligible: goldEligibility.eligible,
+        progress: goldEligibility,
+      },
+    };
+  }
+
+  async uploadPhoneCamera(userId: string, base64: string, mimetype: string) {
+    const buffer = Buffer.from(base64, 'base64');
+    if (buffer.byteLength === 0) {
+      throw new BadRequestException('Empty document');
+    }
+    if (buffer.byteLength > MAX_KYC_DOCUMENT_BYTES) {
+      throw new BadRequestException('El documento no puede superar 5 MB');
+    }
+
+    const ext = mimetype.split('/')[1] ?? 'bin';
+    const key = `kyc/${userId}/phone_camera/${randomUUID()}.${ext}`;
+    await this.storage.uploadBuffer(key, buffer, mimetype);
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(schema.userVerifications)
+        .where(
+          and(
+            eq(schema.userVerifications.userId, userId),
+            eq(
+              schema.userVerifications.type,
+              'phone_camera' as UserVerificationType,
+            ),
+          ),
+        );
+      await tx.insert(schema.userVerifications).values({
+        userId,
+        type: 'phone_camera' as UserVerificationType,
+        status: 'pending',
+        s3Key: key,
+      });
+    });
+
+    return { ok: true as const };
+  }
+
+  async recordBcraConsent(userId: string, consentText: string) {
+    const consentToken = randomUUID();
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(schema.userVerifications)
+        .where(
+          and(
+            eq(schema.userVerifications.userId, userId),
+            eq(
+              schema.userVerifications.type,
+              'bcra_consent' as UserVerificationType,
+            ),
+          ),
+        );
+      await tx.insert(schema.userVerifications).values({
+        userId,
+        type: 'bcra_consent' as UserVerificationType,
+        status: 'pending',
+        verificationData: consentText,
+      });
+
+      await tx
+        .update(schema.users)
+        .set({
+          bcraConsentGrantedAt: new Date(),
+          bcraConsentExpiresAt: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000,
+          ),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.id, userId));
+    });
+
+    // Trigger BCRA check (fire-and-forget)
+    this.runBcraCheck(userId, consentToken).catch((err) =>
+      console.error('BCRA check error:', err),
+    );
+
+    return { ok: true as const };
+  }
+
+  private async runBcraCheck(userId: string, consentToken: string) {
+    const [userProfile] = await this.db
+      .select({
+        firstName: schema.userProfiles.firstName,
+        lastName: schema.userProfiles.lastName,
+      })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.userId, userId))
+      .limit(1);
+
+    const identifier = userId; // placeholder — use actual DNI/CUIT in prod
+    const result = await this.bcraProvider.consult(identifier, consentToken, {
+      firstName: userProfile?.firstName ?? undefined,
+      lastName: userProfile?.lastName ?? undefined,
+    });
+
+    await this.db.insert(schema.bcraChecks).values({
+      userId,
+      cuitDni: identifier,
+      consentToken,
+      status: result.status,
+      score: result.score,
+      summary: result.summary,
+      rawResponse: result.rawData,
+      checkedAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    if (result.status === 'passed') {
+      await this.autoApproveVerification(userId, 'bcra_consent');
+    }
+  }
+
+  private async autoApproveVerification(
+    userId: string,
+    type: UserVerificationType,
+  ) {
+    await this.db
+      .update(schema.userVerifications)
+      .set({ status: 'approved', verifiedAt: new Date() })
+      .where(
+        and(
+          eq(schema.userVerifications.userId, userId),
+          eq(schema.userVerifications.type, type),
+        ),
+      );
+
+    await this.tryUpgradeToSilver(userId);
+  }
+
+  async tryUpgradeToSilver(userId: string) {
+    const status = await this.getStatus(userId);
+
+    const allSilverSteps =
+      status.id && status.selfie && status.phoneCamera && status.bcraConsent;
+
+    if (!allSilverSteps) return { upgraded: false };
+
+    const [user] = await this.db
+      .select({ kycLevel: schema.users.kycLevel })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (user && user.kycLevel < 1) {
+      await this.db
+        .update(schema.users)
+        .set({
+          kycLevel: 1,
+          silverGrantedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.id, userId));
+    }
+
+    return { upgraded: true };
+  }
+
+  async checkGoldEligibility(userId: string) {
+    const [user] = await this.db
+      .select({ kycLevel: schema.users.kycLevel })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (!user || user.kycLevel < 1) {
+      return {
+        eligible: false,
+        reason: 'Se requiere nivel Silver primero',
+        totalReviews: 0,
+        positiveReviews: 0,
+        badReviews: 0,
+        badPct: 0,
+      };
+    }
+
+    const [stats] = await this.db
+      .select({
+        totalReviews: sql<number>`count(*)::int`,
+        positiveReviews:
+          sql<number>`count(*) filter (where overall_rating >= 4)::int`,
+        badReviews:
+          sql<number>`count(*) filter (where overall_rating = 1)::int`,
+      })
+      .from(schema.reviews)
+      .where(
+        and(
+          eq(schema.reviews.reviewedId, userId),
+          sql`${schema.reviews.direction} in ('buyer_to_seller', 'seller_to_buyer')`,
+        ),
+      );
+
+    const total = stats?.totalReviews ?? 0;
+    const bad = stats?.badReviews ?? 0;
+    const positive = stats?.positiveReviews ?? 0;
+    const badPct = total > 0 ? (bad / total) * 100 : 0;
+
+    if (total < GOLD_MIN_REVIEWS) {
+      return {
+        eligible: false,
+        reason: `Faltan ${GOLD_MIN_REVIEWS - total} calificaciones para llegar a Gold`,
+        totalReviews: total,
+        positiveReviews: positive,
+        badReviews: bad,
+        badPct: Math.round(badPct * 100) / 100,
+      };
+    }
+
+    if (badPct > GOLD_MAX_BAD_PCT) {
+      return {
+        eligible: false,
+        reason: `Tiene ${badPct.toFixed(1)}% de calificaciones negativas (máx. ${GOLD_MAX_BAD_PCT}%)`,
+        totalReviews: total,
+        positiveReviews: positive,
+        badReviews: bad,
+        badPct: Math.round(badPct * 100) / 100,
+      };
+    }
+
+    return {
+      eligible: true,
+      reason: null,
+      totalReviews: total,
+      positiveReviews: positive,
+      badReviews: bad,
+      badPct: Math.round(badPct * 100) / 100,
+    };
+  }
+
+  async tryUpgradeToGold(userId: string) {
+    const eligibility = await this.checkGoldEligibility(userId);
+
+    if (!eligibility.eligible) {
+      return { upgraded: false, reason: eligibility.reason };
+    }
+
+    await this.db
+      .update(schema.users)
+      .set({
+        kycLevel: 2,
+        goldGrantedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.users.id, userId));
+
+    return { upgraded: true };
+  }
+
+  async recalculateTier(userId: string) {
+    const [user] = await this.db
+      .select({ kycLevel: schema.users.kycLevel })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    if (user.kycLevel >= 2) {
+      const eligibility = await this.checkGoldEligibility(userId);
+      if (!eligibility.eligible) {
+        await this.db
+          .update(schema.users)
+          .set({
+            kycLevel: 1,
+            goldGrantedAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.users.id, userId));
+        return { tier: 1, downgraded: true };
+      }
+    }
+
+    if (user.kycLevel < 1) {
+      await this.tryUpgradeToSilver(userId);
+    }
+
+    return { tier: user.kycLevel, downgraded: false };
   }
 
   async uploadDocument(

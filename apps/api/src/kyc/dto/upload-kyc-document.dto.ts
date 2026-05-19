@@ -1,12 +1,12 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator'
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class UploadKycDocumentDto {
   @IsString()
   @IsNotEmpty()
-  data!: string
+  data!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  mimetype!: string
+  mimetype!: string;
 }

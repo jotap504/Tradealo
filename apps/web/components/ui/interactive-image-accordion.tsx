@@ -118,7 +118,7 @@ function ScrambleWords({
     setTimeout(() => {
       setIndex((prev) => (prev + 1) % texts.length);
       setKey((prev) => prev + 1);
-    }, 5000);
+    }, 2500);
   };
 
   return (

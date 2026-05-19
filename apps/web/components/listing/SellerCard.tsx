@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ShieldCheck, MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { TierBadge } from '@/components/ui/TierBadge';
 import { ReputationStars } from '@/components/ui/ReputationStars';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -40,17 +41,11 @@ export function SellerCard({ user }: Props) {
               <p className="font-heading font-semibold text-base truncate">
                 {user.username ?? user.email}
               </p>
-              {user.kycLevel >= 1 && (
-                <ShieldCheck
-                  size={15}
-                  className="text-tradealo-primary"
-                  aria-label="Verificado"
-                />
-              )}
+              <TierBadge level={user.kycLevel} />
             </div>
             {user.kycLevel > 0 && (
               <Badge variant="primary" size="sm" className="mt-1">
-                KYC nivel {user.kycLevel}
+                {user.kycLevel >= 2 ? 'Gold' : 'Silver'}
               </Badge>
             )}
           </div>

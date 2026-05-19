@@ -5,6 +5,7 @@ import {
   CreditCard,
   ScanFace,
   Home,
+  Camera,
   CheckCircle2,
   AlertCircle,
   Upload,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { kyc as kycApi } from '@/lib/api';
 import { toast } from '@/lib/store';
 
-type KycType = 'id' | 'selfie' | 'address';
+type KycType = 'id' | 'selfie' | 'address' | 'phone_camera';
 type KycStepStatus = 'pending' | 'verified' | 'rejected';
 
 interface Props {
@@ -46,6 +47,11 @@ const META: Record<
     title: 'Comprobante de domicilio',
     description: 'Factura de servicio reciente (luz, gas, internet) a tu nombre.',
     icon: Home,
+  },
+  phone_camera: {
+    title: 'Validación con celular',
+    description: 'Foto de tu DNI tomada con la cámara del celular.',
+    icon: Camera,
   },
 };
 
@@ -89,7 +95,8 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
       });
       if (type === 'id') await kycApi.uploadId(base64, mimetype);
       else if (type === 'selfie') await kycApi.uploadSelfie(base64, mimetype);
-      else await kycApi.uploadAddress(base64, mimetype);
+      else if (type === 'address') await kycApi.uploadAddress(base64, mimetype);
+      else if (type === 'phone_camera') await kycApi.uploadPhoneCamera(base64, mimetype);
       toast.success('Documento subido. Te avisaremos cuando se verifique.');
       onUploaded?.();
     } catch {

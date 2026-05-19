@@ -5,6 +5,7 @@ export interface JwtPayload {
   email: string
   role: string
   kycLevel: number
+  accountType: string
 }
 
 export const CurrentUser = createParamDecorator(

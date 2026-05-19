@@ -18,7 +18,7 @@ const mockAuthService = {
   getMe: jest.fn().mockResolvedValue({ ...TOKEN_PAIR.user, profile: null }),
 }
 
-const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0 }
+const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0, accountType: 'individual' }
 
 describe('AuthController', () => {
   let controller: AuthController

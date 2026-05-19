@@ -1,10 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  jsonb,
-  timestamp,
-  index,
-} from 'drizzle-orm/pg-core';
+import { pgTable, uuid, jsonb, timestamp, index } from 'drizzle-orm/pg-core';
 import { orderStatusEnum } from './enums';
 import { users } from './users.schema';
 import { listings } from './listings.schema';

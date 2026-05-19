@@ -95,7 +95,10 @@ export class OrdersService {
         },
       })
       .from(schema.orders)
-      .innerJoin(schema.listings, eq(schema.orders.listingId, schema.listings.id))
+      .innerJoin(
+        schema.listings,
+        eq(schema.orders.listingId, schema.listings.id),
+      )
       .innerJoin(schema.users, eq(schema.orders.sellerId, schema.users.id))
       .leftJoin(
         schema.userProfiles,
@@ -171,7 +174,10 @@ export class OrdersService {
         },
       })
       .from(schema.orders)
-      .innerJoin(schema.listings, eq(schema.orders.listingId, schema.listings.id))
+      .innerJoin(
+        schema.listings,
+        eq(schema.orders.listingId, schema.listings.id),
+      )
       .innerJoin(schema.users, eq(schema.orders.buyerId, schema.users.id))
       .leftJoin(
         schema.userProfiles,
@@ -253,7 +259,11 @@ export class OrdersService {
 
     const [updated] = await this.db
       .update(schema.orders)
-      .set({ status: 'delivered', deliveredAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: 'delivered',
+        deliveredAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(schema.orders.id, orderId))
       .returning();
 
@@ -263,7 +273,11 @@ export class OrdersService {
       type: 'order_delivered',
       title: 'Producto entregado',
       body: 'El vendedor marcó el producto como entregado. ¡Calificá tu experiencia!',
-      data: { orderId, listingId: order.listingId, conversationId: order.conversationId },
+      data: {
+        orderId,
+        listingId: order.listingId,
+        conversationId: order.conversationId,
+      },
     });
 
     return updated;
@@ -281,7 +295,11 @@ export class OrdersService {
 
     const [updated] = await this.db
       .update(schema.orders)
-      .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(schema.orders.id, orderId))
       .returning();
 
@@ -311,7 +329,11 @@ export class OrdersService {
       type: 'order_cancelled',
       title: 'Venta cancelada',
       body: 'El vendedor canceló la venta.',
-      data: { orderId, listingId: order.listingId, conversationId: order.conversationId },
+      data: {
+        orderId,
+        listingId: order.listingId,
+        conversationId: order.conversationId,
+      },
     });
 
     return updated;
@@ -333,7 +355,9 @@ export class OrdersService {
     if (profile.alias) lines.push(`Alias: ${profile.alias}`);
     if (profile.bankName) lines.push(`Banco: ${profile.bankName}`);
     if (profile.bankAccountType && profile.bankAccountNumber) {
-      lines.push(`Cuenta ${profile.bankAccountType}: ${profile.bankAccountNumber}`);
+      lines.push(
+        `Cuenta ${profile.bankAccountType}: ${profile.bankAccountNumber}`,
+      );
     }
 
     if (lines.length === 1) {
@@ -370,7 +394,9 @@ export class OrdersService {
 
     if (user?.email) lines.push(`Email: ${user.email}`);
     if (profile.whatsapp) {
-      lines.push(`WhatsApp: https://wa.me/${String(profile.whatsapp).replace(/[^0-9]/g, '')}`);
+      lines.push(
+        `WhatsApp: https://wa.me/${String(profile.whatsapp).replace(/[^0-9]/g, '')}`,
+      );
     }
 
     if (lines.length === 1) {
@@ -395,7 +421,8 @@ export class OrdersService {
 
     if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
     if (order.buyerId !== userId) throw new ForbiddenException('NOT_BUYER');
-    if (order.status !== 'delivered') throw new BadRequestException('ORDER_NOT_DELIVERED');
+    if (order.status !== 'delivered')
+      throw new BadRequestException('ORDER_NOT_DELIVERED');
 
     const [updated] = await this.db
       .update(schema.orders)

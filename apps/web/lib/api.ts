@@ -10,6 +10,7 @@ import type {
   WalletTransaction,
   Notification,
   KycStatus,
+  TierProgress,
   Review,
   Conversation,
   Message,
@@ -287,12 +288,19 @@ export const notifications = {
 
 export const kyc = {
   getKycStatus: () => get<KycStatus>('/kyc/status'),
+  getTierProgress: () => get<TierProgress>('/kyc/tiers'),
   uploadSelfie: (data: string, mimetype: string) =>
     post<{ ok: true }>('/kyc/selfie', { data, mimetype }),
   uploadId: (data: string, mimetype: string) =>
     post<{ ok: true }>('/kyc/id', { data, mimetype }),
   uploadAddress: (data: string, mimetype: string) =>
     post<{ ok: true }>('/kyc/address', { data, mimetype }),
+  uploadPhoneCamera: (data: string, mimetype: string) =>
+    post<{ ok: true }>('/kyc/silver/phone-camera', { data, mimetype }),
+  recordBcraConsent: (consent: string) =>
+    post<{ ok: true }>('/kyc/silver/bcra-consent', { consent }),
+  getGoldEligibility: () => get<TierProgress['gold']['progress']>('/kyc/gold/eligibility'),
+  recalculateTier: () => post<{ tier: number; downgraded?: boolean }>('/kyc/recalculate'),
 };
 
 export interface FavoriteListing extends Listing {

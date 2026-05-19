@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
+import { TierBadge } from '@/components/ui/TierBadge';
 import { Button } from '@/components/ui/Button';
 import { NotificationBell } from './NotificationBell';
 import { MessageBell } from './MessageBell';
@@ -146,8 +147,9 @@ export function Navbar() {
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-tradealo-border rounded-xl shadow-lg z-50 overflow-hidden animate-slide-up">
                     <div className="px-4 py-3 border-b border-tradealo-border">
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-sm font-medium truncate flex items-center gap-1.5">
                         {user.username ?? user.email}
+                        <TierBadge level={user.kycLevel} />
                       </p>
                       <p className="text-xs text-tradealo-text-muted truncate">
                         {user.email}

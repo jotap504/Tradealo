@@ -3,7 +3,7 @@ import { UsersController } from './users.controller'
 import { UsersService } from './users.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
-const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0 }
+const JWT_USER = { sub: 'user-1', email: 'test@example.com', role: 'user', kycLevel: 0, accountType: 'individual' }
 const MOCK_PROFILE = { id: 'user-1', email: 'test@example.com', profile: null, reputation: null }
 
 const mockUsersService = {

@@ -1,17 +1,22 @@
 import {
-  Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException, ConflictException,
-} from '@nestjs/common'
-import { eq, and, desc, lt, or, sql } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import * as schema from '../database/schema'
-import { encodeCursor, decodeCursor } from '../common/utils/cursor.util'
-import type { CreateReviewDto } from './dto/create-review.dto'
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { eq, and, desc, lt, or, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import * as schema from '../database/schema';
+import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
+import type { CreateReviewDto } from './dto/create-review.dto';
 
-type DB = NodePgDatabase<typeof schema>
+type DB = NodePgDatabase<typeof schema>;
 
-const DEFAULT_LIMIT = 20
-const MAX_LIMIT = 50
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 50;
 
 @Injectable()
 export class ReviewsService {
@@ -19,21 +24,21 @@ export class ReviewsService {
 
   async create(reviewerId: string, dto: CreateReviewDto) {
     if (reviewerId === dto.reviewedId) {
-      throw new BadRequestException('SELF_REVIEW_NOT_ALLOWED')
+      throw new BadRequestException('SELF_REVIEW_NOT_ALLOWED');
     }
 
     const [listing] = await this.db
       .select({ id: schema.listings.id })
       .from(schema.listings)
       .where(eq(schema.listings.id, dto.listingId))
-      .limit(1)
+      .limit(1);
 
-    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND')
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
 
     return this.db.transaction(async (tx) => {
-      let review
+      let review;
       try {
-        ;[review] = await tx
+        [review] = await tx
           .insert(schema.reviews)
           .values({
             listingId: dto.listingId,
@@ -44,34 +49,43 @@ export class ReviewsService {
             comment: dto.comment,
             isPublic: dto.isPublic ?? true,
           })
-          .returning()
+          .returning();
       } catch (err: unknown) {
-        const pg = err as { code?: string }
-        if (pg.code === '23505') throw new ConflictException('REVIEW_ALREADY_EXISTS')
-        throw err
+        const pg = err as { code?: string };
+        if (pg.code === '23505')
+          throw new ConflictException('REVIEW_ALREADY_EXISTS');
+        throw err;
       }
 
-      await this.updateReputation(tx, dto.reviewedId, dto.direction, dto.overallRating)
+      await this.updateReputation(
+        tx,
+        dto.reviewedId,
+        dto.direction,
+        dto.overallRating,
+      );
 
-      return review
-    })
+      return review;
+    });
   }
 
   async findByUser(userId: string, cursor?: string, limit = DEFAULT_LIMIT) {
-    const pageSize = Math.min(limit, MAX_LIMIT)
+    const pageSize = Math.min(limit, MAX_LIMIT);
     const conditions = [
       eq(schema.reviews.reviewedId, userId),
       eq(schema.reviews.isPublic, true),
-    ]
+    ];
 
     if (cursor) {
-      const { createdAt, id } = decodeCursor(cursor)
+      const { createdAt, id } = decodeCursor(cursor);
       conditions.push(
         or(
           lt(schema.reviews.createdAt, createdAt),
-          and(eq(schema.reviews.createdAt, createdAt), lt(schema.reviews.id, id)),
+          and(
+            eq(schema.reviews.createdAt, createdAt),
+            lt(schema.reviews.id, id),
+          ),
         )!,
-      )
+      );
     }
 
     const rows = await this.db
@@ -79,16 +93,17 @@ export class ReviewsService {
       .from(schema.reviews)
       .where(and(...conditions))
       .orderBy(desc(schema.reviews.createdAt), desc(schema.reviews.id))
-      .limit(pageSize + 1)
+      .limit(pageSize + 1);
 
-    const hasMore = rows.length > pageSize
-    const data = hasMore ? rows.slice(0, pageSize) : rows
-    const last = data[data.length - 1]
-    const nextCursor = hasMore && last
-      ? encodeCursor({ createdAt: last.createdAt, id: last.id })
-      : null
+    const hasMore = rows.length > pageSize;
+    const data = hasMore ? rows.slice(0, pageSize) : rows;
+    const last = data[data.length - 1];
+    const nextCursor =
+      hasMore && last
+        ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+        : null;
 
-    return { data, nextCursor, hasMore }
+    return { data, nextCursor, hasMore };
   }
 
   async getReputation(userId: string) {
@@ -96,16 +111,18 @@ export class ReviewsService {
       .select()
       .from(schema.reputationScores)
       .where(eq(schema.reputationScores.userId, userId))
-      .limit(1)
+      .limit(1);
 
-    return score ?? {
-      userId,
-      asSellerAvg: '0',
-      asSellerCount: 0,
-      asBuyerAvg: '0',
-      asBuyerCount: 0,
-      updatedAt: new Date(),
-    }
+    return (
+      score ?? {
+        userId,
+        asSellerAvg: '0',
+        asSellerCount: 0,
+        asBuyerAvg: '0',
+        asBuyerCount: 0,
+        updatedAt: new Date(),
+      }
+    );
   }
 
   async reply(reviewId: string, userId: string, replyText: string) {
@@ -116,8 +133,10 @@ export class ReviewsService {
       .limit(1);
 
     if (!review) throw new NotFoundException('REVIEW_NOT_FOUND');
-    if (review.reviewedId !== userId) throw new ForbiddenException('NOT_REVIEWED_USER');
-    if (review.direction !== 'buyer_to_seller') throw new BadRequestException('CANNOT_REPLY');
+    if (review.reviewedId !== userId)
+      throw new ForbiddenException('NOT_REVIEWED_USER');
+    if (review.direction !== 'buyer_to_seller')
+      throw new BadRequestException('CANNOT_REPLY');
 
     const [updated] = await this.db
       .update(schema.reviews)
@@ -134,7 +153,7 @@ export class ReviewsService {
     direction: string,
     rating: number,
   ): Promise<void> {
-    const isSellerReview = direction === 'buyer_to_seller'
+    const isSellerReview = direction === 'buyer_to_seller';
 
     await tx
       .insert(schema.reputationScores)
@@ -158,6 +177,6 @@ export class ReviewsService {
               asBuyerCount: sql`${schema.reputationScores.asBuyerCount} + 1`,
               updatedAt: new Date(),
             },
-      })
+      });
   }
 }

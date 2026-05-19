@@ -23,6 +23,11 @@ export const kycTypeEnum = pgEnum('kyc_type', [
   'dni',
   'address',
   'selfie',
+  'phone_camera',
+  'bcra_consent',
+  'company_statute',
+  'arca_registration',
+  'google_maps',
 ]);
 
 export const kycStatusEnum = pgEnum('kyc_status', [
