@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, ShieldCheck, Star, FileCheck } from 'lucide-react';
+import { ShieldCheck, Star, FileCheck } from 'lucide-react';
 import { kyc } from '@/lib/api';
 import { KycProgress } from '@/components/kyc/KycProgress';
 import { KycStepCard } from '@/components/kyc/KycStepCard';
