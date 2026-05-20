@@ -30,13 +30,21 @@ export class UsersService {
   async getMyProfile(userId: string) {
     const row = await this.fetchFullProfile(userId);
     if (!row) throw new NotFoundException('USER_NOT_FOUND');
-    return row;
+    return { ...row, reputation: this.mapReputation(row.reputation) };
   }
 
   async getPublicProfile(userId: string) {
     const row = await this.fetchPublicProfile(userId);
     if (!row) throw new NotFoundException('USER_NOT_FOUND');
-    return row;
+    return { ...row, reputation: this.mapReputation(row.reputation) };
+  }
+
+  private mapReputation(rep: { asSellerAvg: unknown; asSellerCount: number } | null) {
+    if (!rep) return { average: 0, count: 0 };
+    return {
+      average: parseFloat(String(rep.asSellerAvg)) || 0,
+      count: rep.asSellerCount ?? 0,
+    };
   }
 
   async getByUsername(username: string) {
