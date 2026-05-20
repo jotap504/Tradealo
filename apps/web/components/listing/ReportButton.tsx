@@ -28,8 +28,6 @@ export function ReportButton({ targetType, targetId, ownerId }: Props) {
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
 
-  if (!user || user.id === ownerId) return null;
-
   const mutation = useMutation({
     mutationFn: () =>
       reports.create({
@@ -46,6 +44,8 @@ export function ReportButton({ targetType, targetId, ownerId }: Props) {
     },
     onError: () => toast.error('No se pudo enviar la denuncia. Intentá de nuevo.'),
   });
+
+  if (!user || user.id === ownerId) return null;
 
   return (
     <>
