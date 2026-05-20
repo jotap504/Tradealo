@@ -12,6 +12,7 @@ import { ListingReviews } from './ListingReviews';
 import { ListingQuestions } from '@/components/listing/ListingQuestions';
 import { ShareButton } from '@/components/listing/ShareButton';
 import { FavoriteButton } from '@/components/listing/FavoriteButton';
+import { ReportButton } from '@/components/listing/ReportButton';
 
 async function getListing(id: string): Promise<Listing | null> {
   try {
@@ -192,6 +193,13 @@ export default async function ListingDetailPage({
           <div className="flex gap-2">
             <FavoriteButton listingId={listing.id} variant="pill" />
             <ShareButton url={`/listing/${listing.id}`} title={listing.title} />
+          </div>
+          <div className="flex justify-end">
+            <ReportButton
+              targetType="listing"
+              targetId={listing.id}
+              ownerId={listing.seller?.id}
+            />
           </div>
         </aside>
       </div>

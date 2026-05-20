@@ -8,6 +8,7 @@ import { ListingGrid } from '@/components/listing/ListingGrid';
 import { API_URL } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
 import type { User, Listing, PaginatedResponse } from '@/types';
+import { ReportButton } from '@/components/listing/ReportButton';
 
 async function getProfile(username: string): Promise<User | null> {
   try {
@@ -118,6 +119,9 @@ export default async function SellerProfilePage({
                 {user.bio}
               </p>
             )}
+            <div className="pt-1">
+              <ReportButton targetType="user" targetId={user.id} />
+            </div>
           </div>
         </div>
       </div>
