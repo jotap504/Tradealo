@@ -73,3 +73,18 @@ h1, h2, h3, h4, h5, h6 {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-tradealo-primary focus-visible:ring-offset-2;
   }
 }
+
+@keyframes promoProgress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-14px) rotate(6deg); }
+}
+
+@keyframes floatOrb {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  50%       { transform: scale(1.12) translate(-18px, 14px); }
+}

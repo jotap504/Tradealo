@@ -5,6 +5,7 @@ import { ListingCard } from '@/components/listing/ListingCard';
 import { ListingGrid } from '@/components/listing/ListingGrid';
 import { Badge } from '@/components/ui/Badge';
 import { CategoryAccordionHero } from '@/components/ui/interactive-image-accordion';
+import { PromoBannerSlider } from '@/components/ui/PromoBannerSlider';
 import { API_URL } from '@/lib/constants';
 
 const LiveVideosSection = dynamic(
@@ -119,6 +120,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Banners promocionales */}
+      <PromoBannerSlider />
 
       {/* Premium */}
       {premiumListings.length > 0 && (
