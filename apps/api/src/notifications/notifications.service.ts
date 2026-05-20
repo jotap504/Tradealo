@@ -1,5 +1,5 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, isNull, count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Resend } from 'resend';
 import { DRIZZLE_TOKEN } from '../database/database.module';
@@ -81,8 +81,8 @@ export class NotificationsService {
   }
 
   async countUnread(userId: string): Promise<{ count: number }> {
-    const rows = await this.db
-      .select({ id: schema.notifications.id })
+    const [row] = await this.db
+      .select({ n: count() })
       .from(schema.notifications)
       .where(
         and(
@@ -90,19 +90,31 @@ export class NotificationsService {
           isNull(schema.notifications.readAt),
         ),
       );
-    return { count: rows.length };
+    return { count: row?.n ?? 0 };
   }
 
   async findForUser(userId: string, unreadOnly = false) {
     const conditions = [eq(schema.notifications.userId, userId)];
     if (unreadOnly) conditions.push(isNull(schema.notifications.readAt));
 
-    return this.db
+    const rows = await this.db
       .select()
       .from(schema.notifications)
       .where(and(...conditions))
       .orderBy(desc(schema.notifications.createdAt))
       .limit(50);
+
+    return {
+      data: rows.map((n) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.body,
+        read: n.readAt !== null,
+        createdAt: n.createdAt,
+        data: n.data,
+      })),
+    };
   }
 
   async markRead(userId: string, notificationId: string): Promise<void> {
