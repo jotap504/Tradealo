@@ -109,7 +109,7 @@ export function PromoBannerSlider() {
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const delta = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 50) delta > 0 ? next() : prev();
+    if (Math.abs(delta) > 50) { if (delta > 0) next(); else prev(); }
     touchStartX.current = null;
   };
 
