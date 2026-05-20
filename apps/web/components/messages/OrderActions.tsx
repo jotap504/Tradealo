@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orders, reviews } from '@/lib/api';
 import { useAuthStore, toast } from '@/lib/store';
@@ -247,6 +248,18 @@ export function OrderActions({ conversationId }: Props) {
               Cancelar
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Buyer: open dispute */}
+      {isBuyer && (order.status === 'pending' || order.status === 'delivered') && (
+        <div className="mt-3 pt-3 border-t border-tradealo-border">
+          <Link
+            href={`/disputes/new?respondentId=${order.sellerId}&listingId=${order.listingId}`}
+            className="text-xs text-tradealo-text-muted hover:text-red-500 transition-colors"
+          >
+            ¿Tuviste un problema con esta compra? Abrir disputa
+          </Link>
         </div>
       )}
 
