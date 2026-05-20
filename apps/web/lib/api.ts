@@ -361,6 +361,8 @@ export const images = {
 };
 
 export const users = {
+  getMe: () =>
+    get<{ reputation: { average: number; count: number } }>('/users/me'),
   getPublicProfile: (username: string) =>
     get<User>(`/users/by-username/${username}`),
   updateProfile: (payload: Partial<User>) =>

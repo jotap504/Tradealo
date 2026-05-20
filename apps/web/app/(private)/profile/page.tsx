@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck, MapPin, Calendar, Star, Pencil } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
-import { kyc, reviews } from '@/lib/api';
+import { kyc, reviews, users } from '@/lib/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -38,7 +38,14 @@ export default function ProfilePage() {
     enabled: !!user?.id,
   });
 
-  const rep = user?.reputation ?? { average: 0, count: 0 };
+  const { data: myProfile } = useQuery({
+    queryKey: ['my-profile-reputation', user?.id],
+    queryFn: () => users.getMe(),
+    staleTime: 60_000,
+    enabled: !!user?.id,
+  });
+
+  const rep = myProfile?.reputation ?? user?.reputation ?? { average: 0, count: 0 };
   const latestReviews = reviewsData?.data?.slice(0, 5) ?? [];
 
   if (!user) return null;
