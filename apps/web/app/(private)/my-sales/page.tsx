@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, TrendingUp, Send } from 'lucide-react';
-import { orders, reviews } from '@/lib/api';
+import { Package, TrendingUp, Send, ShieldCheck, X } from 'lucide-react';
+import { orders, reviews, conversations } from '@/lib/api';
+import { toast } from '@/lib/store';
 import type { SaleOrder } from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
@@ -108,6 +109,7 @@ export default function MySalesPage() {
 function SaleRow({ order }: { order: SaleOrder }) {
   const badge = STATUS_BADGE[order.status];
   const price = Number(order.listing.price);
+  const [showResolve, setShowResolve] = useState(false);
 
   return (
     <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4">
@@ -204,15 +206,103 @@ function SaleRow({ order }: { order: SaleOrder }) {
           </div>
         )}
 
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3 flex-wrap">
           <Link href={`/messages/${order.conversationId}`}>
             <Button size="sm" variant="secondary">
               Ver conversación
             </Button>
           </Link>
+          {order.status !== 'cancelled' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              leftIcon={<ShieldCheck size={14} />}
+              onClick={() => setShowResolve(true)}
+              className="text-tradealo-primary hover:bg-tradealo-primary-light"
+            >
+              Resolver reclamo
+            </Button>
+          )}
         </div>
       </div>
+
+      {showResolve && (
+        <ResolveModal
+          order={order}
+          onClose={() => setShowResolve(false)}
+        />
+      )}
     </li>
+  );
+}
+
+function ResolveModal({ order, onClose }: { order: SaleOrder; onClose: () => void }) {
+  const [message, setMessage] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      conversations.sendMessage(order.conversationId, { content: message.trim() }),
+    onSuccess: () => {
+      toast.success('Respuesta enviada al comprador correctamente.');
+      onClose();
+    },
+    onError: () => {
+      toast.error('No se pudo enviar la respuesta. Intentá de nuevo.');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={20} className="text-tradealo-primary shrink-0" />
+            <h2 className="font-heading font-bold text-lg text-tradealo-text">
+              Resolver reclamo
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-tradealo-text-muted hover:text-tradealo-text">
+            <X size={20} />
+          </button>
+        </div>
+
+        <p className="text-sm text-tradealo-text-muted">
+          Publicación: <span className="font-medium text-tradealo-text">{order.listing.title}</span>
+        </p>
+        <p className="text-xs text-tradealo-text-muted">
+          Tu respuesta será enviada directamente al comprador a través del chat de la operación.
+        </p>
+
+        <div>
+          <label className="block text-sm font-medium text-tradealo-text mb-1.5">
+            Tu propuesta de resolución *
+          </label>
+          <textarea
+            rows={5}
+            placeholder="Explicá tu posición, ofrecé una solución o aclaración al comprador. Ej: 'El producto fue enviado el día X, podés verificarlo con el código de seguimiento...'."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            maxLength={2000}
+            className="w-full rounded-lg border border-tradealo-border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
+          />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <Button variant="secondary" fullWidth onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            fullWidth
+            loading={mutation.isPending}
+            disabled={!message.trim()}
+            leftIcon={<Send size={14} />}
+            onClick={() => mutation.mutate()}
+          >
+            Enviar respuesta
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

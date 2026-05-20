@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { Package, ShoppingBag } from 'lucide-react';
-import { orders } from '@/lib/api';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Package, ShoppingBag, AlertTriangle, Swords, X } from 'lucide-react';
+import { orders, disputes } from '@/lib/api';
 import type { PurchaseOrder } from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { formatPrice } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { toast } from '@/lib/store';
 import type { OrderStatus } from '@/types';
 
 type Tab = 'all' | OrderStatus;
@@ -113,6 +114,7 @@ export default function MyPurchasesPage() {
 function PurchaseRow({ order }: { order: PurchaseOrder }) {
   const badge = STATUS_BADGE[order.status];
   const price = Number(order.listing.price);
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4">
@@ -174,14 +176,166 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
           />
         </div>
 
-        <div className="mt-3">
+        <div className="flex gap-2 mt-3 flex-wrap">
           <Link href={`/messages/${order.conversationId}`}>
             <Button size="sm" variant="secondary">
               Ver conversación
             </Button>
           </Link>
+          {order.status !== 'cancelled' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              leftIcon={<Swords size={14} />}
+              onClick={() => setShowModal(true)}
+              className="text-red-600 hover:bg-red-50"
+            >
+              Iniciar reclamo
+            </Button>
+          )}
         </div>
       </div>
+
+      {showModal && (
+        <DisputeModal
+          order={order}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </li>
+  );
+}
+
+function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () => void }) {
+  const [step, setStep] = useState<'disclaimer' | 'form'>('disclaimer');
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      disputes.create({
+        respondentId: order.seller.id,
+        listingId: order.listing.id,
+        subject: subject.trim(),
+        description: description.trim(),
+      }),
+    onSuccess: () => {
+      toast.success('Reclamo iniciado. Un administrador revisará tu caso.');
+      onClose();
+    },
+    onError: () => {
+      toast.error('No se pudo iniciar el reclamo. Intentá de nuevo.');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        {step === 'disclaimer' ? (
+          <div className="p-6 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={20} className="text-amber-500 shrink-0" />
+                <h2 className="font-heading font-bold text-lg text-tradealo-text">
+                  Aviso importante
+                </h2>
+              </div>
+              <button onClick={onClose} className="text-tradealo-text-muted hover:text-tradealo-text">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-tradealo-text space-y-2">
+              <p>
+                <strong>Tradealo es una plataforma de intermediación digital</strong> que facilita
+                el contacto entre usuarios de forma independiente. No somos parte de la transacción,
+                no actuamos como vendedor ni como garante de ningún producto o servicio publicado.
+              </p>
+              <p>
+                Tradealo <strong>no asume responsabilidad alguna</strong> por la veracidad de los
+                anuncios, la calidad o estado de los productos, el cumplimiento de las entregas,
+                ni por daños directos o indirectos derivados de operaciones entre usuarios.
+              </p>
+              <p>
+                Al continuar, declarás que <strong>intentaste resolver esta situación de forma
+                directa</strong> con el vendedor. Tu reclamo será revisado por nuestro equipo
+                de mediación como facilitador, sin que ello implique ninguna obligación legal
+                ni responsabilidad por parte de Tradealo S.A.S.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button variant="secondary" fullWidth onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button fullWidth onClick={() => setStep('form')}>
+                Entendido, continuar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Swords size={20} className="text-tradealo-primary shrink-0" />
+                <h2 className="font-heading font-bold text-lg text-tradealo-text">
+                  Iniciar reclamo
+                </h2>
+              </div>
+              <button onClick={onClose} className="text-tradealo-text-muted hover:text-tradealo-text">
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-sm text-tradealo-text-muted">
+              Publicación: <span className="font-medium text-tradealo-text">{order.listing.title}</span>
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-tradealo-text mb-1.5">
+                  Motivo del reclamo *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Producto no recibido, no coincide con la descripción..."
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  maxLength={200}
+                  className="w-full rounded-lg border border-tradealo-border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-tradealo-text mb-1.5">
+                  Descripción detallada *
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Describí la situación con el mayor detalle posible: fechas, hechos, evidencia disponible..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={2000}
+                  className="w-full rounded-lg border border-tradealo-border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button variant="secondary" fullWidth onClick={() => setStep('disclaimer')}>
+                Atrás
+              </Button>
+              <Button
+                fullWidth
+                loading={mutation.isPending}
+                disabled={!subject.trim() || !description.trim()}
+                onClick={() => mutation.mutate()}
+              >
+                Enviar reclamo
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
