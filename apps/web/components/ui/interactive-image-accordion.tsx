@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { TextScramble } from '@/components/ui/text-scramble';
+import { useAuthStore } from '@/lib/store';
 
 // --- Data for the marketplace accordion ---
 const CATEGORY_DATA = [
@@ -139,6 +140,7 @@ function ScrambleWords({
 // --- Main Component ---
 export function CategoryAccordionHero() {
   const [activeIndex, setActiveIndex] = useState(2);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <section className="bg-gradient-to-br from-tradealo-primary-light to-white overflow-hidden">
@@ -156,7 +158,7 @@ export function CategoryAccordionHero() {
 
             <div className="flex items-center gap-3 justify-center lg:justify-start flex-wrap">
               <Link
-                href="/register"
+                href={user ? '/my-listings/new' : '/register'}
                 className="inline-flex items-center gap-2 bg-tradealo-primary text-white rounded-xl px-6 py-3 font-medium text-sm hover:bg-tradealo-primary-hover transition-colors shadow-sm"
               >
                 Publicar
