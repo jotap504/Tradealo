@@ -49,6 +49,7 @@ export class OrdersService {
       .select()
       .from(schema.orders)
       .where(eq(schema.orders.conversationId, conversationId))
+      .orderBy(sql`${schema.orders.createdAt} DESC`)
       .limit(1);
 
     if (!order) return null;

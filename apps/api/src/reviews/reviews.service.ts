@@ -89,8 +89,28 @@ export class ReviewsService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: schema.reviews.id,
+        listingId: schema.reviews.listingId,
+        reviewerId: schema.reviews.reviewerId,
+        reviewedId: schema.reviews.reviewedId,
+        direction: schema.reviews.direction,
+        rating: schema.reviews.overallRating,
+        comment: schema.reviews.comment,
+        replyText: schema.reviews.replyText,
+        replyCreatedAt: schema.reviews.replyCreatedAt,
+        createdAt: schema.reviews.createdAt,
+        reviewer: {
+          id: schema.userProfiles.userId,
+          username: schema.userProfiles.username,
+          avatarUrl: schema.userProfiles.avatarUrl,
+        },
+      })
       .from(schema.reviews)
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.reviews.reviewerId),
+      )
       .where(and(...conditions))
       .orderBy(desc(schema.reviews.createdAt), desc(schema.reviews.id))
       .limit(pageSize + 1);
