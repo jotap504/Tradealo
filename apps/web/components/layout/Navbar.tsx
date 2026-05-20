@@ -18,6 +18,7 @@ import {
   Repeat,
   MessageCircle,
   Heart,
+  LifeBuoy,
   ShoppingBag,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
@@ -200,6 +201,11 @@ export function Navbar() {
                       icon={<ShieldCheck size={15} />}
                       label="Verificación KYC"
                     />
+                    <DropdownLink
+                      href="/support"
+                      icon={<LifeBuoy size={15} />}
+                      label="Soporte"
+                    />
                     <button
                       onClick={onLogout}
                       className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-gray-50 text-tradealo-error border-t border-tradealo-border"
@@ -314,6 +320,12 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Verificación
+                  </Link>
+                  <Link
+                    href="/support"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Soporte
                   </Link>
                 </>
               )}

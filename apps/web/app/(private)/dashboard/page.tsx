@@ -11,6 +11,7 @@ import {
   Bell,
   MessageCircle,
   ArrowRight,
+  LifeBuoy,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { wallet, listings, notifications } from '@/lib/api';
@@ -309,6 +310,23 @@ export default function DashboardPage() {
                 </p>
                 <p className="text-xs text-tradealo-text-muted">
                   Nivel {user?.kycLevel ?? 0} de 2
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+        </Link>
+        <Link href="/support">
+          <Card hover className="cursor-pointer h-full">
+            <CardBody className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                <LifeBuoy size={22} />
+              </div>
+              <div>
+                <p className="font-heading font-semibold text-sm">
+                  Soporte
+                </p>
+                <p className="text-xs text-tradealo-text-muted">
+                  Consultas y tickets
                 </p>
               </div>
             </CardBody>
