@@ -47,6 +47,7 @@ export const users = pgTable(
     referralCode: varchar('referral_code', { length: 12 }).unique(),
     referredBy: uuid('referred_by').references((): any => users.id),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    suspendedUntil: timestamp('suspended_until', { withTimezone: true }),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

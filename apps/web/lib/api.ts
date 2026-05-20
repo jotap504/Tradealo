@@ -466,10 +466,16 @@ export const admin = {
   getUser: (id: string) => get<User>(`/admin/users/${id}`),
   updateUserRole: (id: string, role: string) =>
     patch<{ ok: true }>(`/admin/users/${id}/role`, { role }),
-  suspendUser: (id: string) =>
-    patch<{ ok: true }>(`/admin/users/${id}/suspend`),
+  suspendUser: (id: string, days?: number) =>
+    patch<{ ok: true }>(`/admin/users/${id}/suspend`, days ? { days } : {}),
   banUser: (id: string) =>
     patch<{ ok: true }>(`/admin/users/${id}/ban`),
+  restoreUser: (id: string) =>
+    patch<{ ok: true }>(`/admin/users/${id}/restore`),
+  deleteUser: (id: string) =>
+    del<{ ok: true }>(`/admin/users/${id}`),
+  setKycLevel: (id: string, level: 0 | 1 | 2) =>
+    patch<{ ok: true }>(`/admin/users/${id}/kyc-level`, { level }),
   adjustTokens: (userId: string, amount: number, reason: string) =>
     post<{ ok: true }>(`/admin/users/${userId}/tokens`, { amount, reason }),
   getModerationListings: (params: { cursor?: string } = {}) =>

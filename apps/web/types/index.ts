@@ -2,7 +2,7 @@ export type Currency = 'ARS' | 'USD';
 export type ListingCondition = 'new' | 'used' | 'refurbished';
 export type ListingType = 'standard' | 'premium';
 export type Role = 'user' | 'super_admin' | 'moderator';
-export type UserStatus = 'active' | 'suspended' | 'banned';
+export type UserStatus = 'active' | 'suspended' | 'banned' | 'deleted';
 
 export interface User {
   id: string;

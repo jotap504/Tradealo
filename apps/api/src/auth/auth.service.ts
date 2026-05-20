@@ -173,8 +173,20 @@ export class AuthService {
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordValid) throw new UnauthorizedException('PASSWORD_MISMATCH');
 
-    if (user.status !== 'active')
-      throw new ForbiddenException('ACCOUNT_SUSPENDED');
+    if (user.status !== 'active') {
+      if (
+        user.status === 'suspended' &&
+        user.suspendedUntil &&
+        user.suspendedUntil < new Date()
+      ) {
+        await this.db
+          .update(schema.users)
+          .set({ status: 'active', suspendedUntil: null })
+          .where(eq(schema.users.id, user.id));
+      } else {
+        throw new ForbiddenException('ACCOUNT_SUSPENDED');
+      }
+    }
 
     await this.db
       .update(schema.users)
@@ -240,7 +252,13 @@ export class AuthService {
       .set({ revokedAt: new Date() })
       .where(eq(schema.refreshTokens.tokenHash, tokenHash));
 
-    return this.createTokenPair(user.id, user.email, user.role, user.kycLevel, user.accountType);
+    return this.createTokenPair(
+      user.id,
+      user.email,
+      user.role,
+      user.kycLevel,
+      user.accountType,
+    );
   }
 
   async logout(userId: string, rawToken: string): Promise<void> {
@@ -294,7 +312,13 @@ export class AuthService {
     kycLevel: number,
     accountType: string,
   ): Promise<TokenPair> {
-    const payload: JwtPayload = { sub: userId, email, role, kycLevel, accountType };
+    const payload: JwtPayload = {
+      sub: userId,
+      email,
+      role,
+      kycLevel,
+      accountType,
+    };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET ?? 'changeme_dev_only',

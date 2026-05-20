@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -29,7 +30,15 @@ import type { AdminSessionPayload } from './admin-auth.service';
 
 class UpdateRoleDto {
   @IsString()
-  @IsIn(['user', 'verified_user', 'moderator', 'support', 'finance', 'partner', 'super_admin'])
+  @IsIn([
+    'user',
+    'verified_user',
+    'moderator',
+    'support',
+    'finance',
+    'partner',
+    'super_admin',
+  ])
   role!: string;
 }
 
@@ -58,6 +67,21 @@ class RejectReasonDto {
   @IsNotEmpty()
   @MaxLength(500)
   reason!: string;
+}
+
+class SuspendUserDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  days?: number;
+}
+
+class SetKycLevelDto {
+  @IsInt()
+  @IsIn([0, 1, 2])
+  @Type(() => Number)
+  level!: number;
 }
 
 class UpdateTokenPackDto {
@@ -155,17 +179,43 @@ export class AdminController {
   suspendUser(
     @Param('id') id: string,
     @CurrentAdmin() admin: AdminSessionPayload,
+    @Body() dto: SuspendUserDto,
   ) {
-    return this.adminService.suspendUser(id, admin.sub);
+    return this.adminService.suspendUser(id, admin.sub, dto.days);
   }
 
   @Patch('users/:id/ban')
   @HttpCode(HttpStatus.OK)
-  banUser(
+  banUser(@Param('id') id: string, @CurrentAdmin() admin: AdminSessionPayload) {
+    return this.adminService.banUser(id, admin.sub);
+  }
+
+  @Patch('users/:id/restore')
+  @HttpCode(HttpStatus.OK)
+  restoreUser(
     @Param('id') id: string,
     @CurrentAdmin() admin: AdminSessionPayload,
   ) {
-    return this.adminService.banUser(id, admin.sub);
+    return this.adminService.restoreUser(id, admin.sub);
+  }
+
+  @Delete('users/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteUser(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: AdminSessionPayload,
+  ) {
+    return this.adminService.deleteUser(id, admin.sub);
+  }
+
+  @Patch('users/:id/kyc-level')
+  @HttpCode(HttpStatus.OK)
+  setKycLevel(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: AdminSessionPayload,
+    @Body() dto: SetKycLevelDto,
+  ) {
+    return this.adminService.setKycLevel(id, dto.level, admin.sub);
   }
 
   @Post('users/:id/tokens')
@@ -175,7 +225,12 @@ export class AdminController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: AdjustTokensDto,
   ) {
-    return this.adminService.adjustTokens(id, dto.amount, dto.reason, admin.sub);
+    return this.adminService.adjustTokens(
+      id,
+      dto.amount,
+      dto.reason,
+      admin.sub,
+    );
   }
 
   // ─── Configs ─────────────────────────────────────────────────────────────────
@@ -192,7 +247,12 @@ export class AdminController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: UpdateConfigDto,
   ) {
-    return this.adminService.updateConfig(key, dto.value, dto.reason, admin.sub);
+    return this.adminService.updateConfig(
+      key,
+      dto.value,
+      dto.reason,
+      admin.sub,
+    );
   }
 
   // ─── Token Packs ─────────────────────────────────────────────────────────────
@@ -219,7 +279,11 @@ export class AdminController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: UpdateTokenPackPriceDto,
   ) {
-    return this.adminService.updateTokenPackPrice(priceId, dto.price, admin.sub);
+    return this.adminService.updateTokenPackPrice(
+      priceId,
+      dto.price,
+      admin.sub,
+    );
   }
 
   // ─── KYC ─────────────────────────────────────────────────────────────────────
@@ -252,7 +316,9 @@ export class AdminController {
 
   @Get('listings/flagged')
   listFlagged(@Query('limit') limit?: string) {
-    return this.adminService.listFlaggedListings(limit ? parseInt(limit, 10) : 50);
+    return this.adminService.listFlaggedListings(
+      limit ? parseInt(limit, 10) : 50,
+    );
   }
 
   @Get('listings/pending')
