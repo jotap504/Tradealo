@@ -92,6 +92,9 @@ export default async function HomePage() {
     <div className="flex flex-col gap-10 pb-20">
       <CategoryAccordionHero />
 
+      {/* Banners promocionales */}
+      <PromoBannerSlider />
+
       <LiveVideosSection listings={liveListings} />
 
       {/* Categorías */}
@@ -120,9 +123,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Banners promocionales */}
-      <PromoBannerSlider />
 
       {/* Premium */}
       {premiumListings.length > 0 && (
