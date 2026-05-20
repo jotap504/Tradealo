@@ -113,6 +113,28 @@ export interface TokenPack {
   description?: string;
 }
 
+export interface AdminTokenPackPrice {
+  id: string;
+  packId: string;
+  countryCode: string;
+  price: string;
+  currencyCode: string;
+  isActive: boolean;
+}
+
+export interface AdminTokenPack {
+  id: string;
+  key: string;
+  label: string;
+  tokens: number;
+  bonusPct: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  sortOrder: number;
+  createdAt: string;
+  prices: AdminTokenPackPrice[];
+}
+
 export interface WalletBalance {
   balance: number;
   monthlyQuota: number;

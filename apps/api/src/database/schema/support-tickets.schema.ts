@@ -7,7 +7,6 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
-import { adminUsers } from './config.schema';
 
 export const supportTickets = pgTable(
   'support_tickets',
@@ -20,7 +19,9 @@ export const supportTickets = pgTable(
     category: varchar('category', { length: 30 }).notNull(), // 'account'|'billing'|'listing'|'technical'|'other'
     priority: varchar('priority', { length: 10 }).notNull().default('medium'), // 'low'|'medium'|'high'|'urgent'
     status: varchar('status', { length: 20 }).notNull().default('open'), // 'open'|'in_progress'|'waiting_user'|'resolved'|'closed'
-    assignedTo: uuid('assigned_to').references(() => adminUsers.id),
+    assignedTo: uuid('assigned_to').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

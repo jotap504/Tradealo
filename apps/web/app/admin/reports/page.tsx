@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Flag } from 'lucide-react';
+import { Flag, ExternalLink } from 'lucide-react';
 import { admin, type AdminReport } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -147,6 +148,7 @@ export default function AdminReportsPage() {
                     <tr className="border-b border-tradealo-border text-left text-tradealo-text-muted text-xs">
                       <th className="pb-2 font-medium">Fecha</th>
                       <th className="pb-2 font-medium">Tipo</th>
+                      <th className="pb-2 font-medium">Denunciado</th>
                       <th className="pb-2 font-medium">Motivo</th>
                       <th className="pb-2 font-medium">Estado</th>
                       <th className="pb-2 font-medium">Acciones</th>
@@ -163,7 +165,25 @@ export default function AdminReportsPage() {
                             {r.targetType === 'listing' ? 'Publicación' : 'Usuario'}
                           </Badge>
                         </td>
-                        <td className="py-3 pr-4 text-tradealo-text max-w-[200px] truncate">
+                        <td className="py-3 pr-4">
+                          {r.targetType === 'listing' ? (
+                            <Link
+                              href={`/listing/${r.targetId}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1 text-xs text-tradealo-primary hover:underline"
+                            >
+                              Ver publicación <ExternalLink size={11} />
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/admin/users/${r.targetId}`}
+                              className="inline-flex items-center gap-1 text-xs text-tradealo-primary hover:underline"
+                            >
+                              Ver usuario <ExternalLink size={11} />
+                            </Link>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4 text-tradealo-text max-w-[160px] truncate">
                           {r.reason}
                         </td>
                         <td className="py-3 pr-4">

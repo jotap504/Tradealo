@@ -20,6 +20,7 @@ import type {
   PaginatedResponse,
   SystemConfig,
   AdminStats,
+  AdminTokenPack,
   Order,
 } from '@/types';
 
@@ -494,9 +495,13 @@ export const admin = {
   getConfigs: () => get<SystemConfig[]>('/admin/configs'),
   updateConfig: (key: string, value: unknown, reason: string) =>
     patch<SystemConfig>(`/admin/configs/${key}`, { value, reason }),
-  getTokenPacks: () => get<{ packs: unknown[] }>('/admin/token-packs'),
-  updateTokenPack: (id: string, updates: Record<string, unknown>) =>
-    patch<{ ok: true }>(`/admin/token-packs/${id}`, updates),
+  getTokenPacks: () => get<AdminTokenPack[]>('/admin/token-packs'),
+  createTokenPack: (data: { key: string; label: string; tokens: number; bonusPct?: number; isFeatured?: boolean; sortOrder?: number; priceArs: string }) =>
+    post<AdminTokenPack>('/admin/token-packs', data),
+  updateTokenPack: (id: string, updates: { label?: string; tokens?: number; bonusPct?: number; isFeatured?: boolean; isActive?: boolean; sortOrder?: number }) =>
+    patch<AdminTokenPack>(`/admin/token-packs/${id}`, updates),
+  updateTokenPackPrice: (priceId: string, price: string) =>
+    patch<{ ok: true }>(`/admin/token-packs/prices/${priceId}`, { price }),
   getAuditLog: (params: { entityType?: string; adminId?: string; from?: string; to?: string; cursor?: string; limit?: number } = {}) =>
     get<{ data: AdminAuditEntry[]; nextCursor?: string }>('/admin/audit-log', { params }),
   getReports: (params: { status?: string; targetType?: string; cursor?: string; limit?: number } = {}) =>

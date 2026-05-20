@@ -178,7 +178,10 @@ export class ReviewsService {
    * The review is always stored and shown publicly; this only gates the
    * score update.
    */
-  private async reputationEligible(reviewerId: string, tx: DB): Promise<boolean> {
+  private async reputationEligible(
+    reviewerId: string,
+    tx: DB,
+  ): Promise<boolean> {
     const [reviewer] = await tx
       .select({ kycLevel: schema.users.kycLevel })
       .from(schema.users)

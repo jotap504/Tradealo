@@ -479,14 +479,71 @@ export class AdminService {
       adminId,
       changeReason,
     );
-    await this.logAudit(adminId, 'config.update', 'config', undefined, undefined, {
-      key,
-      value,
-    });
+    await this.logAudit(
+      adminId,
+      'config.update',
+      'config',
+      undefined,
+      undefined,
+      {
+        key,
+        value,
+      },
+    );
     return updated;
   }
 
   // ─── Token Packs ─────────────────────────────────────────────────────────────
+
+  async createTokenPack(
+    data: {
+      key: string;
+      label: string;
+      tokens: number;
+      bonusPct?: number;
+      isFeatured?: boolean;
+      sortOrder?: number;
+      priceArs: string;
+    },
+    adminId: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const [pack] = await tx
+        .insert(schema.tokenPackDefinitions)
+        .values({
+          key: data.key,
+          label: data.label,
+          tokens: data.tokens,
+          bonusPct: data.bonusPct ?? 0,
+          isFeatured: data.isFeatured ?? false,
+          sortOrder: data.sortOrder ?? 0,
+          isActive: true,
+        })
+        .returning();
+
+      const [price] = await tx
+        .insert(schema.tokenPackPrices)
+        .values({
+          packId: pack.id,
+          countryCode: 'AR',
+          price: data.priceArs,
+          currencyCode: 'ARS',
+          updatedBy: adminId,
+        })
+        .returning();
+
+      await this.logAudit(
+        adminId,
+        'token_pack.create',
+        'token_pack',
+        pack.id,
+        undefined,
+        data,
+      );
+
+      return { ...pack, prices: [price] };
+    });
+  }
 
   async getTokenPacks() {
     const [packs, prices] = await Promise.all([

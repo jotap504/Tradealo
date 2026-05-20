@@ -8,7 +8,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
 import { listings } from './listings.schema';
-import { adminUsers } from './config.schema';
 
 export const disputes = pgTable(
   'disputes',
@@ -24,7 +23,9 @@ export const disputes = pgTable(
     subject: varchar('subject', { length: 200 }).notNull(),
     description: text('description').notNull(),
     status: varchar('status', { length: 20 }).notNull().default('open'), // 'open' | 'resolved' | 'closed'
-    assignedTo: uuid('assigned_to').references(() => adminUsers.id),
+    assignedTo: uuid('assigned_to').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     resolution: text('resolution'),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })

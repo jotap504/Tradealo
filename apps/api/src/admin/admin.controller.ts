@@ -120,6 +120,42 @@ class UpdateTokenPackPriceDto {
   price!: string;
 }
 
+class CreateTokenPackDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  key!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  label!: string;
+
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  tokens!: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  bonusPct?: number;
+
+  @IsOptional()
+  isFeatured?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  sortOrder?: number;
+
+  @IsString()
+  @IsNotEmpty()
+  priceArs!: string;
+}
+
 @Controller('admin')
 @Public()
 @UseGuards(AdminJwtGuard)
@@ -260,6 +296,15 @@ export class AdminController {
   @Get('token-packs')
   getTokenPacks() {
     return this.adminService.getTokenPacks();
+  }
+
+  @Post('token-packs')
+  @HttpCode(HttpStatus.CREATED)
+  createTokenPack(
+    @CurrentAdmin() admin: AdminSessionPayload,
+    @Body() dto: CreateTokenPackDto,
+  ) {
+    return this.adminService.createTokenPack(dto, admin.sub);
   }
 
   @Patch('token-packs/:id')

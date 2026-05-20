@@ -105,7 +105,7 @@ export class ReportsService {
   async assignReport(id: string, adminId: string) {
     const [updated] = await this.db
       .update(reports)
-      .set({ assignedTo: adminId })
+      .set({ assignedTo: adminId, status: 'under_review' })
       .where(eq(reports.id, id))
       .returning();
 

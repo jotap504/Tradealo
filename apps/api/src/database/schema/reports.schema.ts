@@ -20,7 +20,9 @@ export const reports = pgTable(
     reason: varchar('reason', { length: 50 }).notNull(),
     description: text('description'),
     status: varchar('status', { length: 20 }).notNull().default('open'), // 'open' | 'resolved' | 'dismissed'
-    assignedTo: uuid('assigned_to').references(() => users.id),
+    assignedTo: uuid('assigned_to').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     resolution: text('resolution'),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
