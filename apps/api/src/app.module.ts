@@ -19,6 +19,9 @@ import { LiveChatModule } from './live-chat/live-chat.module';
 import { OrdersModule } from './orders/orders.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { KycModule } from './kyc/kyc.module';
+import { ReportsModule } from './reports/reports.module';
+import { DisputesModule } from './disputes/disputes.module';
+import { SupportModule } from './support/support.module';
 // Disabled until external services are configured:
 // import { AiModule } from './ai/ai.module'
 // import { SearchModule } from './search/search.module'
@@ -50,6 +53,9 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     OrdersModule,
     FavoritesModule,
     KycModule,
+    ReportsModule,
+    DisputesModule,
+    SupportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

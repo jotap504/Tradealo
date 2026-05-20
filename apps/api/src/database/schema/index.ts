@@ -12,3 +12,6 @@ export * from './listing-questions.schema';
 export * from './live-chat.schema';
 export * from './orders.schema';
 export * from './favorites.schema';
+export * from './reports.schema';
+export * from './support-tickets.schema';
+export * from './disputes.schema';

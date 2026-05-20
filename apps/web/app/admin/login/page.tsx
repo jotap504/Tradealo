@@ -25,10 +25,13 @@ export default function AdminLoginPage() {
   const initialized = useAuthStore((s) => s.initialized);
   const setUser = useAuthStore((s) => s.setUser);
 
+  const ADMIN_ROLES = ['super_admin', 'partner', 'finance', 'support', 'moderator'];
+
   useEffect(() => {
-    if (initialized && user?.role === 'super_admin') {
+    if (initialized && user && ADMIN_ROLES.includes(user.role ?? '')) {
       router.replace('/admin');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, user, router]);
 
   const {
@@ -40,7 +43,7 @@ export default function AdminLoginPage() {
   const onSubmit = async (values: FormValues) => {
     try {
       const res = await auth.login(values);
-      if (res.user.role !== 'super_admin') {
+      if (!ADMIN_ROLES.includes(res.user.role ?? '')) {
         toast.error('Acceso denegado. No tenés permisos de administrador.');
         return;
       }

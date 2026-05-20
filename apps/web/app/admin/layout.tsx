@@ -13,19 +13,33 @@ import {
   ScrollText,
   Repeat,
   LogOut,
+  TicketCheck,
+  Swords,
+  Flag,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 
-const NAV = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/users', label: 'Usuarios', icon: Users },
-  { href: '/admin/listings', label: 'Listings', icon: Tag },
-  { href: '/admin/kyc', label: 'KYC', icon: ShieldCheck },
-  { href: '/admin/config', label: 'Config', icon: Settings },
-  { href: '/admin/token-packs', label: 'Token Packs', icon: Coins },
-  { href: '/admin/audit-log', label: 'Audit Log', icon: ScrollText },
+type AdminRole = 'super_admin' | 'partner' | 'finance' | 'support' | 'moderator';
+
+const ADMIN_ROLES: AdminRole[] = ['super_admin', 'partner', 'finance', 'support', 'moderator'];
+
+function isAdminRole(role: string | undefined): role is AdminRole {
+  return ADMIN_ROLES.includes(role as AdminRole);
+}
+
+const NAV: { href: string; label: string; icon: React.FC<{ size?: number | string }>; exact?: boolean; roles: AdminRole[] }[] = [
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true, roles: ['super_admin', 'partner', 'finance'] },
+  { href: '/admin/users', label: 'Usuarios', icon: Users, roles: ['super_admin', 'partner', 'support'] },
+  { href: '/admin/listings', label: 'Listings', icon: Tag, roles: ['super_admin', 'partner', 'moderator'] },
+  { href: '/admin/kyc', label: 'KYC', icon: ShieldCheck, roles: ['super_admin', 'partner', 'moderator'] },
+  { href: '/admin/tickets', label: 'Tickets', icon: TicketCheck, roles: ['super_admin', 'partner', 'support'] },
+  { href: '/admin/disputes', label: 'Disputas', icon: Swords, roles: ['super_admin', 'partner', 'support'] },
+  { href: '/admin/reports', label: 'Denuncias', icon: Flag, roles: ['super_admin', 'partner', 'support', 'moderator'] },
+  { href: '/admin/token-packs', label: 'Token Packs', icon: Coins, roles: ['super_admin', 'finance'] },
+  { href: '/admin/config', label: 'Config', icon: Settings, roles: ['super_admin'] },
+  { href: '/admin/audit-log', label: 'Audit Log', icon: ScrollText, roles: ['super_admin', 'finance'] },
 ];
 
 export default function AdminLayout({
@@ -47,17 +61,18 @@ export default function AdminLayout({
   useEffect(() => {
     if (!initialized) return;
     if (pathname === '/admin/login') return;
-    if (!user || user.role !== 'super_admin') {
+    if (!user || !isAdminRole(user.role)) {
       router.replace('/admin/login');
     }
   }, [initialized, user, router, pathname]);
 
-  // On the login page, just render children without sidebar
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
-  if (!initialized || !user || user.role !== 'super_admin') return null;
+  if (!initialized || !user || !isAdminRole(user.role)) return null;
+
+  const visibleNav = NAV.filter((item) => item.roles.includes(user.role as AdminRole));
 
   const onLogout = async () => {
     await logout();
@@ -78,7 +93,7 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-2">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href) && item.href !== '/admin';
@@ -102,6 +117,13 @@ export default function AdminLayout({
         </nav>
 
         <div className="px-2 py-4 border-t border-white/10">
+          <div className="flex items-center gap-2 px-3 py-2 mb-1">
+            <Avatar src={user.avatarUrl} username={user.username ?? user.email} size="sm" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-white truncate">{user.username ?? user.email}</p>
+              <p className="text-xs text-gray-500 truncate">{user.role}</p>
+            </div>
+          </div>
           <button
             onClick={onLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white w-full text-left transition-colors"

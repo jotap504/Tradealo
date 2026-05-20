@@ -6,6 +6,8 @@ import { AdminAuthService } from './admin-auth.service';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { AdminPreAuthGuard } from '../common/guards/admin-preauth.guard';
+import { AdminConfigService } from '../config/admin-config.service';
+import { ConfigService } from '../config/config.service';
 
 @Module({
   imports: [
@@ -14,6 +16,6 @@ import { AdminPreAuthGuard } from '../common/guards/admin-preauth.guard';
     }),
   ],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminAuthService, AdminJwtGuard, AdminPreAuthGuard],
+  providers: [AdminService, AdminAuthService, AdminJwtGuard, AdminPreAuthGuard, AdminConfigService, ConfigService],
 })
 export class AdminModule {}

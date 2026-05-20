@@ -461,9 +461,15 @@ export const orders = {
 
 export const admin = {
   getStats: () => get<AdminStats>('/admin/stats'),
-  getUsers: (params: { cursor?: string; role?: string; kycLevel?: number } = {}) =>
+  getUsers: (params: { cursor?: string; role?: string; kycLevel?: number; status?: string; search?: string; limit?: number } = {}) =>
     get<PaginatedResponse<User>>('/admin/users', { params }),
   getUser: (id: string) => get<User>(`/admin/users/${id}`),
+  updateUserRole: (id: string, role: string) =>
+    patch<{ ok: true }>(`/admin/users/${id}/role`, { role }),
+  suspendUser: (id: string) =>
+    patch<{ ok: true }>(`/admin/users/${id}/suspend`),
+  banUser: (id: string) =>
+    patch<{ ok: true }>(`/admin/users/${id}/ban`),
   adjustTokens: (userId: string, amount: number, reason: string) =>
     post<{ ok: true }>(`/admin/users/${userId}/tokens`, { amount, reason }),
   getModerationListings: (params: { cursor?: string } = {}) =>
@@ -478,8 +484,139 @@ export const admin = {
   rejectKyc: (userId: string, reason: string) =>
     post<{ ok: true }>(`/admin/kyc/${userId}/reject`, { reason }),
   getConfigs: () => get<SystemConfig[]>('/admin/configs'),
-  updateConfig: (key: string, value: string) =>
-    patch<SystemConfig>(`/admin/configs/${key}`, { value }),
+  updateConfig: (key: string, value: unknown, reason: string) =>
+    patch<SystemConfig>(`/admin/configs/${key}`, { value, reason }),
+  getTokenPacks: () => get<{ packs: unknown[] }>('/admin/token-packs'),
+  updateTokenPack: (id: string, updates: Record<string, unknown>) =>
+    patch<{ ok: true }>(`/admin/token-packs/${id}`, updates),
+  getAuditLog: (params: { entityType?: string; adminId?: string; from?: string; to?: string; cursor?: string; limit?: number } = {}) =>
+    get<{ data: AdminAuditEntry[]; nextCursor?: string }>('/admin/audit-log', { params }),
+  getReports: (params: { status?: string; targetType?: string; cursor?: string; limit?: number } = {}) =>
+    get<{ data: AdminReport[]; nextCursor?: string }>('/admin/reports', { params }),
+  getReport: (id: string) =>
+    get<AdminReport>(`/admin/reports/${id}`),
+  assignReport: (id: string) =>
+    patch<{ ok: true }>(`/admin/reports/${id}/assign`, {}),
+  resolveReport: (id: string, resolution: string) =>
+    patch<{ ok: true }>(`/admin/reports/${id}/resolve`, { resolution }),
+  dismissReport: (id: string, resolution: string) =>
+    patch<{ ok: true }>(`/admin/reports/${id}/dismiss`, { resolution }),
+  getDisputes: (params: { status?: string; cursor?: string; limit?: number } = {}) =>
+    get<{ data: AdminDispute[]; nextCursor?: string }>('/admin/disputes', { params }),
+  getDispute: (id: string) =>
+    get<AdminDispute>(`/admin/disputes/${id}`),
+  addDisputeMessage: (id: string, message: string) =>
+    post<{ ok: true }>(`/admin/disputes/${id}/messages`, { message }),
+  assignDispute: (id: string) =>
+    patch<{ ok: true }>(`/admin/disputes/${id}/assign`, {}),
+  resolveDispute: (id: string, resolution: string) =>
+    patch<{ ok: true }>(`/admin/disputes/${id}/resolve`, { resolution }),
+  closeDispute: (id: string, resolution: string) =>
+    patch<{ ok: true }>(`/admin/disputes/${id}/close`, { resolution }),
+  getTickets: (params: { status?: string; priority?: string; category?: string; cursor?: string; limit?: number } = {}) =>
+    get<{ data: AdminTicket[]; nextCursor?: string }>('/admin/tickets', { params }),
+  getTicket: (id: string) =>
+    get<AdminTicket>(`/admin/tickets/${id}`),
+  addTicketMessage: (id: string, message: string) =>
+    post<{ ok: true }>(`/admin/tickets/${id}/messages`, { message }),
+  updateTicket: (id: string, updates: { status?: string; priority?: string; assignedTo?: string }) =>
+    patch<{ ok: true }>(`/admin/tickets/${id}`, updates),
+};
+
+export interface AdminAuditEntry {
+  id: string;
+  adminId: string;
+  adminEmail?: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  oldValue?: unknown;
+  newValue?: unknown;
+  createdAt: string;
+}
+
+export interface AdminReport {
+  id: string;
+  reporterId: string;
+  reporterEmail?: string;
+  targetType: 'listing' | 'user';
+  targetId: string;
+  reason: string;
+  description?: string;
+  status: 'open' | 'under_review' | 'resolved' | 'dismissed';
+  assignedTo?: string;
+  resolution?: string;
+  resolvedAt?: string;
+  createdAt: string;
+}
+
+export interface DisputeMessage {
+  id: string;
+  authorId: string;
+  authorType: 'user' | 'admin';
+  message: string;
+  createdAt: string;
+}
+
+export interface AdminDispute {
+  id: string;
+  initiatorId: string;
+  respondentId: string;
+  listingId?: string;
+  subject: string;
+  description: string;
+  status: 'open' | 'in_review' | 'resolved' | 'closed';
+  assignedTo?: string;
+  resolution?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  messages?: DisputeMessage[];
+}
+
+export interface TicketMessage {
+  id: string;
+  authorId: string;
+  authorType: 'user' | 'admin';
+  message: string;
+  createdAt: string;
+}
+
+export interface AdminTicket {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  subject: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'waiting_user' | 'resolved' | 'closed';
+  assignedTo?: string;
+  createdAt: string;
+  updatedAt: string;
+  messages?: TicketMessage[];
+}
+
+export const reports = {
+  create: (dto: { targetType: 'listing' | 'user'; targetId: string; reason: string; description?: string }) =>
+    post<{ ok: true }>('/reports', dto),
+};
+
+export const disputes = {
+  create: (dto: { respondentId: string; listingId?: string; subject: string; description: string }) =>
+    post<{ id: string }>('/disputes', dto),
+  listMine: () => get<{ data: AdminDispute[] }>('/disputes/me'),
+  get: (id: string) => get<AdminDispute>(`/disputes/${id}`),
+  addMessage: (id: string, message: string) =>
+    post<{ ok: true }>(`/disputes/${id}/messages`, { message }),
+};
+
+export const support = {
+  createTicket: (dto: { subject: string; category: string; message: string }) =>
+    post<{ id: string }>('/support/tickets', dto),
+  listMine: () => get<AdminTicket[]>('/support/tickets'),
+  getTicket: (id: string) => get<AdminTicket>(`/support/tickets/${id}`),
+  addMessage: (id: string, message: string) =>
+    post<{ ok: true }>(`/support/tickets/${id}/messages`, { message }),
 };
 
 export default {
@@ -497,4 +634,7 @@ export default {
   liveChat,
   orders,
   admin,
+  reports,
+  disputes,
+  support,
 };

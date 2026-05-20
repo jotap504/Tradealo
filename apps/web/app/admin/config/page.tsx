@@ -53,6 +53,7 @@ export default function AdminConfigPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<SystemConfig | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [editReason, setEditReason] = useState('');
   const [saving, setSaving] = useState(false);
 
   const { data: configs, isLoading } = useQuery({
@@ -78,13 +79,14 @@ export default function AdminConfigPage() {
   const openEdit = (cfg: SystemConfig) => {
     setEditing(cfg);
     setEditValue(cfg.value);
+    setEditReason('');
   };
 
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
     try {
-      await admin.updateConfig(editing.key, editValue);
+      await admin.updateConfig(editing.key, editValue, editReason || 'Actualización manual');
       toast.success('Configuración actualizada');
       queryClient.invalidateQueries({ queryKey: ['admin-configs'] });
       setEditing(null);
@@ -276,6 +278,17 @@ export default function AdminConfigPage() {
             <p className="text-sm text-tradealo-text-muted">{editing.description}</p>
           )}
           {renderEditInput()}
+          <div>
+            <label className="block text-sm font-medium text-tradealo-text mb-1.5">
+              Razón del cambio
+            </label>
+            <input
+              className="w-full rounded-lg border border-tradealo-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary"
+              placeholder="Ej: Ajuste por campaña de verano"
+              value={editReason}
+              onChange={(e) => setEditReason(e.target.value)}
+            />
+          </div>
           <div className="flex gap-2">
             <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
               Cancelar
