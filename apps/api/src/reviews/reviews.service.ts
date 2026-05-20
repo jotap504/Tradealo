@@ -6,7 +6,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { eq, and, desc, lt, or, sql } from 'drizzle-orm';
+import { eq, and, desc, lt, or, sql, gte } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
@@ -57,12 +57,14 @@ export class ReviewsService {
         throw err;
       }
 
-      await this.updateReputation(
-        tx,
-        dto.reviewedId,
-        dto.direction,
-        dto.overallRating,
-      );
+      if (await this.reputationEligible(reviewerId, tx)) {
+        await this.updateReputation(
+          tx,
+          dto.reviewedId,
+          dto.direction,
+          dto.overallRating,
+        );
+      }
 
       return review;
     });
@@ -165,6 +167,43 @@ export class ReviewsService {
       .returning();
 
     return updated;
+  }
+
+  /**
+   * A review counts toward reputation only when:
+   *   1. The reviewer has KYC level >= 1 (verified identity)
+   *   2. The reviewer has submitted at most 2 reputation-counted reviews
+   *      in the current calendar month (limits fake-account inflation)
+   *
+   * The review is always stored and shown publicly; this only gates the
+   * score update.
+   */
+  private async reputationEligible(reviewerId: string, tx: DB): Promise<boolean> {
+    const [reviewer] = await tx
+      .select({ kycLevel: schema.users.kycLevel })
+      .from(schema.users)
+      .where(eq(schema.users.id, reviewerId))
+      .limit(1);
+
+    if (!reviewer || reviewer.kycLevel < 1) return false;
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [{ total }] = await tx
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.reviews)
+      .where(
+        and(
+          eq(schema.reviews.reviewerId, reviewerId),
+          gte(schema.reviews.createdAt, startOfMonth),
+        ),
+      );
+
+    // The current review is already inserted at this point, so <= 2 means
+    // it is the 1st or 2nd review this month.
+    return Number(total) <= 2;
   }
 
   private async updateReputation(
