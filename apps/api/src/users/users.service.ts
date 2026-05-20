@@ -39,7 +39,9 @@ export class UsersService {
     return { ...row, reputation: this.mapReputation(row.reputation) };
   }
 
-  private mapReputation(rep: { asSellerAvg: unknown; asSellerCount: number } | null) {
+  private mapReputation(
+    rep: { asSellerAvg: unknown; asSellerCount: number } | null,
+  ) {
     if (!rep) return { average: 0, count: 0 };
     return {
       average: parseFloat(String(rep.asSellerAvg)) || 0,
@@ -97,8 +99,12 @@ export class UsersService {
         ...(dto.cbu !== undefined && { cbu: dto.cbu }),
         ...(dto.alias !== undefined && { alias: dto.alias }),
         ...(dto.bankName !== undefined && { bankName: dto.bankName }),
-        ...(dto.bankAccountType !== undefined && { bankAccountType: dto.bankAccountType }),
-        ...(dto.bankAccountNumber !== undefined && { bankAccountNumber: dto.bankAccountNumber }),
+        ...(dto.bankAccountType !== undefined && {
+          bankAccountType: dto.bankAccountType,
+        }),
+        ...(dto.bankAccountNumber !== undefined && {
+          bankAccountNumber: dto.bankAccountNumber,
+        }),
         updatedAt: new Date(),
       })
       .where(eq(schema.userProfiles.userId, userId))

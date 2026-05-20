@@ -1,28 +1,31 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common'
-import { eq, desc, and, lt, or } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import * as schema from '../database/schema'
-import { disputes, disputeMessages } from '../database/schema'
-import { encodeCursor, decodeCursor } from '../common/utils/cursor.util'
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { eq, desc, and, lt, or } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import * as schema from '../database/schema';
+import { disputes, disputeMessages } from '../database/schema';
+import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 
-type DB = NodePgDatabase<typeof schema>
+type DB = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class DisputesService {
-  constructor(
-    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
-  ) {}
+  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {}
 
   // ─── User: create a dispute ───────────────────────────────────────────────────
 
   async createDispute(
     initiatorId: string,
     dto: {
-      respondentId: string
-      listingId?: string
-      subject: string
-      description: string
+      respondentId: string;
+      listingId?: string;
+      subject: string;
+      description: string;
     },
   ) {
     const [created] = await this.db
@@ -34,9 +37,9 @@ export class DisputesService {
         subject: dto.subject,
         description: dto.description,
       })
-      .returning()
+      .returning();
 
-    return created
+    return created;
   }
 
   // ─── User: list disputes for a user ──────────────────────────────────────────
@@ -46,12 +49,9 @@ export class DisputesService {
       .select()
       .from(disputes)
       .where(
-        or(
-          eq(disputes.initiatorId, userId),
-          eq(disputes.respondentId, userId),
-        ),
+        or(eq(disputes.initiatorId, userId), eq(disputes.respondentId, userId)),
       )
-      .orderBy(desc(disputes.updatedAt))
+      .orderBy(desc(disputes.updatedAt));
   }
 
   // ─── Get single dispute with messages ─────────────────────────────────────────
@@ -61,23 +61,27 @@ export class DisputesService {
       .select()
       .from(disputes)
       .where(eq(disputes.id, id))
-      .limit(1)
+      .limit(1);
 
     if (!dispute) {
-      throw new NotFoundException(`Dispute ${id} not found`)
+      throw new NotFoundException(`Dispute ${id} not found`);
     }
 
-    if (userId && dispute.initiatorId !== userId && dispute.respondentId !== userId) {
-      throw new ForbiddenException('Access denied')
+    if (
+      userId &&
+      dispute.initiatorId !== userId &&
+      dispute.respondentId !== userId
+    ) {
+      throw new ForbiddenException('Access denied');
     }
 
     const messages = await this.db
       .select()
       .from(disputeMessages)
       .where(eq(disputeMessages.disputeId, id))
-      .orderBy(disputeMessages.createdAt)
+      .orderBy(disputeMessages.createdAt);
 
-    return { ...dispute, messages }
+    return { ...dispute, messages };
   }
 
   // ─── Add message to a dispute ─────────────────────────────────────────────────
@@ -91,39 +95,41 @@ export class DisputesService {
     const [msg] = await this.db
       .insert(disputeMessages)
       .values({ disputeId, authorId, authorType, message })
-      .returning()
+      .returning();
 
     // Touch updated_at on the parent dispute
     await this.db
       .update(disputes)
       .set({ updatedAt: new Date() })
-      .where(eq(disputes.id, disputeId))
+      .where(eq(disputes.id, disputeId));
 
-    return msg
+    return msg;
   }
 
   // ─── Admin: list disputes with cursor pagination ───────────────────────────────
 
   async listAdminDisputes(params: {
-    status?: string
-    cursor?: string
-    limit?: number
+    status?: string;
+    cursor?: string;
+    limit?: number;
   }) {
-    const limit = Math.min(params.limit ?? 50, 100)
+    const limit = Math.min(params.limit ?? 50, 100);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const conditions: any[] = []
+    const conditions: any[] = [];
 
     if (params.status) {
-      conditions.push(eq(disputes.status, params.status))
+      conditions.push(eq(disputes.status, params.status));
     }
     if (params.cursor) {
-      const { createdAt: cursorDate, id: cursorId } = decodeCursor(params.cursor)
+      const { createdAt: cursorDate, id: cursorId } = decodeCursor(
+        params.cursor,
+      );
       conditions.push(
         or(
           lt(disputes.createdAt, cursorDate),
           and(eq(disputes.createdAt, cursorDate), lt(disputes.id, cursorId)),
         ),
-      )
+      );
     }
 
     const rows = await this.db
@@ -131,17 +137,17 @@ export class DisputesService {
       .from(disputes)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(disputes.createdAt), desc(disputes.id))
-      .limit(limit + 1)
+      .limit(limit + 1);
 
-    const hasMore = rows.length > limit
-    const data = hasMore ? rows.slice(0, limit) : rows
-    const lastRow = data[data.length - 1]
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+    const lastRow = data[data.length - 1];
     const nextCursor =
       hasMore && lastRow
         ? encodeCursor({ createdAt: lastRow.createdAt!, id: lastRow.id })
-        : null
+        : null;
 
-    return { data, nextCursor }
+    return { data, nextCursor };
   }
 
   // ─── Admin: assign dispute ────────────────────────────────────────────────────
@@ -151,12 +157,12 @@ export class DisputesService {
       .update(disputes)
       .set({ assignedTo: adminId, updatedAt: new Date() })
       .where(eq(disputes.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`)
+      throw new NotFoundException(`Dispute ${id} not found`);
     }
-    return updated
+    return updated;
   }
 
   // ─── Admin: resolve dispute ───────────────────────────────────────────────────
@@ -171,12 +177,12 @@ export class DisputesService {
         updatedAt: new Date(),
       })
       .where(eq(disputes.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`)
+      throw new NotFoundException(`Dispute ${id} not found`);
     }
-    return updated
+    return updated;
   }
 
   // ─── Admin: close dispute ─────────────────────────────────────────────────────
@@ -191,11 +197,11 @@ export class DisputesService {
         updatedAt: new Date(),
       })
       .where(eq(disputes.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`)
+      throw new NotFoundException(`Dispute ${id} not found`);
     }
-    return updated
+    return updated;
   }
 }

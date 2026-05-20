@@ -783,17 +783,22 @@ export class ListingsService {
       contactMessage,
     );
 
-    await this.notificationsService.send({
-      userId: listing.userId,
-      channel: 'in_app',
-      type: 'item_purchased',
-      title: '¡Vendiste un producto!',
-      body: `Alguien compró "${listing.title}".`,
-      data: { listingId, conversationId: conversation.id },
-    });
+    await this.notificationsService
+      .send({
+        userId: listing.userId,
+        channel: 'in_app',
+        type: 'item_purchased',
+        title: '¡Vendiste un producto!',
+        body: `Alguien compró "${listing.title}".`,
+        data: { listingId, conversationId: conversation.id },
+      })
+      .catch(() => {});
 
     // Resolve payment info (listing override > seller profile defaults)
-    const listingPaymentInfo = listing.paymentInfo as Record<string, unknown> | null;
+    const listingPaymentInfo = listing.paymentInfo as Record<
+      string,
+      unknown
+    > | null;
     let resolvedPaymentInfo = listingPaymentInfo;
 
     if (!resolvedPaymentInfo) {
@@ -813,10 +818,14 @@ export class ListingsService {
         const profilePayment: Record<string, unknown> = {};
         if (sellerProfile.cbu) profilePayment.cbu = sellerProfile.cbu;
         if (sellerProfile.alias) profilePayment.alias = sellerProfile.alias;
-        if (sellerProfile.bankName) profilePayment.bankName = sellerProfile.bankName;
-        if (sellerProfile.bankAccountType) profilePayment.bankAccountType = sellerProfile.bankAccountType;
-        if (sellerProfile.bankAccountNumber) profilePayment.bankAccountNumber = sellerProfile.bankAccountNumber;
-        if (Object.keys(profilePayment).length > 0) resolvedPaymentInfo = profilePayment;
+        if (sellerProfile.bankName)
+          profilePayment.bankName = sellerProfile.bankName;
+        if (sellerProfile.bankAccountType)
+          profilePayment.bankAccountType = sellerProfile.bankAccountType;
+        if (sellerProfile.bankAccountNumber)
+          profilePayment.bankAccountNumber = sellerProfile.bankAccountNumber;
+        if (Object.keys(profilePayment).length > 0)
+          resolvedPaymentInfo = profilePayment;
       }
     }
 

@@ -2,6 +2,7 @@ import {
   pgTable, uuid, varchar, text, boolean, jsonb, timestamp,
 } from 'drizzle-orm/pg-core'
 import { configDataTypeEnum } from './enums'
+import { users } from './users.schema'
 
 export const systemConfigs = pgTable('system_configs', {
   id:           uuid('id').primaryKey().defaultRandom(),
@@ -44,7 +45,7 @@ export const adminUsers = pgTable('admin_users', {
 
 export const adminAuditLog = pgTable('admin_audit_log', {
   id:         uuid('id').primaryKey().defaultRandom(),
-  adminId:    uuid('admin_id').notNull().references(() => adminUsers.id),
+  adminId:    uuid('admin_id').notNull().references(() => users.id),
   action:     varchar('action', { length: 100 }).notNull(),
   entityType: varchar('entity_type', { length: 50 }),
   entityId:   varchar('entity_id', { length: 100 }),

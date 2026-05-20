@@ -10,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { LiveChatService } from './live-chat.service';
 import { Public } from '../common/decorators/public.decorator';
-import { CurrentUser, type JwtPayload } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type JwtPayload,
+} from '../common/decorators/current-user.decorator';
 import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import { SendLiveChatMessageDto } from './dto/send-live-chat-message.dto';
 import { ListLiveChatMessagesDto } from './dto/list-live-chat-messages.dto';

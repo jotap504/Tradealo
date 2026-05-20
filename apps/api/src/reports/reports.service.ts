@@ -1,28 +1,26 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common'
-import { eq, desc, and, lt, or } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import * as schema from '../database/schema'
-import { reports } from '../database/schema'
-import { encodeCursor, decodeCursor } from '../common/utils/cursor.util'
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { eq, desc, and, lt, or } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import * as schema from '../database/schema';
+import { reports } from '../database/schema';
+import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 
-type DB = NodePgDatabase<typeof schema>
+type DB = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
-  ) {}
+  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {}
 
   // ─── User: create a report ────────────────────────────────────────────────────
 
   async createReport(
     reporterId: string,
     dto: {
-      targetType: 'listing' | 'user'
-      targetId: string
-      reason: string
-      description?: string
+      targetType: 'listing' | 'user';
+      targetId: string;
+      reason: string;
+      description?: string;
     },
   ) {
     const [created] = await this.db
@@ -34,37 +32,39 @@ export class ReportsService {
         reason: dto.reason,
         description: dto.description ?? null,
       })
-      .returning()
+      .returning();
 
-    return created
+    return created;
   }
 
   // ─── Admin: list reports with filters + cursor pagination ─────────────────────
 
   async listReports(params: {
-    status?: string
-    targetType?: string
-    cursor?: string
-    limit?: number
+    status?: string;
+    targetType?: string;
+    cursor?: string;
+    limit?: number;
   }) {
-    const limit = Math.min(params.limit ?? 50, 100)
+    const limit = Math.min(params.limit ?? 50, 100);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const conditions: any[] = []
+    const conditions: any[] = [];
 
     if (params.status) {
-      conditions.push(eq(reports.status, params.status))
+      conditions.push(eq(reports.status, params.status));
     }
     if (params.targetType) {
-      conditions.push(eq(reports.targetType, params.targetType))
+      conditions.push(eq(reports.targetType, params.targetType));
     }
     if (params.cursor) {
-      const { createdAt: cursorDate, id: cursorId } = decodeCursor(params.cursor)
+      const { createdAt: cursorDate, id: cursorId } = decodeCursor(
+        params.cursor,
+      );
       conditions.push(
         or(
           lt(reports.createdAt, cursorDate),
           and(eq(reports.createdAt, cursorDate), lt(reports.id, cursorId)),
         ),
-      )
+      );
     }
 
     const rows = await this.db
@@ -72,17 +72,17 @@ export class ReportsService {
       .from(reports)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(reports.createdAt), desc(reports.id))
-      .limit(limit + 1)
+      .limit(limit + 1);
 
-    const hasMore = rows.length > limit
-    const data = hasMore ? rows.slice(0, limit) : rows
-    const lastRow = data[data.length - 1]
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+    const lastRow = data[data.length - 1];
     const nextCursor =
       hasMore && lastRow
         ? encodeCursor({ createdAt: lastRow.createdAt, id: lastRow.id })
-        : null
+        : null;
 
-    return { data, nextCursor }
+    return { data, nextCursor };
   }
 
   // ─── Admin: get single report ─────────────────────────────────────────────────
@@ -92,12 +92,12 @@ export class ReportsService {
       .select()
       .from(reports)
       .where(eq(reports.id, id))
-      .limit(1)
+      .limit(1);
 
     if (!report) {
-      throw new NotFoundException(`Report ${id} not found`)
+      throw new NotFoundException(`Report ${id} not found`);
     }
-    return report
+    return report;
   }
 
   // ─── Admin: assign report ─────────────────────────────────────────────────────
@@ -107,12 +107,12 @@ export class ReportsService {
       .update(reports)
       .set({ assignedTo: adminId })
       .where(eq(reports.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Report ${id} not found`)
+      throw new NotFoundException(`Report ${id} not found`);
     }
-    return updated
+    return updated;
   }
 
   // ─── Admin: resolve report ────────────────────────────────────────────────────
@@ -126,12 +126,12 @@ export class ReportsService {
         resolvedAt: new Date(),
       })
       .where(eq(reports.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Report ${id} not found`)
+      throw new NotFoundException(`Report ${id} not found`);
     }
-    return updated
+    return updated;
   }
 
   // ─── Admin: dismiss report ────────────────────────────────────────────────────
@@ -145,11 +145,11 @@ export class ReportsService {
         resolvedAt: new Date(),
       })
       .where(eq(reports.id, id))
-      .returning()
+      .returning();
 
     if (!updated) {
-      throw new NotFoundException(`Report ${id} not found`)
+      throw new NotFoundException(`Report ${id} not found`);
     }
-    return updated
+    return updated;
   }
 }

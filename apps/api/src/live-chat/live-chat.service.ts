@@ -42,7 +42,9 @@ export class LiveChatService {
 
     const conditions = [eq(schema.liveChatMessages.listingId, listingId)];
     if (options?.cursor) {
-      conditions.push(lt(schema.liveChatMessages.createdAt, new Date(options.cursor)));
+      conditions.push(
+        lt(schema.liveChatMessages.createdAt, new Date(options.cursor)),
+      );
     }
 
     const rows = await this.db
@@ -103,7 +105,10 @@ export class LiveChatService {
       .returning();
 
     const profile = await this.db
-      .select({ username: userProfiles.username, avatarUrl: userProfiles.avatarUrl })
+      .select({
+        username: userProfiles.username,
+        avatarUrl: userProfiles.avatarUrl,
+      })
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId))
       .limit(1);

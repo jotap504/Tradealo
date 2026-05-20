@@ -479,7 +479,8 @@ export class AdminService {
       adminId,
       changeReason,
     );
-    await this.logAudit(adminId, 'config.update', 'config', key, null, {
+    await this.logAudit(adminId, 'config.update', 'config', undefined, undefined, {
+      key,
       value,
     });
     return updated;
@@ -909,8 +910,12 @@ export class AdminService {
         action,
         entityType,
         entityId,
-        oldValue: oldValue as Record<string, unknown> | null,
-        newValue: newValue as Record<string, unknown> | null,
+        ...(oldValue != null
+          ? { oldValue: oldValue as Record<string, unknown> }
+          : {}),
+        ...(newValue != null
+          ? { newValue: newValue as Record<string, unknown> }
+          : {}),
       });
     } catch {
       /* audit failures are non-fatal */

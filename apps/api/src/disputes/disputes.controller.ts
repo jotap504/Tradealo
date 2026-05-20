@@ -7,69 +7,72 @@ import {
   Param,
   Query,
   UseGuards,
-} from '@nestjs/common'
+} from '@nestjs/common';
 import {
   IsString,
   IsUUID,
   IsNotEmpty,
   IsOptional,
   MaxLength,
-} from 'class-validator'
-import { Type } from 'class-transformer'
-import { DisputesService } from './disputes.service'
-import { Public } from '../common/decorators/public.decorator'
-import { AdminJwtGuard } from '../common/guards/admin-jwt.guard'
-import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator'
-import { CurrentAdmin } from '../common/decorators/current-admin.decorator'
-import type { AdminSessionPayload } from '../admin/admin-auth.service'
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { DisputesService } from './disputes.service';
+import { Public } from '../common/decorators/public.decorator';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import { CurrentAdmin } from '../common/decorators/current-admin.decorator';
+import type { AdminSessionPayload } from '../admin/admin-auth.service';
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
 class CreateDisputeDto {
   @IsUUID()
-  respondentId!: string
+  respondentId!: string;
 
   @IsOptional()
   @IsUUID()
-  listingId?: string
+  listingId?: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)
-  subject!: string
+  subject!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  description!: string
+  description!: string;
 }
 
 class AddMessageDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  message!: string
+  message!: string;
 }
 
 class ResolveDisputeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)
-  resolution!: string
+  resolution!: string;
 }
 
 class ListAdminDisputesQueryDto {
   @IsOptional()
   @IsString()
-  status?: string
+  status?: string;
 
   @IsOptional()
   @IsString()
-  cursor?: string
+  cursor?: string;
 
   @IsOptional()
   @Type(() => Number)
-  limit?: number
+  limit?: number;
 }
 
 // ─── User controller ───────────────────────────────────────────────────────────
@@ -88,20 +91,17 @@ export class DisputesController {
       listingId: dto.listingId,
       subject: dto.subject,
       description: dto.description,
-    })
+    });
   }
 
   @Get('me')
   listUserDisputes(@CurrentUser() user: JwtPayload) {
-    return this.disputesService.listUserDisputes(user.sub)
+    return this.disputesService.listUserDisputes(user.sub);
   }
 
   @Get(':id')
-  getDispute(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.disputesService.getDispute(id, user.sub)
+  getDispute(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.disputesService.getDispute(id, user.sub);
   }
 
   @Post(':id/messages')
@@ -110,7 +110,7 @@ export class DisputesController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: AddMessageDto,
   ) {
-    return this.disputesService.addMessage(id, user.sub, 'user', dto.message)
+    return this.disputesService.addMessage(id, user.sub, 'user', dto.message);
   }
 }
 
@@ -128,12 +128,12 @@ export class AdminDisputesController {
       status: query.status,
       cursor: query.cursor,
       limit: query.limit,
-    })
+    });
   }
 
   @Get(':id')
   getDispute(@Param('id') id: string) {
-    return this.disputesService.getDispute(id)
+    return this.disputesService.getDispute(id);
   }
 
   @Post(':id/messages')
@@ -142,7 +142,7 @@ export class AdminDisputesController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: AddMessageDto,
   ) {
-    return this.disputesService.addMessage(id, admin.sub, 'admin', dto.message)
+    return this.disputesService.addMessage(id, admin.sub, 'admin', dto.message);
   }
 
   @Patch(':id/assign')
@@ -150,7 +150,7 @@ export class AdminDisputesController {
     @Param('id') id: string,
     @CurrentAdmin() admin: AdminSessionPayload,
   ) {
-    return this.disputesService.assignDispute(id, admin.sub)
+    return this.disputesService.assignDispute(id, admin.sub);
   }
 
   @Patch(':id/resolve')
@@ -159,7 +159,7 @@ export class AdminDisputesController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: ResolveDisputeDto,
   ) {
-    return this.disputesService.resolveDispute(id, dto.resolution, admin.sub)
+    return this.disputesService.resolveDispute(id, dto.resolution, admin.sub);
   }
 
   @Patch(':id/close')
@@ -168,6 +168,6 @@ export class AdminDisputesController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: ResolveDisputeDto,
   ) {
-    return this.disputesService.closeDispute(id, dto.resolution, admin.sub)
+    return this.disputesService.closeDispute(id, dto.resolution, admin.sub);
   }
 }

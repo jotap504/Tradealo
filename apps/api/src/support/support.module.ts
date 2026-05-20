@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
-import { SupportService } from './support.service'
-import { SupportController, AdminSupportController } from './support.controller'
-import { AdminJwtGuard } from '../common/guards/admin-jwt.guard'
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { SupportService } from './support.service';
+import {
+  SupportController,
+  AdminSupportController,
+} from './support.controller';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 
 @Module({
   imports: [

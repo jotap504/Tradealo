@@ -37,7 +37,7 @@ export class OrdersService {
         buyerId: data.buyerId,
         sellerId: data.sellerId,
         conversationId: data.conversationId,
-        paymentInfo: data.paymentInfo ?? null,
+        ...(data.paymentInfo != null ? { paymentInfo: data.paymentInfo } : {}),
       })
       .returning();
 

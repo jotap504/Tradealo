@@ -7,7 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
-} from '@nestjs/common'
+} from '@nestjs/common';
 import {
   IsString,
   IsIn,
@@ -15,64 +15,67 @@ import {
   IsNotEmpty,
   IsOptional,
   MaxLength,
-} from 'class-validator'
-import { Type } from 'class-transformer'
-import { ReportsService } from './reports.service'
-import { Public } from '../common/decorators/public.decorator'
-import { AdminJwtGuard } from '../common/guards/admin-jwt.guard'
-import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator'
-import { CurrentAdmin } from '../common/decorators/current-admin.decorator'
-import type { AdminSessionPayload } from '../admin/admin-auth.service'
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ReportsService } from './reports.service';
+import { Public } from '../common/decorators/public.decorator';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import { CurrentAdmin } from '../common/decorators/current-admin.decorator';
+import type { AdminSessionPayload } from '../admin/admin-auth.service';
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
 class CreateReportDto {
   @IsIn(['listing', 'user'])
-  targetType!: 'listing' | 'user'
+  targetType!: 'listing' | 'user';
 
   @IsUUID()
-  targetId!: string
+  targetId!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  reason!: string
+  reason!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  description?: string
+  description?: string;
 }
 
 class AssignReportDto {
   @IsOptional()
   @IsUUID()
-  adminId?: string
+  adminId?: string;
 }
 
 class ResolveReportDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
-  resolution!: string
+  resolution!: string;
 }
 
 class ListReportsQueryDto {
   @IsOptional()
   @IsString()
-  status?: string
+  status?: string;
 
   @IsOptional()
   @IsString()
-  targetType?: string
+  targetType?: string;
 
   @IsOptional()
   @IsString()
-  cursor?: string
+  cursor?: string;
 
   @IsOptional()
   @Type(() => Number)
-  limit?: number
+  limit?: number;
 }
 
 // ─── User controller ───────────────────────────────────────────────────────────
@@ -82,11 +85,8 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Post()
-  createReport(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: CreateReportDto,
-  ) {
-    return this.reportsService.createReport(user.sub, dto)
+  createReport(@CurrentUser() user: JwtPayload, @Body() dto: CreateReportDto) {
+    return this.reportsService.createReport(user.sub, dto);
   }
 }
 
@@ -105,12 +105,12 @@ export class AdminReportsController {
       targetType: query.targetType,
       cursor: query.cursor,
       limit: query.limit,
-    })
+    });
   }
 
   @Get(':id')
   getReport(@Param('id') id: string) {
-    return this.reportsService.getReport(id)
+    return this.reportsService.getReport(id);
   }
 
   @Patch(':id/assign')
@@ -119,8 +119,8 @@ export class AdminReportsController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: AssignReportDto,
   ) {
-    const adminId = dto.adminId ?? admin.sub
-    return this.reportsService.assignReport(id, adminId)
+    const adminId = dto.adminId ?? admin.sub;
+    return this.reportsService.assignReport(id, adminId);
   }
 
   @Patch(':id/resolve')
@@ -129,7 +129,7 @@ export class AdminReportsController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: ResolveReportDto,
   ) {
-    return this.reportsService.resolveReport(id, dto.resolution, admin.sub)
+    return this.reportsService.resolveReport(id, dto.resolution, admin.sub);
   }
 
   @Patch(':id/dismiss')
@@ -138,6 +138,6 @@ export class AdminReportsController {
     @CurrentAdmin() admin: AdminSessionPayload,
     @Body() dto: ResolveReportDto,
   ) {
-    return this.reportsService.dismissReport(id, dto.resolution, admin.sub)
+    return this.reportsService.dismissReport(id, dto.resolution, admin.sub);
   }
 }

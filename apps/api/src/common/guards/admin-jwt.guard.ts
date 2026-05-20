@@ -8,7 +8,13 @@ import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import type { AdminSessionPayload } from '../../admin/admin-auth.service';
 
-const ADMIN_ROLES = ['super_admin', 'partner', 'finance', 'support', 'moderator'];
+const ADMIN_ROLES = [
+  'super_admin',
+  'partner',
+  'finance',
+  'support',
+  'moderator',
+];
 
 @Injectable()
 export class AdminJwtGuard implements CanActivate {
@@ -31,13 +37,19 @@ export class AdminJwtGuard implements CanActivate {
         request.adminUser = payload;
         return true;
       }
-    } catch { /* fall through to regular user token check */ }
+    } catch {
+      /* fall through to regular user token check */
+    }
 
     // Accept regular user access tokens for users with admin roles
     try {
       const userPayload = this.jwtService.verify<{
-        sub: string; email: string; role: string;
-      }>(token, { secret: process.env.JWT_ACCESS_SECRET ?? 'changeme_dev_only' });
+        sub: string;
+        email: string;
+        role: string;
+      }>(token, {
+        secret: process.env.JWT_ACCESS_SECRET ?? 'changeme_dev_only',
+      });
 
       if (!ADMIN_ROLES.includes(userPayload.role)) {
         throw new UnauthorizedException('INSUFFICIENT_ROLE');

@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
-import { DisputesService } from './disputes.service'
-import { DisputesController, AdminDisputesController } from './disputes.controller'
-import { AdminJwtGuard } from '../common/guards/admin-jwt.guard'
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { DisputesService } from './disputes.service';
+import {
+  DisputesController,
+  AdminDisputesController,
+} from './disputes.controller';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 
 @Module({
   imports: [

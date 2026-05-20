@@ -16,6 +16,13 @@ import { ConfigService } from '../config/config.service';
     }),
   ],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminAuthService, AdminJwtGuard, AdminPreAuthGuard, AdminConfigService, ConfigService],
+  providers: [
+    AdminService,
+    AdminAuthService,
+    AdminJwtGuard,
+    AdminPreAuthGuard,
+    AdminConfigService,
+    ConfigService,
+  ],
 })
 export class AdminModule {}
