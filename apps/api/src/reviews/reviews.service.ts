@@ -230,12 +230,12 @@ export class ReviewsService {
         target: schema.reputationScores.userId,
         set: isSellerReview
           ? {
-              asSellerAvg: sql`(${schema.reputationScores.asSellerAvg}::numeric * ${schema.reputationScores.asSellerCount} + ${rating}) / (${schema.reputationScores.asSellerCount} + 1)`,
+              asSellerAvg: sql`(${schema.reputationScores.asSellerAvg}::numeric * ${schema.reputationScores.asSellerCount} + ${rating}::numeric) / (${schema.reputationScores.asSellerCount} + 1)`,
               asSellerCount: sql`${schema.reputationScores.asSellerCount} + 1`,
               updatedAt: new Date(),
             }
           : {
-              asBuyerAvg: sql`(${schema.reputationScores.asBuyerAvg}::numeric * ${schema.reputationScores.asBuyerCount} + ${rating}) / (${schema.reputationScores.asBuyerCount} + 1)`,
+              asBuyerAvg: sql`(${schema.reputationScores.asBuyerAvg}::numeric * ${schema.reputationScores.asBuyerCount} + ${rating}::numeric) / (${schema.reputationScores.asBuyerCount} + 1)`,
               asBuyerCount: sql`${schema.reputationScores.asBuyerCount} + 1`,
               updatedAt: new Date(),
             },
