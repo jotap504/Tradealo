@@ -73,7 +73,15 @@ export class AdminService {
   }
 
   async getStats() {
-    return this.getDashboardStats();
+    const d = await this.getDashboardStats();
+    return {
+      totalUsers: Number(d.users.total),
+      activeListings: Number(d.listings.active),
+      pendingModeration: Number(d.listings.pendingModeration),
+      pendingKyc: Number(d.kyc.pending),
+      tokensIssued: 0,
+      revenueArs: 0,
+    };
   }
 
   // ─── Users ───────────────────────────────────────────────────────────────────

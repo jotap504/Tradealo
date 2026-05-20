@@ -225,8 +225,8 @@ export class WalletService {
     return { data: data as CreditTxResult[], nextCursor, hasMore };
   }
 
-  async getTokenPacks(countryCode = 'AR'): Promise<TokenPackWithPrice[]> {
-    return this.db
+  async getTokenPacks(countryCode = 'AR') {
+    const rows = await this.db
       .select({
         id: schema.tokenPackDefinitions.id,
         key: schema.tokenPackDefinitions.key,
@@ -248,6 +248,15 @@ export class WalletService {
       )
       .where(eq(schema.tokenPackDefinitions.isActive, true))
       .orderBy(asc(schema.tokenPackDefinitions.sortOrder));
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.label,
+      tokens: r.tokens,
+      priceArs: Number(r.price),
+      bonusTokens: r.bonusPct > 0 ? Math.floor(r.tokens * r.bonusPct / 100) : undefined,
+      popular: r.isFeatured,
+    }));
   }
 
   async getFreeQuota(userId: string): Promise<FreeQuota> {
