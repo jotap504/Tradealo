@@ -22,6 +22,9 @@ import { KycModule } from './kyc/kyc.module';
 import { ReportsModule } from './reports/reports.module';
 import { DisputesModule } from './disputes/disputes.module';
 import { SupportModule } from './support/support.module';
+import { ShopModule } from './shop/shop.module';
+import { ShopSubscriptionModule } from './shop-subscription/shop-subscription.module';
+import { ShopChatbotModule } from './shop-chatbot/shop-chatbot.module';
 // Disabled until external services are configured:
 // import { AiModule } from './ai/ai.module'
 // import { SearchModule } from './search/search.module'
@@ -56,6 +59,9 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     ReportsModule,
     DisputesModule,
     SupportModule,
+    ShopModule,
+    ShopSubscriptionModule,
+    ShopChatbotModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

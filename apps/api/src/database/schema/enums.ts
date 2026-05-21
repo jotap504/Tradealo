@@ -120,3 +120,19 @@ export const orderStatusEnum = pgEnum('order_status', [
   'completed',
   'cancelled',
 ]);
+
+export const shopThemeEnum = pgEnum('shop_theme', [
+  'minimalista',
+  'oscuro',
+  'vibrante',
+  'clasico',
+  'boutique',
+]);
+
+export const shopSubscriptionStatusEnum = pgEnum('shop_subscription_status', [
+  'active',
+  'paused',
+  'cancelled',
+  'expired',
+  'trial',
+]);
