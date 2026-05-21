@@ -11,10 +11,12 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   X,
 } from 'lucide-react';
 import { toast } from '@/lib/store';
-import { listings } from '@/lib/api';
+import { listings, categories as categoriesApi } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -23,7 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { PriceDisplay } from '@/components/listing/PriceDisplay';
 import { cn } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import type { Listing } from '@/types';
+import type { Listing, Category } from '@/types';
 
 type StatusTab = 'active' | 'finalized' | 'draft';
 
@@ -65,56 +67,59 @@ export default function MyListingsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [saleType, setSaleType] = useState('');
-  const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
-  const [pageIdx, setPageIdx] = useState(0);
+  const [categoryId, setCategoryId] = useState('');
+  const [page, setPage] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const currentStatus = TABS.find((t) => t.key === activeTab)?.status ?? '';
-  const currentCursor = cursors[pageIdx];
 
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput), 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Reset to page 0 on any filter change
   useEffect(() => {
-    setPageIdx(0);
-    setCursors([undefined]);
-  }, [activeTab, search, saleType]);
+    setPage(0);
+  }, [activeTab, search, saleType, categoryId]);
+
+  const { data: catData } = useQuery({
+    queryKey: ['categories-root'],
+    queryFn: () => categoriesApi.getCategories(),
+    staleTime: 300_000,
+  });
+  const rootCategories: Category[] = (catData ?? []).filter((c: Category) => !c.parentId);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['my-listings', currentCursor, currentStatus, search, saleType],
+    queryKey: ['my-listings', page, currentStatus, search, saleType, categoryId],
     queryFn: () =>
       listings.getMyListings({
-        cursor: currentCursor,
+        offset: page * PAGE_SIZE,
         status: currentStatus,
         search: search || undefined,
         saleType: saleType || undefined,
+        categoryId: categoryId || undefined,
         limit: PAGE_SIZE,
       }),
     staleTime: 60_000,
   });
 
   const allListings = data?.data ?? [];
-  const nextCursor = data?.nextCursor;
-  const hasMore = !!nextCursor;
-  const hasPrev = pageIdx > 0;
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hasNext = page < totalPages - 1;
+  const hasPrev = page > 0;
 
-  const goNext = useCallback(() => {
-    if (!nextCursor) return;
-    setCursors((prev) => {
-      const updated = [...prev];
-      if (!updated[pageIdx + 1]) updated[pageIdx + 1] = nextCursor;
-      return updated;
-    });
-    setPageIdx((p) => p + 1);
-  }, [nextCursor, pageIdx]);
-
-  const goPrev = useCallback(() => {
-    if (pageIdx > 0) setPageIdx((p) => p - 1);
-  }, [pageIdx]);
+  const goFirst = useCallback(() => setPage(0), []);
+  const goLast = useCallback(() => setPage(totalPages - 1), [totalPages]);
+  const goPrev = useCallback(() => setPage((p) => Math.max(0, p - 1)), []);
+  const goNext = useCallback(
+    () => setPage((p) => Math.min(totalPages - 1, p + 1)),
+    [totalPages],
+  );
 
   const handleDelete = async () => {
     if (!deletingId) return;
@@ -134,9 +139,16 @@ export default function MyListingsPage() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-bold text-tradealo-text">
-          Mis publicaciones
-        </h1>
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-tradealo-text">
+            Mis publicaciones
+          </h1>
+          {total > 0 && !isLoading && (
+            <p className="text-sm text-tradealo-text-muted mt-0.5">
+              {total} {total === 1 ? 'publicación' : 'publicaciones'}
+            </p>
+          )}
+        </div>
         <Link href="/my-listings/new">
           <Button leftIcon={<Plus size={16} />}>Nueva publicación</Button>
         </Link>
@@ -166,9 +178,10 @@ export default function MyListingsPage() {
         )}
       </div>
 
-      {/* Tabs + sale type filter chips */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit shrink-0">
+      {/* Filters row */}
+      <div className="flex flex-col gap-3">
+        {/* Status tabs */}
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -186,26 +199,47 @@ export default function MyListingsPage() {
           ))}
         </div>
 
-        <div className="flex gap-1.5 flex-wrap">
-          {SALE_TYPES.map((st) => (
-            <button
-              key={st.value}
-              type="button"
-              onClick={() => setSaleType(st.value)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-                saleType === st.value
-                  ? 'bg-tradealo-primary text-white border-tradealo-primary'
-                  : 'bg-white text-tradealo-text-muted border-tradealo-border hover:border-tradealo-primary hover:text-tradealo-primary',
-              )}
+        {/* Category + sale type in same row */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Category dropdown */}
+          {rootCategories.length > 0 && (
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="h-8 pl-3 pr-8 rounded-lg border border-tradealo-border bg-white text-xs text-tradealo-text focus:outline-none focus:ring-2 focus:ring-tradealo-primary/30 focus:border-tradealo-primary transition-colors appearance-none cursor-pointer"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
             >
-              {st.label}
-            </button>
-          ))}
+              <option value="">Todas las categorías</option>
+              {rootCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Sale type chips */}
+          <div className="flex gap-1.5 flex-wrap">
+            {SALE_TYPES.map((st) => (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setSaleType(st.value)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  saleType === st.value
+                    ? 'bg-tradealo-primary text-white border-tradealo-primary'
+                    : 'bg-white text-tradealo-text-muted border-tradealo-border hover:border-tradealo-primary hover:text-tradealo-primary',
+                )}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* List */}
+      {/* Listing list */}
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -252,29 +286,53 @@ export default function MyListingsPage() {
       )}
 
       {/* Pagination */}
-      {(hasPrev || hasMore) && (
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<ChevronLeft size={15} />}
-            onClick={goPrev}
-            disabled={!hasPrev}
-          >
-            Anterior
-          </Button>
-          <span className="text-sm text-tradealo-text-muted font-medium">
-            Página {pageIdx + 1}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2 gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={goFirst}
+              disabled={!hasPrev}
+              title="Primera página"
+              className="p-1.5 rounded-lg border border-tradealo-border bg-white text-tradealo-text-muted disabled:opacity-40 hover:border-tradealo-primary hover:text-tradealo-primary transition-colors disabled:cursor-not-allowed"
+            >
+              <ChevronsLeft size={16} />
+            </button>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<ChevronLeft size={15} />}
+              onClick={goPrev}
+              disabled={!hasPrev}
+            >
+              Anterior
+            </Button>
+          </div>
+
+          <span className="text-sm text-tradealo-text-muted font-medium whitespace-nowrap">
+            Página {page + 1} de {totalPages}
           </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            rightIcon={<ChevronRight size={15} />}
-            onClick={goNext}
-            disabled={!hasMore}
-          >
-            Siguiente
-          </Button>
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              rightIcon={<ChevronRight size={15} />}
+              onClick={goNext}
+              disabled={!hasNext}
+            >
+              Siguiente
+            </Button>
+            <button
+              type="button"
+              onClick={goLast}
+              disabled={!hasNext}
+              title="Última página"
+              className="p-1.5 rounded-lg border border-tradealo-border bg-white text-tradealo-text-muted disabled:opacity-40 hover:border-tradealo-primary hover:text-tradealo-primary transition-colors disabled:cursor-not-allowed"
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 

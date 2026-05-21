@@ -51,6 +51,8 @@ export class ListingsController {
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('saleType') saleType?: string,
+    @Query('offset') offset?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
     return this.listingsService.findByUser(
       user.sub,
@@ -59,6 +61,8 @@ export class ListingsController {
       status,
       search,
       saleType,
+      offset !== undefined ? parseInt(offset, 10) : undefined,
+      categoryId,
     );
   }
 
@@ -70,6 +74,8 @@ export class ListingsController {
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('saleType') saleType?: string,
+    @Query('offset') offset?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
     return this.listingsService.findByUser(
       user.sub,
@@ -78,6 +84,8 @@ export class ListingsController {
       status,
       search,
       saleType,
+      offset !== undefined ? parseInt(offset, 10) : undefined,
+      categoryId,
     );
   }
 

@@ -239,8 +239,8 @@ export const listings = {
   updateListing: (id: string, payload: Partial<Listing>) =>
     patch<Listing>(`/listings/${id}`, payload),
   deleteListing: (id: string) => del<{ ok: true }>(`/listings/${id}`),
-  getMyListings: (params: { cursor?: string; status?: string; search?: string; saleType?: string; limit?: number } = {}) =>
-    get<PaginatedResponse<Listing> & { nextCursor?: string; hasMore?: boolean }>('/listings/me', { params }),
+  getMyListings: (params: { cursor?: string; offset?: number; status?: string; search?: string; saleType?: string; categoryId?: string; limit?: number } = {}) =>
+    get<PaginatedResponse<Listing> & { nextCursor?: string; hasMore?: boolean; total?: number }>('/listings/me', { params }),
   publishListing: (id: string, payload: { type: string; durationDays: number }) =>
     post<Listing>(`/listings/${id}/publish`, payload),
   renewListing: (id: string, durationDays: number) =>
@@ -365,7 +365,7 @@ export const images = {
   deleteImage: (listingId: string, imageId: string) =>
     del<{ ok: true }>(`/listings/${listingId}/images/${imageId}`),
   reorder: (listingId: string, ids: string[]) =>
-    post<{ ok: true }>(`/listings/${listingId}/images/reorder`, { imageIds: ids }),
+    patch<{ ok: true }>(`/listings/${listingId}/images/reorder`, { imageIds: ids }),
 };
 
 export const users = {

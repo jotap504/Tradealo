@@ -536,57 +536,90 @@ export class ListingsService {
     status?: string,
     search?: string,
     saleType?: string,
+    offset?: number,
+    categoryId?: string,
   ): Promise<{
     data: Listing[];
     nextCursor: string | null;
     hasMore: boolean;
+    total: number;
   }> {
     const pageSize = Math.min(limit, MAX_LIMIT);
-    const fetchCount = pageSize + 1;
-    const conditions = [eq(schema.listings.userId, userId)];
+    const baseConditions = [eq(schema.listings.userId, userId)];
 
     if (status) {
-      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+      const statuses = status
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (statuses.length === 1) {
-        conditions.push(eq(schema.listings.status, statuses[0] as any));
+        baseConditions.push(eq(schema.listings.status, statuses[0] as any));
       } else if (statuses.length > 1) {
-        conditions.push(inArray(schema.listings.status, statuses as any));
+        baseConditions.push(inArray(schema.listings.status, statuses as any));
       }
     }
 
     if (search?.trim()) {
-      conditions.push(ilike(schema.listings.title, `%${search.trim()}%`));
+      baseConditions.push(ilike(schema.listings.title, `%${search.trim()}%`));
     }
 
     if (saleType) {
-      conditions.push(eq(schema.listings.saleType, saleType));
+      baseConditions.push(eq(schema.listings.saleType, saleType));
     }
 
-    if (cursor) {
-      const { createdAt, id } = decodeCursor(cursor);
-      conditions.push(
-        or(
-          lt(schema.listings.createdAt, createdAt),
-          and(
-            eq(schema.listings.createdAt, createdAt),
-            lt(schema.listings.id, id),
-          ),
-        )!,
-      );
+    if (categoryId) {
+      baseConditions.push(eq(schema.listings.categoryId, categoryId));
     }
 
-    const rows = await this.db
-      .select()
+    // Total count (no cursor/offset)
+    const [countResult] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
       .from(schema.listings)
-      .where(and(...conditions))
-      .orderBy(desc(schema.listings.createdAt), desc(schema.listings.id))
-      .limit(fetchCount);
+      .where(and(...baseConditions));
+    const total = countResult?.count ?? 0;
 
-    const hasMore = rows.length > pageSize;
-    const data = hasMore ? rows.slice(0, pageSize) : rows;
+    let rows: Listing[];
+
+    if (offset !== undefined) {
+      // Page-based: LIMIT / OFFSET
+      rows = await this.db
+        .select()
+        .from(schema.listings)
+        .where(and(...baseConditions))
+        .orderBy(desc(schema.listings.createdAt), desc(schema.listings.id))
+        .limit(pageSize)
+        .offset(offset);
+    } else {
+      // Cursor-based (legacy)
+      const conditions = [...baseConditions];
+      if (cursor) {
+        const { createdAt, id } = decodeCursor(cursor);
+        conditions.push(
+          or(
+            lt(schema.listings.createdAt, createdAt),
+            and(
+              eq(schema.listings.createdAt, createdAt),
+              lt(schema.listings.id, id),
+            ),
+          )!,
+        );
+      }
+      rows = await this.db
+        .select()
+        .from(schema.listings)
+        .where(and(...conditions))
+        .orderBy(desc(schema.listings.createdAt), desc(schema.listings.id))
+        .limit(pageSize + 1);
+    }
+
+    const useOffset = offset !== undefined;
+    const hasMore = useOffset
+      ? offset + pageSize < total
+      : rows.length > pageSize;
+    const data = useOffset ? rows : hasMore ? rows.slice(0, pageSize) : rows;
     const last = data[data.length - 1];
     const nextCursor =
-      hasMore && last
+      !useOffset && hasMore && last
         ? encodeCursor({ createdAt: last.createdAt, id: last.id })
         : null;
 
@@ -616,7 +649,7 @@ export class ListingsService {
       }));
     }
 
-    return { data: enriched, nextCursor, hasMore };
+    return { data: enriched, nextCursor, hasMore, total };
   }
 
   private async chargePublication(
