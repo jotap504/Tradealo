@@ -22,6 +22,7 @@ export const sellerShops = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    slug: varchar('slug', { length: 60 }),
     shopName: varchar('shop_name', { length: 100 }),
     tagline: varchar('tagline', { length: 200 }),
     logoUrl: varchar('logo_url', { length: 500 }),
@@ -58,6 +59,7 @@ export const sellerShops = pgTable(
   },
   (table) => [
     uniqueIndex('idx_seller_shops_user').on(table.userId),
+    uniqueIndex('idx_seller_shops_slug').on(table.slug),
     index('idx_seller_shops_published').on(table.isPublished, table.isActive),
   ],
 );
@@ -76,9 +78,7 @@ export const shopGalleryImages = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index('idx_shop_gallery_shop').on(table.shopId, table.sortOrder),
-  ],
+  (table) => [index('idx_shop_gallery_shop').on(table.shopId, table.sortOrder)],
 );
 
 export const shopPinnedListings = pgTable(

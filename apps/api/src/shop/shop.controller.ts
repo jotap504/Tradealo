@@ -39,6 +39,7 @@ class SocialLinksDto {
 }
 
 class UpdateShopDto {
+  @IsOptional() @IsString() @MaxLength(60) slug?: string;
   @IsOptional() @IsString() @MaxLength(100) shopName?: string;
   @IsOptional() @IsString() @MaxLength(200) tagline?: string;
   @IsOptional() @IsString() about?: string;

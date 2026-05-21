@@ -103,28 +103,50 @@ export class ShopService {
     return created;
   }
 
-  // ─── Public shop by username ──────────────────────────────────────────────────
+  // ─── Public shop by slug or username ─────────────────────────────────────────
 
-  async getPublicShop(username: string) {
-    const [profile] = await this.db
-      .select({ userId: schema.userProfiles.userId })
-      .from(schema.userProfiles)
-      .where(eq(schema.userProfiles.username, username))
-      .limit(1);
+  async getPublicShop(slugOrUsername: string) {
+    // Try slug first, then fall back to username
+    let shop: typeof sellerShops.$inferSelect | undefined;
 
-    if (!profile) throw new NotFoundException('Shop not found');
-
-    const [shop] = await this.db
+    const [bySlug] = await this.db
       .select()
       .from(sellerShops)
       .where(
         and(
-          eq(sellerShops.userId, profile.userId),
+          eq(sellerShops.slug, slugOrUsername),
           eq(sellerShops.isPublished, true),
           eq(sellerShops.isActive, true),
         ),
       )
       .limit(1);
+
+    if (bySlug) {
+      shop = bySlug;
+    } else {
+      const [profile] = await this.db
+        .select({ userId: schema.userProfiles.userId })
+        .from(schema.userProfiles)
+        .where(eq(schema.userProfiles.username, slugOrUsername))
+        .limit(1);
+
+      if (!profile) throw new NotFoundException('Shop not found');
+
+      const [byUsername] = await this.db
+        .select()
+        .from(sellerShops)
+        .where(
+          and(
+            eq(sellerShops.userId, profile.userId),
+            eq(sellerShops.isPublished, true),
+            eq(sellerShops.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      if (!byUsername) throw new NotFoundException('Shop not found');
+      shop = byUsername;
+    }
 
     if (!shop) throw new NotFoundException('Shop not found');
 
@@ -217,6 +239,7 @@ export class ShopService {
   async updateShopProfile(
     userId: string,
     dto: {
+      slug?: string;
       shopName?: string;
       tagline?: string;
       about?: string;
@@ -237,6 +260,26 @@ export class ShopService {
     },
   ) {
     await this.ensureShopExists(userId);
+
+    if (dto.slug !== undefined) {
+      const normalized = dto.slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (!normalized) throw new BadRequestException('Slug inválido');
+      const [existing] = await this.db
+        .select({ id: sellerShops.id })
+        .from(sellerShops)
+        .where(eq(sellerShops.slug, normalized))
+        .limit(1);
+      const myShop = await this.db
+        .select({ id: sellerShops.id })
+        .from(sellerShops)
+        .where(eq(sellerShops.userId, userId))
+        .limit(1);
+      if (existing && existing.id !== myShop[0]?.id) {
+        throw new BadRequestException('Ese nombre de tienda ya está en uso');
+      }
+      dto = { ...dto, slug: normalized };
+    }
+
     const [updated] = await this.db
       .update(sellerShops)
       .set({ ...dto, updatedAt: new Date() })

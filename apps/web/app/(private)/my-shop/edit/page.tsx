@@ -20,6 +20,7 @@ export default function EditShopPage() {
   const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
+    slug: '',
     shopName: '',
     tagline: '',
     about: '',
@@ -40,6 +41,7 @@ export default function EditShopPage() {
     shopApi.getMyShop().then((s: Shop) => {
       const sl = s.socialLinks ?? {};
       setForm({
+        slug: s.slug ?? '',
         shopName: s.shopName ?? '',
         tagline: s.tagline ?? '',
         about: s.about ?? '',
@@ -68,6 +70,7 @@ export default function EditShopPage() {
     setSuccess('');
     try {
       await shopApi.updateProfile({
+        slug: form.slug || undefined,
         shopName: form.shopName || undefined,
         tagline: form.tagline || undefined,
         about: form.about || undefined,
@@ -113,6 +116,19 @@ export default function EditShopPage() {
       <form onSubmit={handleSave} className="space-y-6">
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">Información básica</h2>
+          <Field label="URL de tu tienda" maxLength={60}>
+            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+              <span className="px-3 py-2 text-sm text-gray-400 bg-gray-50 border-r border-gray-200 whitespace-nowrap">trocalia.ar/shop/</span>
+              <input
+                {...field('slug')}
+                maxLength={60}
+                placeholder="betostore"
+                className="flex-1 px-3 py-2 text-sm bg-white focus:outline-none"
+                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Solo letras minúsculas, números y guiones. Si no definís uno, se usa tu username.</p>
+          </Field>
           <Field label="Nombre de la tienda" maxLength={100}>
             <input {...field('shopName')} maxLength={100} className={inputCls} placeholder="Mi Tienda" />
           </Field>

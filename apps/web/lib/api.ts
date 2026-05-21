@@ -653,6 +653,7 @@ export const support = {
 };
 
 export interface UpdateShopProfileDto {
+  slug?: string;
   shopName?: string;
   tagline?: string;
   about?: string;
