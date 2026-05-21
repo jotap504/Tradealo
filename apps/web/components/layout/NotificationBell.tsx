@@ -88,7 +88,11 @@ export function NotificationBell() {
                 return (
                 <div
                   key={n.id}
-                  onClick={() => { if (href) { router.push(href); setOpen(false); } }}
+                  onClick={() => {
+                    if (!n.read) notifications.markOneRead(n.id).catch(() => null);
+                    qc.invalidateQueries({ queryKey: ['notifications'] });
+                    if (href) { router.push(href); setOpen(false); }
+                  }}
                   className={`px-4 py-3 border-b border-tradealo-border last:border-0 hover:bg-gray-50 transition-colors ${
                     !n.read ? 'bg-teal-50/40' : ''
                   } ${href ? 'cursor-pointer' : ''}`}
