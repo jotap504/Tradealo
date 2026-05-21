@@ -200,7 +200,7 @@ export class ShopService {
             .where(
               and(
                 inArray(schema.listingImages.listingId, listingIds),
-                eq(schema.listingImages.sortOrder, 0),
+                eq(schema.listingImages.isPrimary, true),
               ),
             )
         : [];
