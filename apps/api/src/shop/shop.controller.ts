@@ -17,7 +17,6 @@ import {
   IsUUID,
   MaxLength,
   IsIn,
-  IsUrl,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -31,12 +30,12 @@ import {
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
 class SocialLinksDto {
-  @IsOptional() @IsUrl() instagram?: string;
-  @IsOptional() @IsUrl() facebook?: string;
-  @IsOptional() @IsUrl() tiktok?: string;
-  @IsOptional() @IsUrl() youtube?: string;
-  @IsOptional() @IsUrl() twitter?: string;
-  @IsOptional() @IsUrl() website?: string;
+  @IsOptional() @IsString() @MaxLength(300) instagram?: string;
+  @IsOptional() @IsString() @MaxLength(300) facebook?: string;
+  @IsOptional() @IsString() @MaxLength(300) tiktok?: string;
+  @IsOptional() @IsString() @MaxLength(300) youtube?: string;
+  @IsOptional() @IsString() @MaxLength(300) twitter?: string;
+  @IsOptional() @IsString() @MaxLength(300) website?: string;
 }
 
 class UpdateShopDto {

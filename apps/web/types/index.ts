@@ -348,6 +348,7 @@ export interface ShopPinnedListing {
 export interface Shop {
   id: string;
   userId: string;
+  username: string | null;
   shopName: string | null;
   tagline: string | null;
   logoUrl: string | null;

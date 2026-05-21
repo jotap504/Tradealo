@@ -77,9 +77,9 @@ export default function MyShopPage() {
             </span>
           </div>
           <p className="text-sm text-gray-600">{shopData.shopName ?? 'Sin nombre'}</p>
-          {shopData.isPublished && (
+          {shopData.isPublished && shopData.username && (
             <a
-              href={`/shop/${shopData.userId}`}
+              href={`/shop/${shopData.username}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-teal-600 underline"

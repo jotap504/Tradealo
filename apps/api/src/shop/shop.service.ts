@@ -54,7 +54,7 @@ export class ShopService {
 
     if (!shop) return null;
 
-    const [gallery, pinned, sub] = await Promise.all([
+    const [gallery, pinned, sub, profileRows] = await Promise.all([
       this.db
         .select()
         .from(shopGalleryImages)
@@ -71,10 +71,16 @@ export class ShopService {
         .where(eq(shopSubscriptions.userId, userId))
         .orderBy(desc(shopSubscriptions.createdAt))
         .limit(1),
+      this.db
+        .select({ username: schema.userProfiles.username })
+        .from(schema.userProfiles)
+        .where(eq(schema.userProfiles.userId, userId))
+        .limit(1),
     ]);
 
     return {
       ...shop,
+      username: profileRows[0]?.username ?? null,
       gallery,
       pinnedListingIds: pinned.map((p) => p.listingId),
       subscription: sub[0] ?? null,
