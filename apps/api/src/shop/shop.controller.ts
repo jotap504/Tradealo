@@ -47,7 +47,9 @@ class UpdateShopDto {
   @IsIn(['minimalista', 'oscuro', 'vibrante', 'clasico', 'boutique'])
   theme?: 'minimalista' | 'oscuro' | 'vibrante' | 'clasico' | 'boutique';
   @IsOptional() @IsString() @MaxLength(20) whatsappBusiness?: string;
-  @IsOptional() @ValidateNested() @Type(() => SocialLinksDto)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SocialLinksDto)
   socialLinks?: SocialLinksDto;
   @IsOptional() @IsString() @MaxLength(300) locationText?: string;
   @IsOptional() @IsString() @MaxLength(100) metaTitle?: string;
@@ -192,10 +194,7 @@ export class ShopController {
   }
 
   @Get('me/analytics')
-  getAnalytics(
-    @CurrentUser() user: JwtPayload,
-    @Query('days') days?: string,
-  ) {
+  getAnalytics(@CurrentUser() user: JwtPayload, @Query('days') days?: string) {
     return this.shopService.getAnalytics(user.sub, days ? Number(days) : 30);
   }
 }

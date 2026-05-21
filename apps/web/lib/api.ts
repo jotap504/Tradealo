@@ -545,6 +545,10 @@ export const admin = {
     post<{ ok: true }>(`/admin/tickets/${id}/messages`, { message }),
   updateTicket: (id: string, updates: { status?: string; priority?: string; assignedTo?: string }) =>
     patch<{ ok: true }>(`/admin/tickets/${id}`, updates),
+  grantShop: (userId: string) =>
+    patch<{ ok: true; shopId: string }>(`/admin/users/${userId}/shop/grant`, {}),
+  revokeShop: (userId: string) =>
+    patch<{ ok: true }>(`/admin/users/${userId}/shop/revoke`, {}),
 };
 
 export interface AdminAuditEntry {

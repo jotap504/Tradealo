@@ -269,6 +269,24 @@ export class AdminController {
     );
   }
 
+  @Patch('users/:id/shop/grant')
+  @HttpCode(HttpStatus.OK)
+  grantShopAccess(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: AdminSessionPayload,
+  ) {
+    return this.adminService.grantShopAccess(id, admin.sub);
+  }
+
+  @Patch('users/:id/shop/revoke')
+  @HttpCode(HttpStatus.OK)
+  revokeShopAccess(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: AdminSessionPayload,
+  ) {
+    return this.adminService.revokeShopAccess(id, admin.sub);
+  }
+
   // ─── Configs ─────────────────────────────────────────────────────────────────
 
   @Get('configs')

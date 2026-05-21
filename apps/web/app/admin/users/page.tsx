@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Coins, ShieldCheck, User as UserIcon, ChevronDown,
-  Ban, Clock, Trash2, RotateCcw, Shield,
+  Ban, Clock, Trash2, RotateCcw, Shield, Store,
 } from 'lucide-react';
 import { admin } from '@/lib/api';
 import { type User } from '@/types';
@@ -21,7 +21,7 @@ import { RelativeTime } from '@/components/ui/RelativeTime';
 type RoleFilter = '' | 'user' | 'super_admin' | 'moderator' | 'support' | 'finance' | 'partner';
 type KycFilter = '' | '0' | '1' | '2';
 type StatusFilter = '' | 'active' | 'suspended' | 'banned' | 'deleted';
-type ModalType = 'tokens' | 'suspend' | 'ban' | 'restore' | 'delete' | 'kyc' | null;
+type ModalType = 'tokens' | 'suspend' | 'ban' | 'restore' | 'delete' | 'kyc' | 'shop' | null;
 
 function ActionsMenu({ user, onAction }: { user: User; onAction: (type: ModalType, user: User) => void }) {
   const [open, setOpen] = useState(false);
@@ -61,6 +61,12 @@ function ActionsMenu({ user, onAction }: { user: User; onAction: (type: ModalTyp
             onClick={() => { setOpen(false); onAction('kyc', user); }}
           >
             <Shield size={14} /> Cambiar nivel KYC
+          </button>
+          <button
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-teal-700 hover:bg-teal-50 transition-colors"
+            onClick={() => { setOpen(false); onAction('shop', user); }}
+          >
+            <Store size={14} /> Tienda
           </button>
           {!isDead && user.status !== 'suspended' && (
             <button
@@ -243,6 +249,23 @@ export default function UsersPage() {
       invalidate();
       closeModal();
     } catch { toast.error('Error al cambiar nivel KYC'); }
+    finally { setLoading(false); }
+  };
+
+  const handleShop = async (action: 'grant' | 'revoke') => {
+    if (!selectedUser) return;
+    setLoading(true);
+    try {
+      if (action === 'grant') {
+        await admin.grantShop(selectedUser.id);
+        toast.success(`Tienda habilitada para ${selectedUser.username ?? selectedUser.email}`);
+      } else {
+        await admin.revokeShop(selectedUser.id);
+        toast.success(`Tienda deshabilitada para ${selectedUser.username ?? selectedUser.email}`);
+      }
+      invalidate();
+      closeModal();
+    } catch { toast.error('Error al gestionar tienda'); }
     finally { setLoading(false); }
   };
 
@@ -540,6 +563,39 @@ export default function UsersPage() {
             <Button variant="secondary" fullWidth onClick={closeModal}>Cancelar</Button>
             <Button variant="danger" fullWidth loading={loading} onClick={handleDelete}>Eliminar cuenta</Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* ── Shop modal ── */}
+      <Modal
+        open={activeModal === 'shop'}
+        onClose={closeModal}
+        title={`Gestionar Tienda — ${selectedUser?.username ?? selectedUser?.email ?? ''}`}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-tradealo-text-muted">
+            Habilitá o deshabilitá el acceso a la tienda premium para este usuario sin necesidad de suscripción de pago.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              fullWidth
+              loading={loading}
+              onClick={() => handleShop('grant')}
+              className="bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              Habilitar tienda
+            </Button>
+            <Button
+              variant="danger"
+              fullWidth
+              loading={loading}
+              onClick={() => handleShop('revoke')}
+            >
+              Deshabilitar tienda
+            </Button>
+          </div>
+          <Button variant="secondary" fullWidth onClick={closeModal}>Cancelar</Button>
         </div>
       </Modal>
 

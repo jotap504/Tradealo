@@ -961,6 +961,85 @@ export class AdminService {
     });
   }
 
+  async grantShopAccess(targetUserId: string, adminId: string) {
+    const [user] = await this.db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, targetUserId))
+      .limit(1);
+
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    const [existing] = await this.db
+      .select({ id: schema.sellerShops.id })
+      .from(schema.sellerShops)
+      .where(eq(schema.sellerShops.userId, targetUserId))
+      .limit(1);
+
+    let shopId: string;
+    if (existing) {
+      await this.db
+        .update(schema.sellerShops)
+        .set({ isPublished: true, isActive: true, publishedAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.sellerShops.userId, targetUserId));
+      shopId = existing.id;
+    } else {
+      const [created] = await this.db
+        .insert(schema.sellerShops)
+        .values({ userId: targetUserId, isPublished: true, isActive: true, publishedAt: new Date() })
+        .returning({ id: schema.sellerShops.id });
+      shopId = created.id;
+    }
+
+    const [existingSub] = await this.db
+      .select({ id: schema.shopSubscriptions.id })
+      .from(schema.shopSubscriptions)
+      .where(eq(schema.shopSubscriptions.userId, targetUserId))
+      .limit(1);
+
+    if (existingSub) {
+      await this.db
+        .update(schema.shopSubscriptions)
+        .set({ status: 'active', cancelledAt: null, updatedAt: new Date() })
+        .where(eq(schema.shopSubscriptions.id, existingSub.id));
+    } else {
+      await this.db.insert(schema.shopSubscriptions).values({
+        userId: targetUserId,
+        shopId,
+        status: 'active',
+        amountArs: '0',
+      });
+    }
+
+    await this.logAudit(adminId, 'shop.grant', 'user', targetUserId, null, { shopId, status: 'active' });
+
+    return { ok: true, shopId };
+  }
+
+  async revokeShopAccess(targetUserId: string, adminId: string) {
+    const [shop] = await this.db
+      .select({ id: schema.sellerShops.id })
+      .from(schema.sellerShops)
+      .where(eq(schema.sellerShops.userId, targetUserId))
+      .limit(1);
+
+    if (shop) {
+      await this.db
+        .update(schema.sellerShops)
+        .set({ isPublished: false, updatedAt: new Date() })
+        .where(eq(schema.sellerShops.userId, targetUserId));
+
+      await this.db
+        .update(schema.shopSubscriptions)
+        .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.shopSubscriptions.userId, targetUserId));
+    }
+
+    await this.logAudit(adminId, 'shop.revoke', 'user', targetUserId, null, { status: 'cancelled' });
+
+    return { ok: true };
+  }
+
   private async logAudit(
     adminId: string,
     action: string,
