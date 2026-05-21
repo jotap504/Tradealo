@@ -48,11 +48,17 @@ export class ListingsController {
     @CurrentUser() user: JwtPayload,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('saleType') saleType?: string,
   ) {
     return this.listingsService.findByUser(
       user.sub,
       cursor,
       limit ? parseInt(limit, 10) : 20,
+      status,
+      search,
+      saleType,
     );
   }
 
@@ -61,11 +67,17 @@ export class ListingsController {
     @CurrentUser() user: JwtPayload,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('saleType') saleType?: string,
   ) {
     return this.listingsService.findByUser(
       user.sub,
       cursor,
       limit ? parseInt(limit, 10) : 20,
+      status,
+      search,
+      saleType,
     );
   }
 

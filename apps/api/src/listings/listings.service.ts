@@ -533,6 +533,9 @@ export class ListingsService {
     userId: string,
     cursor?: string,
     limit = DEFAULT_LIMIT,
+    status?: string,
+    search?: string,
+    saleType?: string,
   ): Promise<{
     data: Listing[];
     nextCursor: string | null;
@@ -541,6 +544,23 @@ export class ListingsService {
     const pageSize = Math.min(limit, MAX_LIMIT);
     const fetchCount = pageSize + 1;
     const conditions = [eq(schema.listings.userId, userId)];
+
+    if (status) {
+      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        conditions.push(eq(schema.listings.status, statuses[0] as any));
+      } else if (statuses.length > 1) {
+        conditions.push(inArray(schema.listings.status, statuses as any));
+      }
+    }
+
+    if (search?.trim()) {
+      conditions.push(ilike(schema.listings.title, `%${search.trim()}%`));
+    }
+
+    if (saleType) {
+      conditions.push(eq(schema.listings.saleType, saleType));
+    }
 
     if (cursor) {
       const { createdAt, id } = decodeCursor(cursor);
