@@ -89,7 +89,7 @@ export function NotificationBell() {
                 <div
                   key={n.id}
                   onClick={() => {
-                    if (!n.read) notifications.markOneRead(n.id).catch(() => null);
+                    if (!n.read) notifications.markRead(n.id).catch(() => null);
                     qc.invalidateQueries({ queryKey: ['notifications'] });
                     if (href) { router.push(href); setOpen(false); }
                   }}
