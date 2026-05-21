@@ -226,6 +226,22 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
+    const recipientId =
+      userId === dispute.initiatorId ? dispute.respondentId : dispute.initiatorId;
+    const recipientHref =
+      userId === dispute.initiatorId ? '/my-sales' : '/my-purchases';
+
+    this.notificationsService
+      .send({
+        userId: recipientId,
+        channel: 'in_app',
+        type: 'dispute',
+        title: 'Reclamo cerrado',
+        body: `El reclamo "${dispute.subject}" fue cerrado por la otra parte.`,
+        data: { disputeId: id, listingId: dispute.listingId, href: recipientHref },
+      })
+      .catch(() => null);
+
     return updated;
   }
 
