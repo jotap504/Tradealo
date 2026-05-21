@@ -6,6 +6,7 @@ const nextConfig = {
       { protocol: 'http', hostname: 'localhost' },
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'loremflickr.com' },
       { protocol: 'https', hostname: '**.trocalia.ar' },
     ],
   },
