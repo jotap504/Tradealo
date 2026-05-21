@@ -7,6 +7,8 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   IsString,
@@ -52,6 +54,20 @@ class AddMessageDto {
   @IsNotEmpty()
   @MaxLength(2000)
   message!: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+}
+
+class UploadImageDto {
+  @IsString()
+  @IsNotEmpty()
+  data!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  mimetype!: string;
 }
 
 class ResolveDisputeDto {
@@ -110,7 +126,31 @@ export class DisputesController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: AddMessageDto,
   ) {
-    return this.disputesService.addMessage(id, user.sub, 'user', dto.message);
+    return this.disputesService.addMessage(
+      id,
+      user.sub,
+      'user',
+      dto.message,
+      dto.imageUrl,
+    );
+  }
+
+  @Post(':id/image')
+  @HttpCode(HttpStatus.OK)
+  uploadImage(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UploadImageDto,
+  ) {
+    return this.disputesService
+      .uploadDisputeImage(id, user.sub, dto.data, dto.mimetype)
+      .then((imageUrl) => ({ imageUrl }));
+  }
+
+  @Patch(':id/close')
+  @HttpCode(HttpStatus.OK)
+  closeDispute(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.disputesService.closeDisputeByUser(id, user.sub);
   }
 }
 

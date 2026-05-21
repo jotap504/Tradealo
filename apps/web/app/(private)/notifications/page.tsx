@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
@@ -11,6 +12,7 @@ import {
   Clock,
   MessageCircle,
   ShieldCheck,
+  Swords,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
@@ -27,6 +29,7 @@ const TYPE_ICON: Record<string, React.ComponentType<any>> = {
   listing_expired: Clock,
   payment: DollarSign,
   kyc: ShieldCheck,
+  dispute: Swords,
 };
 
 function NotifIcon({ type }: { type: string }) {
@@ -39,6 +42,8 @@ function NotifIcon({ type }: { type: string }) {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
+
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => notifications.getNotifications(),
@@ -84,14 +89,17 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {items.map((notif) => (
+          {items.map((notif) => {
+            const href = (notif as { data?: { href?: string } }).data?.href;
+            return (
             <li
               key={notif.id}
+              onClick={() => href && router.push(href)}
               className={`flex gap-4 p-4 rounded-xl border transition-all ${
                 notif.read
                   ? 'bg-white border-tradealo-border'
                   : 'bg-tradealo-primary-light/30 border-tradealo-primary/20'
-              }`}
+              } ${href ? 'cursor-pointer hover:shadow-sm' : ''}`}
             >
               <NotifIcon type={notif.type} />
               <div className="flex-1 min-w-0">
@@ -113,7 +121,7 @@ export default function NotificationsPage() {
                 </p>
               </div>
             </li>
-          ))}
+          );})
         </ul>
       )}
     </div>

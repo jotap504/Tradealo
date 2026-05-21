@@ -138,8 +138,9 @@ export class ListingsService {
       .where(eq(schema.categories.slug, categoryId))
       .limit(1);
     if (cat) return cat.id;
-    // Not a valid slug either — return as-is so DB query yields empty
-    return categoryId;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(categoryId) ? categoryId : undefined;
   }
 
   async findAll(dto: ListListingsDto): Promise<{

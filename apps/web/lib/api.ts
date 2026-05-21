@@ -624,10 +624,14 @@ export const reports = {
 export const disputes = {
   create: (dto: { respondentId: string; listingId?: string; subject: string; description: string }) =>
     post<{ id: string }>('/disputes', dto),
-  listMine: () => get<{ data: AdminDispute[] }>('/disputes/me'),
+  listMine: () => get<AdminDispute[]>('/disputes/me'),
   get: (id: string) => get<AdminDispute>(`/disputes/${id}`),
-  addMessage: (id: string, message: string) =>
-    post<{ ok: true }>(`/disputes/${id}/messages`, { message }),
+  addMessage: (id: string, message: string, imageUrl?: string) =>
+    post<DisputeMessage>(`/disputes/${id}/messages`, { message, imageUrl }),
+  uploadImage: (id: string, data: string, mimetype: string) =>
+    post<{ imageUrl: string }>(`/disputes/${id}/image`, { data, mimetype }),
+  close: (id: string) =>
+    patch<AdminDispute>(`/disputes/${id}/close`, {}),
 };
 
 export const support = {

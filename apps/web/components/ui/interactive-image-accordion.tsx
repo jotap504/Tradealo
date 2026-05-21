@@ -43,7 +43,7 @@ const CATEGORY_DATA = [
   {
     id: 'indumentaria',
     title: 'Indumentaria',
-    slug: 'indumentaria',
+    slug: 'ropa',
     imageUrl:
       'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=2070&auto=format&fit=crop',
     description: 'Ropa, calzado y accesorios de moda',

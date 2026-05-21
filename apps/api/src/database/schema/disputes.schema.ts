@@ -53,6 +53,7 @@ export const disputeMessages = pgTable(
     authorId: uuid('author_id').notNull(),
     authorType: varchar('author_type', { length: 10 }).notNull(), // 'user' | 'admin'
     message: text('message').notNull(),
+    imageUrl: text('image_url'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

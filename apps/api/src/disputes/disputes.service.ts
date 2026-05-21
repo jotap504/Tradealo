@@ -10,12 +10,18 @@ import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
 import { disputes, disputeMessages } from '../database/schema';
 import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
+import { NotificationsService } from '../notifications/notifications.service';
+import { StorageService } from '../storage/storage.service';
 
 type DB = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class DisputesService {
-  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {}
+  constructor(
+    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
+    private readonly notificationsService: NotificationsService,
+    private readonly storageService: StorageService,
+  ) {}
 
   // ─── User: create a dispute ───────────────────────────────────────────────────
 
@@ -38,6 +44,21 @@ export class DisputesService {
         description: dto.description,
       })
       .returning();
+
+    this.notificationsService
+      .send({
+        userId: dto.respondentId,
+        channel: 'in_app',
+        type: 'dispute',
+        title: 'Nuevo reclamo recibido',
+        body: `Se abrió un reclamo por: ${dto.subject}`,
+        data: {
+          disputeId: created.id,
+          listingId: dto.listingId ?? null,
+          href: '/my-sales',
+        },
+      })
+      .catch(() => null);
 
     return created;
   }
@@ -91,19 +112,121 @@ export class DisputesService {
     authorId: string,
     authorType: 'user' | 'admin',
     message: string,
+    imageUrl?: string,
   ) {
+    const [dispute] = await this.db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, disputeId))
+      .limit(1);
+
+    if (!dispute) throw new NotFoundException(`Dispute ${disputeId} not found`);
+
+    if (
+      authorType === 'user' &&
+      dispute.initiatorId !== authorId &&
+      dispute.respondentId !== authorId
+    ) {
+      throw new ForbiddenException('Access denied');
+    }
+
     const [msg] = await this.db
       .insert(disputeMessages)
-      .values({ disputeId, authorId, authorType, message })
+      .values({
+        disputeId,
+        authorId,
+        authorType,
+        message,
+        imageUrl: imageUrl ?? null,
+      })
       .returning();
 
-    // Touch updated_at on the parent dispute
     await this.db
       .update(disputes)
       .set({ updatedAt: new Date() })
       .where(eq(disputes.id, disputeId));
 
+    if (authorType === 'user') {
+      const recipientId =
+        authorId === dispute.initiatorId
+          ? dispute.respondentId
+          : dispute.initiatorId;
+      const recipientHref =
+        authorId === dispute.initiatorId ? '/my-sales' : '/my-purchases';
+
+      this.notificationsService
+        .send({
+          userId: recipientId,
+          channel: 'in_app',
+          type: 'dispute',
+          title: 'Nuevo mensaje en tu reclamo',
+          body: message.length > 80 ? message.slice(0, 80) + '…' : message,
+          data: {
+            disputeId,
+            listingId: dispute.listingId,
+            href: recipientHref,
+          },
+        })
+        .catch(() => null);
+    }
+
     return msg;
+  }
+
+  // ─── User: upload image attachment for a dispute message ──────────────────────
+
+  async uploadDisputeImage(
+    disputeId: string,
+    userId: string,
+    data: string,
+    mimetype: string,
+  ): Promise<string> {
+    const [dispute] = await this.db
+      .select({
+        initiatorId: disputes.initiatorId,
+        respondentId: disputes.respondentId,
+      })
+      .from(disputes)
+      .where(eq(disputes.id, disputeId))
+      .limit(1);
+
+    if (!dispute) throw new NotFoundException('Dispute not found');
+    if (dispute.initiatorId !== userId && dispute.respondentId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const buffer = Buffer.from(data, 'base64');
+    const ext =
+      mimetype === 'image/png'
+        ? 'png'
+        : mimetype === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+    const key = `disputes/${disputeId}/${Date.now()}.${ext}`;
+    return this.storageService.uploadBuffer(key, buffer, mimetype);
+  }
+
+  // ─── User: close their own dispute ────────────────────────────────────────────
+
+  async closeDisputeByUser(id: string, userId: string) {
+    const [dispute] = await this.db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id))
+      .limit(1);
+
+    if (!dispute) throw new NotFoundException('Dispute not found');
+    if (dispute.initiatorId !== userId && dispute.respondentId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const [updated] = await this.db
+      .update(disputes)
+      .set({ status: 'closed', resolvedAt: new Date(), updatedAt: new Date() })
+      .where(eq(disputes.id, id))
+      .returning();
+
+    return updated;
   }
 
   // ─── Admin: list disputes with cursor pagination ───────────────────────────────
@@ -159,9 +282,7 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
-    if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`);
-    }
+    if (!updated) throw new NotFoundException(`Dispute ${id} not found`);
     return updated;
   }
 
@@ -179,9 +300,7 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
-    if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`);
-    }
+    if (!updated) throw new NotFoundException(`Dispute ${id} not found`);
     return updated;
   }
 
@@ -199,9 +318,7 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
-    if (!updated) {
-      throw new NotFoundException(`Dispute ${id} not found`);
-    }
+    if (!updated) throw new NotFoundException(`Dispute ${id} not found`);
     return updated;
   }
 }

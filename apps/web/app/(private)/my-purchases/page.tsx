@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Package, ShoppingBag, AlertTriangle, Swords, X } from 'lucide-react';
+import { Package, ShoppingBag, AlertTriangle, Swords, X, Eye } from 'lucide-react';
 import { orders, disputes } from '@/lib/api';
-import type { PurchaseOrder } from '@/lib/api';
+import type { PurchaseOrder, AdminDispute } from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { DisputeDetailModal } from '@/components/disputes/DisputeDetailModal';
 import { formatPrice } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/store';
@@ -39,6 +40,12 @@ export default function MyPurchasesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['orders', 'my-purchases'],
     queryFn: () => orders.getMyPurchases(),
+    staleTime: 30_000,
+  });
+
+  const { data: myDisputes } = useQuery({
+    queryKey: ['disputes-mine'],
+    queryFn: () => disputes.listMine(),
     staleTime: 30_000,
   });
 
@@ -85,9 +92,7 @@ export default function MyPurchasesPage() {
         <div className="bg-white rounded-2xl border border-tradealo-border p-10 text-center">
           <ShoppingBag size={36} className="mx-auto text-tradealo-text-muted mb-3" />
           <h2 className="font-heading font-semibold text-lg">
-            {tab === 'all'
-              ? 'Todavía no compraste nada'
-              : 'No hay compras en este estado'}
+            {tab === 'all' ? 'Todavía no compraste nada' : 'No hay compras en este estado'}
           </h2>
           <p className="text-sm text-tradealo-text-muted mt-1 mb-4">
             {tab === 'all'
@@ -102,19 +107,25 @@ export default function MyPurchasesPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {filtered.map((order) => (
-            <PurchaseRow key={order.id} order={order} />
-          ))}
+          {filtered.map((order) => {
+            const openDispute = (myDisputes ?? []).find(
+              (d) => d.listingId === order.listing.id && d.status === 'open',
+            );
+            return (
+              <PurchaseRow key={order.id} order={order} openDispute={openDispute} />
+            );
+          })}
         </ul>
       )}
     </div>
   );
 }
 
-function PurchaseRow({ order }: { order: PurchaseOrder }) {
+function PurchaseRow({ order, openDispute }: { order: PurchaseOrder; openDispute?: AdminDispute }) {
   const badge = STATUS_BADGE[order.status];
   const price = Number(order.listing.price);
   const [showModal, setShowModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   return (
     <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4">
@@ -124,11 +135,7 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
       >
         {order.listing.primaryImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={order.listing.primaryImageUrl}
-            alt={order.listing.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={order.listing.primaryImageUrl} alt={order.listing.title} className="w-full h-full object-cover" />
         ) : (
           <Package size={24} className="text-tradealo-text-muted" />
         )}
@@ -141,23 +148,14 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
               {order.listing.title}
             </h3>
           </Link>
-          <Badge variant={badge.variant} size="sm">
-            {badge.label}
-          </Badge>
+          <Badge variant={badge.variant} size="sm">{badge.label}</Badge>
         </div>
 
         <div className="flex items-center gap-1.5 mt-1 min-w-0">
-          <Avatar
-            src={order.seller.avatarUrl ?? undefined}
-            username={order.seller.username ?? undefined}
-            size="sm"
-          />
+          <Avatar src={order.seller.avatarUrl ?? undefined} username={order.seller.username ?? undefined} size="sm" />
           <span className="text-xs text-tradealo-text-muted truncate min-w-0">
             {order.seller.username ? (
-              <Link
-                href={`/seller/${order.seller.username}`}
-                className="font-medium text-tradealo-text hover:text-tradealo-primary"
-              >
+              <Link href={`/seller/${order.seller.username}`} className="font-medium text-tradealo-text hover:text-tradealo-primary">
                 {order.seller.username}
               </Link>
             ) : (
@@ -170,37 +168,42 @@ function PurchaseRow({ order }: { order: PurchaseOrder }) {
           <span className="font-heading font-semibold text-tradealo-text text-sm sm:text-base">
             {formatPrice(price, order.listing.currency)}
           </span>
-          <RelativeTime
-            iso={order.createdAt}
-            className="text-xs text-tradealo-text-muted"
-          />
+          <RelativeTime iso={order.createdAt} className="text-xs text-tradealo-text-muted" />
         </div>
 
         <div className="flex gap-2 mt-3 flex-wrap">
           <Link href={`/messages/${order.conversationId}`}>
-            <Button size="sm" variant="secondary">
-              Ver conversación
-            </Button>
+            <Button size="sm" variant="secondary">Ver conversación</Button>
           </Link>
           {order.status !== 'cancelled' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              leftIcon={<Swords size={14} />}
-              onClick={() => setShowModal(true)}
-              className="text-red-600 hover:bg-red-50"
-            >
-              Iniciar reclamo
-            </Button>
+            openDispute ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={<Eye size={14} />}
+                onClick={() => setShowDetail(true)}
+                className="text-amber-600 hover:bg-amber-50 border border-amber-200"
+              >
+                Ver reclamo abierto
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={<Swords size={14} />}
+                onClick={() => setShowModal(true)}
+                className="text-red-600 hover:bg-red-50"
+              >
+                Iniciar reclamo
+              </Button>
+            )
           )}
         </div>
       </div>
 
-      {showModal && (
-        <DisputeModal
-          order={order}
-          onClose={() => setShowModal(false)}
-        />
+      {showModal && <DisputeModal order={order} onClose={() => setShowModal(false)} />}
+      {showDetail && openDispute && (
+        <DisputeDetailModal dispute={openDispute} onClose={() => setShowDetail(false)} />
       )}
     </li>
   );
@@ -223,9 +226,7 @@ function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () =>
       toast.success('Reclamo iniciado. Un administrador revisará tu caso.');
       onClose();
     },
-    onError: () => {
-      toast.error('No se pudo iniciar el reclamo. Intentá de nuevo.');
-    },
+    onError: () => toast.error('No se pudo iniciar el reclamo. Intentá de nuevo.'),
   });
 
   return (
@@ -236,41 +237,29 @@ function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () =>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={20} className="text-amber-500 shrink-0" />
-                <h2 className="font-heading font-bold text-lg text-tradealo-text">
-                  Aviso importante
-                </h2>
+                <h2 className="font-heading font-bold text-lg text-tradealo-text">Aviso importante</h2>
               </div>
               <button onClick={onClose} className="text-tradealo-text-muted hover:text-tradealo-text">
                 <X size={20} />
               </button>
             </div>
-
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-tradealo-text space-y-2">
               <p>
-                <strong>Tradealo es una plataforma de intermediación digital</strong> que facilita
-                el contacto entre usuarios de forma independiente. No somos parte de la transacción,
-                no actuamos como vendedor ni como garante de ningún producto o servicio publicado.
+                <strong>Tradealo es una plataforma de intermediación digital</strong> que facilita el contacto entre usuarios de forma independiente.
+                No somos parte de la transacción, no actuamos como vendedor ni como garante de ningún producto o servicio publicado.
               </p>
               <p>
-                Tradealo <strong>no asume responsabilidad alguna</strong> por la veracidad de los
-                anuncios, la calidad o estado de los productos, el cumplimiento de las entregas,
-                ni por daños directos o indirectos derivados de operaciones entre usuarios.
+                Tradealo <strong>no asume responsabilidad alguna</strong> por la veracidad de los anuncios, la calidad o estado de los productos,
+                el cumplimiento de las entregas, ni por daños directos o indirectos derivados de operaciones entre usuarios.
               </p>
               <p>
-                Al continuar, declarás que <strong>intentaste resolver esta situación de forma
-                directa</strong> con el vendedor. Tu reclamo será revisado por nuestro equipo
-                de mediación como facilitador, sin que ello implique ninguna obligación legal
-                ni responsabilidad por parte de Tradealo S.A.S.
+                Al continuar, declarás que <strong>intentaste resolver esta situación de forma directa</strong> con el vendedor.
+                Tu reclamo será revisado por nuestro equipo de mediación como facilitador.
               </p>
             </div>
-
             <div className="flex gap-2 pt-1">
-              <Button variant="secondary" fullWidth onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button fullWidth onClick={() => setStep('form')}>
-                Entendido, continuar
-              </Button>
+              <Button variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+              <Button fullWidth onClick={() => setStep('form')}>Entendido, continuar</Button>
             </div>
           </div>
         ) : (
@@ -278,24 +267,18 @@ function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () =>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Swords size={20} className="text-tradealo-primary shrink-0" />
-                <h2 className="font-heading font-bold text-lg text-tradealo-text">
-                  Iniciar reclamo
-                </h2>
+                <h2 className="font-heading font-bold text-lg text-tradealo-text">Iniciar reclamo</h2>
               </div>
               <button onClick={onClose} className="text-tradealo-text-muted hover:text-tradealo-text">
                 <X size={20} />
               </button>
             </div>
-
             <p className="text-sm text-tradealo-text-muted">
               Publicación: <span className="font-medium text-tradealo-text">{order.listing.title}</span>
             </p>
-
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-tradealo-text mb-1.5">
-                  Motivo del reclamo *
-                </label>
+                <label className="block text-sm font-medium text-tradealo-text mb-1.5">Motivo del reclamo *</label>
                 <input
                   type="text"
                   placeholder="Ej: Producto no recibido, no coincide con la descripción..."
@@ -306,12 +289,10 @@ function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () =>
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-tradealo-text mb-1.5">
-                  Descripción detallada *
-                </label>
+                <label className="block text-sm font-medium text-tradealo-text mb-1.5">Descripción detallada *</label>
                 <textarea
                   rows={4}
-                  placeholder="Describí la situación con el mayor detalle posible: fechas, hechos, evidencia disponible..."
+                  placeholder="Describí la situación con el mayor detalle posible..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={2000}
@@ -319,11 +300,8 @@ function DisputeModal({ order, onClose }: { order: PurchaseOrder; onClose: () =>
                 />
               </div>
             </div>
-
             <div className="flex gap-2 pt-1">
-              <Button variant="secondary" fullWidth onClick={() => setStep('disclaimer')}>
-                Atrás
-              </Button>
+              <Button variant="secondary" fullWidth onClick={() => setStep('disclaimer')}>Atrás</Button>
               <Button
                 fullWidth
                 loading={mutation.isPending}

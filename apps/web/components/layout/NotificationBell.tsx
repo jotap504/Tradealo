@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Bell, Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@/lib/api';
@@ -13,6 +14,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
+  const router = useRouter();
 
   const { data: countData } = useQuery({
     queryKey: ['notifications', 'unread-count'],
@@ -81,12 +83,15 @@ export function NotificationBell() {
                 No tenés notificaciones
               </div>
             ) : (
-              list.data.slice(0, 5).map((n) => (
+              list.data.slice(0, 5).map((n) => {
+                const href = (n as { data?: { href?: string } }).data?.href;
+                return (
                 <div
                   key={n.id}
+                  onClick={() => { if (href) { router.push(href); setOpen(false); } }}
                   className={`px-4 py-3 border-b border-tradealo-border last:border-0 hover:bg-gray-50 transition-colors ${
                     !n.read ? 'bg-teal-50/40' : ''
-                  }`}
+                  } ${href ? 'cursor-pointer' : ''}`}
                 >
                   <div className="flex items-start gap-2">
                     {!n.read && (
@@ -105,7 +110,7 @@ export function NotificationBell() {
                     </div>
                   </div>
                 </div>
-              ))
+              );})
             )}
           </div>
           <Link
