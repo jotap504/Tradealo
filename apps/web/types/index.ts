@@ -310,3 +310,99 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ShopTheme = 'minimalista' | 'oscuro' | 'vibrante' | 'clasico' | 'boutique';
+export type ShopSubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired' | 'trial';
+
+export interface SocialLinks {
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  youtube?: string;
+  twitter?: string;
+  website?: string;
+}
+
+export interface ShopGalleryImage {
+  id: string;
+  shopId: string;
+  url: string;
+  caption?: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface ShopPinnedListing {
+  listingId: string;
+  sortOrder: number;
+  listing: {
+    id: string;
+    title: string;
+    price: string;
+    currency: 'ARS' | 'USD';
+    condition: string;
+    primaryImageUrl: string | null;
+  };
+}
+
+export interface Shop {
+  id: string;
+  userId: string;
+  shopName: string | null;
+  tagline: string | null;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  about: string | null;
+  theme: ShopTheme;
+  whatsappBusiness: string | null;
+  socialLinks: SocialLinks | null;
+  businessHours: Record<string, string> | null;
+  locationText: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  ogImageUrl: string | null;
+  announcementText: string | null;
+  announcementExpiresAt: string | null;
+  isPublished: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicShop extends Shop {
+  username: string;
+  galleryImages: ShopGalleryImage[];
+  pinnedListings: ShopPinnedListing[];
+  allListings: {
+    id: string;
+    title: string;
+    price: string;
+    currency: 'ARS' | 'USD';
+    condition: string;
+    primaryImageUrl: string | null;
+  }[];
+}
+
+export interface ShopSubscription {
+  id: string;
+  userId: string;
+  shopId: string;
+  status: ShopSubscriptionStatus;
+  mpSubscriptionId: string | null;
+  billingCycleEnd: string | null;
+  nextBillingDate: string | null;
+  amountArs: string | null;
+  trialEndsAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShopAnalytics {
+  period: string;
+  pageViews: number;
+  listingClicks: number;
+  whatsappClicks: number;
+  chatbotSessions: number;
+  byDay: { date: string; pageViews: number; listingClicks: number }[];
+}

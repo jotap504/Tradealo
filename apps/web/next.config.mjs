@@ -6,11 +6,12 @@ const nextConfig = {
       { protocol: 'http', hostname: 'localhost' },
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '**.trocalia.ar' },
     ],
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'localhost:3001'],
+      allowedOrigins: ['localhost:3000', 'localhost:3001', '*.trocalia.ar'],
     },
   },
   async headers() {

@@ -6,7 +6,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, and, desc, count, gte } from 'drizzle-orm';
+import { eq, and, desc, count, gte, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
@@ -125,40 +125,78 @@ export class ShopService {
 
     if (!shop) throw new NotFoundException('Shop not found');
 
-    const [gallery, pinned, seller, reputation] = await Promise.all([
+    const [gallery, pinnedRows, sellerRows, allListings] = await Promise.all([
       this.db
         .select()
         .from(shopGalleryImages)
         .where(eq(shopGalleryImages.shopId, shop.id))
         .orderBy(shopGalleryImages.sortOrder),
       this.db
-        .select({ listingId: shopPinnedListings.listingId })
+        .select({
+          listingId: shopPinnedListings.listingId,
+          sortOrder: shopPinnedListings.sortOrder,
+        })
         .from(shopPinnedListings)
         .where(eq(shopPinnedListings.shopId, shop.id))
         .orderBy(shopPinnedListings.sortOrder),
       this.db
-        .select({
-          username: schema.userProfiles.username,
-          avatarUrl: schema.userProfiles.avatarUrl,
-          province: schema.userProfiles.province,
-          city: schema.userProfiles.city,
-          whatsapp: schema.userProfiles.whatsapp,
-        })
+        .select({ username: schema.userProfiles.username })
         .from(schema.userProfiles)
         .where(eq(schema.userProfiles.userId, profile.userId))
         .limit(1),
       this.db
-        .select()
-        .from(schema.reputationScores)
-        .where(eq(schema.reputationScores.userId, profile.userId))
-        .limit(1),
+        .select({
+          id: schema.listings.id,
+          title: schema.listings.title,
+          price: schema.listings.price,
+          currency: schema.listings.currency,
+          condition: schema.listings.condition,
+        })
+        .from(schema.listings)
+        .where(
+          and(
+            eq(schema.listings.userId, profile.userId),
+            eq(schema.listings.status, 'active'),
+          ),
+        )
+        .limit(100),
     ]);
+
+    const listingIds = allListings.map((l) => l.id);
+    const firstImages =
+      listingIds.length > 0
+        ? await this.db
+            .select({ listingId: schema.listingImages.listingId, url: schema.listingImages.url })
+            .from(schema.listingImages)
+            .where(
+              and(
+                inArray(schema.listingImages.listingId, listingIds),
+                eq(schema.listingImages.sortOrder, 0),
+              ),
+            )
+        : [];
+
+    const imageMap = new Map(firstImages.map((i) => [i.listingId, i.url]));
+    const withImage = (l: (typeof allListings)[number]) => ({
+      ...l,
+      primaryImageUrl: imageMap.get(l.id) ?? null,
+    });
+
+    const pinnedListingIds = new Set(pinnedRows.map((p) => p.listingId));
+    const pinnedListingsData = pinnedRows
+      .map((p) => {
+        const listing = allListings.find((l) => l.id === p.listingId);
+        if (!listing) return null;
+        return { listingId: p.listingId, sortOrder: p.sortOrder, listing: withImage(listing) };
+      })
+      .filter(Boolean);
 
     return {
       ...shop,
-      seller: { ...seller[0], reputation: reputation[0] ?? null },
-      gallery,
-      pinnedListingIds: pinned.map((p) => p.listingId),
+      username: sellerRows[0]?.username ?? username,
+      galleryImages: gallery,
+      pinnedListings: pinnedListingsData,
+      allListings: allListings.filter((l) => !pinnedListingIds.has(l.id)).map(withImage),
     };
   }
 

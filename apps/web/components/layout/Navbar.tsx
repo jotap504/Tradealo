@@ -20,6 +20,7 @@ import {
   Heart,
   LifeBuoy,
   ShoppingBag,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
@@ -206,6 +207,11 @@ export function Navbar() {
                       icon={<LifeBuoy size={15} />}
                       label="Soporte"
                     />
+                    <DropdownLink
+                      href="/my-shop"
+                      icon={<Store size={15} />}
+                      label="Mi Tienda"
+                    />
                     <button
                       onClick={onLogout}
                       className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-gray-50 text-tradealo-error border-t border-tradealo-border"
@@ -326,6 +332,12 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Soporte
+                  </Link>
+                  <Link
+                    href="/my-shop"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Mi Tienda
                   </Link>
                 </>
               )}

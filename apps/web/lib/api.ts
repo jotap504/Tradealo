@@ -22,6 +22,10 @@ import type {
   AdminStats,
   AdminTokenPack,
   Order,
+  Shop,
+  PublicShop,
+  ShopSubscription,
+  ShopAnalytics,
 } from '@/types';
 
 export const apiClient = axios.create({
@@ -644,6 +648,71 @@ export const support = {
     post<{ ok: true }>(`/support/tickets/${id}/messages`, { message }),
 };
 
+export interface UpdateShopProfileDto {
+  shopName?: string;
+  tagline?: string;
+  about?: string;
+  theme?: string;
+  whatsappBusiness?: string;
+  socialLinks?: Partial<Record<string, string>>;
+  businessHours?: Record<string, string>;
+  locationText?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+}
+
+export const shop = {
+  getPublic: (username: string) =>
+    get<PublicShop>(`/shops/by-username/${username}`),
+  trackEvent: (shopId: string, dto: { eventType: string; listingId?: string; sessionId?: string; referrer?: string }) =>
+    post<{ ok: true }>(`/shops/${shopId}/analytics`, dto),
+  getMyShop: () => get<Shop>('/shops/me'),
+  initShop: () => post<Shop>('/shops/me'),
+  updateProfile: (dto: UpdateShopProfileDto) =>
+    patch<Shop>('/shops/me', dto),
+  uploadLogo: (data: string, mimetype: string) =>
+    post<{ logoUrl: string }>('/shops/me/logo', { data, mimetype }),
+  uploadBanner: (data: string, mimetype: string) =>
+    post<{ bannerUrl: string }>('/shops/me/banner', { data, mimetype }),
+  addGalleryImage: (data: string, mimetype: string, caption?: string) =>
+    post<{ id: string; url: string }>('/shops/me/gallery', { data, mimetype, caption }),
+  removeGalleryImage: (imageId: string) =>
+    del<{ ok: true }>(`/shops/me/gallery/${imageId}`),
+  reorderGallery: (imageIds: string[]) =>
+    patch<{ ok: true }>('/shops/me/gallery/reorder', { imageIds }),
+  pinListing: (listingId: string) =>
+    post<{ ok: true }>('/shops/me/pinned-listings', { listingId }),
+  unpinListing: (listingId: string) =>
+    del<{ ok: true }>(`/shops/me/pinned-listings/${listingId}`),
+  reorderPinned: (listingIds: string[]) =>
+    patch<{ ok: true }>('/shops/me/pinned-listings/reorder', { listingIds }),
+  setAnnouncement: (dto: { text: string | null; expiresAt?: string | null }) =>
+    patch<{ ok: true }>('/shops/me/announcement', dto),
+  publish: () => post<{ ok: true }>('/shops/me/publish'),
+  unpublish: () => post<{ ok: true }>('/shops/me/unpublish'),
+  getAnalytics: (days?: number) =>
+    get<ShopAnalytics>('/shops/me/analytics', { params: { days } }),
+};
+
+export const shopSubscription = {
+  subscribe: () => post<{ initPoint: string }>('/shop-subscriptions/subscribe'),
+  getMine: () => get<ShopSubscription | null>('/shop-subscriptions/me'),
+  cancel: () => del<{ ok: true }>('/shop-subscriptions/me'),
+};
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export const shopChatbot = {
+  sendMessage: (shopId: string, message: string, history: ChatMessage[] = []) =>
+    post<{ answer: string; suggestWhatsapp: boolean; whatsappUrl?: string }>(
+      `/shop-chatbot/${shopId}/message`,
+      { message, history },
+    ),
+};
+
 export default {
   auth,
   listings,
@@ -662,4 +731,7 @@ export default {
   reports,
   disputes,
   support,
+  shop,
+  shopSubscription,
+  shopChatbot,
 };
