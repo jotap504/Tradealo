@@ -365,14 +365,6 @@ function BannerSlide({ banner }: { banner: BannerDef }) {
 
       {/* Floating emoji */}
       <motion.div
-        className="absolute top-5 right-[9%] text-4xl sm:text-5xl pointer-events-none select-none"
-        animate={{ y: [0, -14, 0], rotate: [0, 7, 0] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden="true"
-      >
-        {banner.emoji1}
-      </motion.div>
-      <motion.div
         className="absolute bottom-5 right-[3%] text-6xl sm:text-8xl pointer-events-none select-none opacity-10 hidden sm:block"
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
