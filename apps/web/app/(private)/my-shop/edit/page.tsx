@@ -12,11 +12,64 @@ const THEMES: { value: ShopTheme; label: string; preview: string }[] = [
   { value: 'boutique', label: 'Boutique', preview: '#a855f7' },
 ];
 
+type FormKey =
+  | 'slug' | 'shopName' | 'tagline' | 'about' | 'theme'
+  | 'whatsappBusiness' | 'locationText' | 'metaTitle' | 'metaDescription'
+  | 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'twitter' | 'website';
+
+type FieldErrors = Partial<Record<FormKey, string>>;
+
+// Maps NestJS property names / keywords → form field keys
+const FIELD_KEYWORDS: [string, FormKey][] = [
+  ['slug', 'slug'],
+  ['nombre de tienda', 'slug'],
+  ['shopName', 'shopName'],
+  ['tagline', 'tagline'],
+  ['about', 'about'],
+  ['whatsappBusiness', 'whatsappBusiness'],
+  ['whatsapp', 'whatsappBusiness'],
+  ['locationText', 'locationText'],
+  ['ubicación', 'locationText'],
+  ['metaTitle', 'metaTitle'],
+  ['metaDescription', 'metaDescription'],
+  ['instagram', 'instagram'],
+  ['facebook', 'facebook'],
+  ['tiktok', 'tiktok'],
+  ['youtube', 'youtube'],
+  ['twitter', 'twitter'],
+  ['website', 'website'],
+];
+
+function parseApiFieldErrors(err: unknown): { fieldErrors: FieldErrors; generic: string } {
+  const data = (err as { response?: { data?: { message?: string | string[] } } }).response?.data;
+  const raw = data?.message;
+  const messages: string[] = Array.isArray(raw) ? raw : raw ? [raw] : ['No se pudo guardar. Intentá de nuevo.'];
+
+  const fieldErrors: FieldErrors = {};
+  const unmatched: string[] = [];
+
+  for (const msg of messages) {
+    const lower = msg.toLowerCase();
+    let matched = false;
+    for (const [keyword, field] of FIELD_KEYWORDS) {
+      if (lower.includes(keyword.toLowerCase())) {
+        fieldErrors[field] = msg;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) unmatched.push(msg);
+  }
+
+  return { fieldErrors, generic: unmatched.join(' · ') };
+}
+
 export default function EditShopPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [genericError, setGenericError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
@@ -63,10 +116,18 @@ export default function EditShopPage() {
     });
   }, [router]);
 
+  const setField = (key: FormKey, value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (fieldErrors[key]) setFieldErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+    setGenericError('');
+    setSuccess('');
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
+    setGenericError('');
+    setFieldErrors({});
     setSuccess('');
     try {
       await shopApi.updateProfile({
@@ -89,18 +150,18 @@ export default function EditShopPage() {
         },
       });
       setSuccess('¡Cambios guardados!');
-    } catch {
-      setError('No se pudo guardar. Intentá de nuevo.');
+    } catch (err) {
+      const { fieldErrors: fe, generic } = parseApiFieldErrors(err);
+      if (Object.keys(fe).length > 0) {
+        setFieldErrors(fe);
+        if (generic) setGenericError(generic);
+      } else {
+        setGenericError(generic || 'No se pudo guardar. Intentá de nuevo.');
+      }
     } finally {
       setSaving(false);
     }
   };
-
-  const field = (key: keyof typeof form) => ({
-    value: form[key],
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value })),
-  });
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen text-sm text-gray-500">Cargando…</div>;
@@ -110,39 +171,69 @@ export default function EditShopPage() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Editar perfil de tienda</h1>
 
-      {error && <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>}
-      {success && <div className="mb-4 rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">{success}</div>}
+      {genericError && (
+        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{genericError}</div>
+      )}
+      {success && (
+        <div className="mb-4 rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">{success}</div>
+      )}
 
       <form onSubmit={handleSave} className="space-y-6">
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">Información básica</h2>
-          <Field label="URL de tu tienda" maxLength={60}>
-            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+
+          <Field label="URL de tu tienda" maxLength={60} error={fieldErrors.slug}>
+            <div className={`flex items-center rounded-xl border overflow-hidden focus-within:ring-2 ${fieldErrors.slug ? 'border-red-400 focus-within:ring-red-100' : 'border-gray-200 focus-within:border-teal-500 focus-within:ring-teal-100'}`}>
               <span className="px-3 py-2 text-sm text-gray-400 bg-gray-50 border-r border-gray-200 whitespace-nowrap">trocalia.ar/shop/</span>
               <input
-                {...field('slug')}
+                value={form.slug}
                 maxLength={60}
                 placeholder="betostore"
                 className="flex-1 px-3 py-2 text-sm bg-white focus:outline-none"
-                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                onChange={(e) => setField('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
               />
             </div>
             <p className="text-xs text-gray-400 mt-1">Solo letras minúsculas, números y guiones. Si no definís uno, se usa tu username.</p>
           </Field>
-          <Field label="Nombre de la tienda" maxLength={100}>
-            <input {...field('shopName')} maxLength={100} className={inputCls} placeholder="Mi Tienda" />
+
+          <Field label="Nombre de la tienda" maxLength={100} error={fieldErrors.shopName}>
+            <input
+              value={form.shopName} maxLength={100} placeholder="Mi Tienda"
+              className={inputCls(!!fieldErrors.shopName)}
+              onChange={(e) => setField('shopName', e.target.value)}
+            />
           </Field>
-          <Field label="Tagline" maxLength={200}>
-            <input {...field('tagline')} maxLength={200} className={inputCls} placeholder="Tu eslogan aquí" />
+
+          <Field label="Tagline" maxLength={200} error={fieldErrors.tagline}>
+            <input
+              value={form.tagline} maxLength={200} placeholder="Tu eslogan aquí"
+              className={inputCls(!!fieldErrors.tagline)}
+              onChange={(e) => setField('tagline', e.target.value)}
+            />
           </Field>
-          <Field label="Descripción">
-            <textarea {...field('about')} rows={4} className={inputCls} placeholder="Contá de qué se trata tu tienda…" />
+
+          <Field label="Descripción" error={fieldErrors.about}>
+            <textarea
+              value={form.about} rows={4} placeholder="Contá de qué se trata tu tienda…"
+              className={inputCls(!!fieldErrors.about)}
+              onChange={(e) => setField('about', e.target.value)}
+            />
           </Field>
-          <Field label="WhatsApp de negocio">
-            <input {...field('whatsappBusiness')} className={inputCls} placeholder="+54 9 11 1234-5678" />
+
+          <Field label="WhatsApp de negocio" error={fieldErrors.whatsappBusiness}>
+            <input
+              value={form.whatsappBusiness} placeholder="+54 9 11 1234-5678"
+              className={inputCls(!!fieldErrors.whatsappBusiness)}
+              onChange={(e) => setField('whatsappBusiness', e.target.value)}
+            />
           </Field>
-          <Field label="Ubicación">
-            <input {...field('locationText')} className={inputCls} placeholder="Buenos Aires, Argentina" />
+
+          <Field label="Ubicación" error={fieldErrors.locationText}>
+            <input
+              value={form.locationText} placeholder="Buenos Aires, Argentina"
+              className={inputCls(!!fieldErrors.locationText)}
+              onChange={(e) => setField('locationText', e.target.value)}
+            />
           </Field>
         </section>
 
@@ -151,9 +242,8 @@ export default function EditShopPage() {
           <div className="grid grid-cols-5 gap-2">
             {THEMES.map((t) => (
               <button
-                key={t.value}
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, theme: t.value }))}
+                key={t.value} type="button"
+                onClick={() => setField('theme', t.value)}
                 className={`rounded-xl p-3 border-2 flex flex-col items-center gap-1.5 transition-all ${form.theme === t.value ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}
               >
                 <span className="w-6 h-6 rounded-full" style={{ backgroundColor: t.preview }} />
@@ -166,25 +256,37 @@ export default function EditShopPage() {
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">Redes sociales</h2>
           {(['instagram', 'facebook', 'tiktok', 'youtube', 'twitter', 'website'] as const).map((net) => (
-            <Field key={net} label={net.charAt(0).toUpperCase() + net.slice(1)}>
-              <input {...field(net)} className={inputCls} placeholder={net === 'website' ? 'https://tusitio.com' : `@usuario`} />
+            <Field key={net} label={net.charAt(0).toUpperCase() + net.slice(1)} error={fieldErrors[net]}>
+              <input
+                value={form[net]}
+                placeholder={net === 'website' ? 'https://tusitio.com' : `@usuario`}
+                className={inputCls(!!fieldErrors[net])}
+                onChange={(e) => setField(net, e.target.value)}
+              />
             </Field>
           ))}
         </section>
 
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">SEO</h2>
-          <Field label="Meta título" maxLength={100}>
-            <input {...field('metaTitle')} maxLength={100} className={inputCls} />
+          <Field label="Meta título" maxLength={100} error={fieldErrors.metaTitle}>
+            <input
+              value={form.metaTitle} maxLength={100}
+              className={inputCls(!!fieldErrors.metaTitle)}
+              onChange={(e) => setField('metaTitle', e.target.value)}
+            />
           </Field>
-          <Field label="Meta descripción" maxLength={300}>
-            <textarea {...field('metaDescription')} rows={2} maxLength={300} className={inputCls} />
+          <Field label="Meta descripción" maxLength={300} error={fieldErrors.metaDescription}>
+            <textarea
+              value={form.metaDescription} rows={2} maxLength={300}
+              className={inputCls(!!fieldErrors.metaDescription)}
+              onChange={(e) => setField('metaDescription', e.target.value)}
+            />
           </Field>
         </section>
 
         <button
-          type="submit"
-          disabled={saving}
+          type="submit" disabled={saving}
           className="w-full py-3 rounded-xl text-white font-semibold bg-teal-500 hover:bg-teal-600 transition-colors disabled:opacity-50"
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
@@ -194,15 +296,32 @@ export default function EditShopPage() {
   );
 }
 
-const inputCls = 'w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-white';
+const inputCls = (hasError: boolean) =>
+  `w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white ${
+    hasError
+      ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+      : 'border-gray-200 focus:border-teal-500 focus:ring-teal-100'
+  }`;
 
-function Field({ label, children, maxLength }: { label: string; children: React.ReactNode; maxLength?: number }) {
+function Field({
+  label,
+  children,
+  maxLength,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  maxLength?: number;
+  error?: string;
+}) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}{maxLength ? <span className="text-gray-400 font-normal ml-1">(máx {maxLength})</span> : null}
+      <label className={`block text-sm font-medium mb-1 ${error ? 'text-red-600' : 'text-gray-700'}`}>
+        {label}
+        {maxLength ? <span className="text-gray-400 font-normal ml-1">(máx {maxLength})</span> : null}
       </label>
       {children}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
