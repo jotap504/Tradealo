@@ -575,6 +575,7 @@ export interface DisputeMessage {
   authorId: string;
   authorType: 'user' | 'admin';
   message: string;
+  imageUrl?: string;
   createdAt: string;
 }
 
