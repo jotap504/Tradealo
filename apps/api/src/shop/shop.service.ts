@@ -106,7 +106,7 @@ export class ShopService {
   // ─── Public shop by slug or username ─────────────────────────────────────────
 
   async getPublicShop(slugOrUsername: string) {
-    // Try slug first, then fall back to username
+    // Try slug first, then fall back to username lookup
     let shop: typeof sellerShops.$inferSelect | undefined;
 
     const [bySlug] = await this.db
@@ -148,7 +148,8 @@ export class ShopService {
       shop = byUsername;
     }
 
-    if (!shop) throw new NotFoundException('Shop not found');
+    // ownerId is always available from shop regardless of resolution path
+    const ownerId = shop.userId;
 
     const [gallery, pinnedRows, sellerRows, allListings] = await Promise.all([
       this.db
@@ -167,7 +168,7 @@ export class ShopService {
       this.db
         .select({ username: schema.userProfiles.username })
         .from(schema.userProfiles)
-        .where(eq(schema.userProfiles.userId, profile.userId))
+        .where(eq(schema.userProfiles.userId, ownerId))
         .limit(1),
       this.db
         .select({
@@ -180,7 +181,7 @@ export class ShopService {
         .from(schema.listings)
         .where(
           and(
-            eq(schema.listings.userId, profile.userId),
+            eq(schema.listings.userId, ownerId),
             eq(schema.listings.status, 'active'),
           ),
         )
@@ -225,7 +226,7 @@ export class ShopService {
 
     return {
       ...shop,
-      username: sellerRows[0]?.username ?? username,
+      username: sellerRows[0]?.username ?? slugOrUsername,
       galleryImages: gallery,
       pinnedListings: pinnedListingsData,
       allListings: allListings
