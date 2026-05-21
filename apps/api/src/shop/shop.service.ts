@@ -4,7 +4,6 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { eq, and, desc, count, gte, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -23,8 +22,6 @@ type DB = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class ShopService {
-  private readonly logger = new Logger(ShopService.name);
-
   constructor(
     @Inject(DRIZZLE_TOKEN) private readonly db: DB,
     private readonly storageService: StorageService,
@@ -166,7 +163,10 @@ export class ShopService {
     const firstImages =
       listingIds.length > 0
         ? await this.db
-            .select({ listingId: schema.listingImages.listingId, url: schema.listingImages.url })
+            .select({
+              listingId: schema.listingImages.listingId,
+              url: schema.listingImages.url,
+            })
             .from(schema.listingImages)
             .where(
               and(
@@ -187,7 +187,11 @@ export class ShopService {
       .map((p) => {
         const listing = allListings.find((l) => l.id === p.listingId);
         if (!listing) return null;
-        return { listingId: p.listingId, sortOrder: p.sortOrder, listing: withImage(listing) };
+        return {
+          listingId: p.listingId,
+          sortOrder: p.sortOrder,
+          listing: withImage(listing),
+        };
       })
       .filter(Boolean);
 
@@ -196,7 +200,9 @@ export class ShopService {
       username: sellerRows[0]?.username ?? username,
       galleryImages: gallery,
       pinnedListings: pinnedListingsData,
-      allListings: allListings.filter((l) => !pinnedListingIds.has(l.id)).map(withImage),
+      allListings: allListings
+        .filter((l) => !pinnedListingIds.has(l.id))
+        .map(withImage),
     };
   }
 
@@ -461,7 +467,10 @@ export class ShopService {
     sessionId?: string;
     referrer?: string;
   }) {
-    await this.db.insert(shopAnalyticsEvents).values(dto).catch(() => null);
+    await this.db
+      .insert(shopAnalyticsEvents)
+      .values(dto)
+      .catch(() => null);
   }
 
   async getAnalytics(userId: string, days = 30) {
@@ -472,7 +481,12 @@ export class ShopService {
       .limit(1);
 
     if (!shop) {
-      return { pageViews: 0, listingClicks: 0, whatsappClicks: 0, chatbotSessions: 0 };
+      return {
+        pageViews: 0,
+        listingClicks: 0,
+        whatsappClicks: 0,
+        chatbotSessions: 0,
+      };
     }
 
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
