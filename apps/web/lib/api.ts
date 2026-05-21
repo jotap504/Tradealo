@@ -266,11 +266,18 @@ export const categories = {
   getCategory: (id: string) => get<Category>(`/categories/${id}`),
 };
 
+export interface FreeQuota {
+  quota: number;
+  used: number;
+  remaining: number;
+}
+
 export const wallet = {
   getBalance: () => get<WalletBalance>('/wallet/balance'),
   getTransactions: (params: { cursor?: string; limit?: number } = {}) =>
     get<PaginatedResponse<WalletTransaction>>('/wallet/transactions', { params }),
   getPacks: () => get<TokenPack[]>('/wallet/token-packs'),
+  getFreeQuota: () => get<FreeQuota>('/wallet/free-quota'),
   createPayment: (packId: string) =>
     post<{ initPoint: string; preferenceId: string }>(
       '/payments/preferences',

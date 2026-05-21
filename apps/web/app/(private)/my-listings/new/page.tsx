@@ -174,6 +174,12 @@ export default function NewListingPage() {
     staleTime: 60_000,
   });
 
+  const { data: freeQuota } = useQuery({
+    queryKey: ['free-quota'],
+    queryFn: () => wallet.getFreeQuota(),
+    staleTime: 30_000,
+  });
+
   const { data: packs } = useQuery({
     queryKey: ['token-packs'],
     queryFn: () => wallet.getPacks(),
@@ -194,7 +200,10 @@ export default function NewListingPage() {
   const baseCost = LISTING_BASE_COST[formData.type];
   const multiplier = getDurationMultiplier(formData.durationDays);
   const totalCost = Math.ceil(baseCost * multiplier);
-  const canAfford = (balanceData?.balance ?? 0) >= totalCost || formData.type === 'standard';
+  const balance = balanceData?.balance ?? 0;
+  const hasTokens = balance >= totalCost;
+  const hasFreeQuota = formData.type === 'standard' && (freeQuota?.remaining ?? 1) > 0;
+  const canAfford = hasTokens || hasFreeQuota;
 
   const buildPayload = () => ({
     categoryId: formData.categoryId,
@@ -324,8 +333,13 @@ export default function NewListingPage() {
       });
       toast.success('¡Publicación enviada a revisión!');
       router.push('/my-listings');
-    } catch {
-      toast.error('No se pudo publicar. Intentá de nuevo.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 402) {
+        toast.error('Sin cuota mensual ni tokens suficientes. Comprá tokens para continuar.');
+      } else {
+        toast.error('No se pudo publicar. Intentá de nuevo.');
+      }
     } finally {
       setSaving(false);
     }
@@ -955,9 +969,17 @@ export default function NewListingPage() {
                   <span>Tu balance</span>
                   <span>{balanceData?.balance ?? 0} tokens</span>
                 </div>
+                {formData.type === 'standard' && freeQuota && (
+                  <div className="flex items-center justify-between text-xs text-tradealo-text-muted">
+                    <span>Cuota mensual gratis</span>
+                    <span className={freeQuota.remaining > 0 ? 'text-tradealo-success font-medium' : 'text-tradealo-error'}>
+                      {freeQuota.remaining}/{freeQuota.quota} disponibles
+                    </span>
+                  </div>
+                )}
                 {!canAfford && (
                   <p className="text-xs text-tradealo-error pt-1">
-                    No tenés suficientes tokens.{' '}
+                    Sin cuota mensual ni tokens suficientes.{' '}
                     <button
                       type="button"
                       className="underline"
