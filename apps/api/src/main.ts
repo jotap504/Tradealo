@@ -3,10 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
-import type Redis from 'ioredis';
 import { AppModule } from './app.module';
-import { REDIS_TOKEN } from './redis/redis.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -21,8 +18,6 @@ process.on('unhandledRejection', (reason) => {
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useBodyParser('json', { limit: '8mb' });
-
-  const redisClient = app.get<Redis>(REDIS_TOKEN);
 
   app.use(
     helmet({
@@ -71,20 +66,6 @@ async function bootstrap(): Promise<void> {
       max: 300,
       standardHeaders: true,
       legacyHeaders: false,
-      store: new RedisStore({
-        sendCommand: async (...args: string[]) => {
-          if (redisClient.status !== 'ready') return 0;
-          try {
-            return await (redisClient.call(
-              args[0],
-              ...args.slice(1),
-            ) as Promise<number>);
-          } catch {
-            return 0;
-          }
-        },
-      }),
-      skip: () => redisClient.status !== 'ready',
     }),
   );
 
