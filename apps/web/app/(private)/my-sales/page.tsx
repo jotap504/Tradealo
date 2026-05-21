@@ -105,7 +105,10 @@ export default function MySalesPage() {
         <ul className="space-y-3">
           {filtered.map((order) => {
             const openDispute = (myDisputes ?? []).find(
-              (d) => d.listingId === order.listing.id && d.status === 'open',
+              (d) =>
+                d.listingId === order.listing.id &&
+                d.initiatorId === order.buyer.id &&
+                d.status === 'open',
             );
             return <SaleRow key={order.id} order={order} openDispute={openDispute} />;
           })}

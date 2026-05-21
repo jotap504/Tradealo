@@ -109,7 +109,10 @@ export default function MyPurchasesPage() {
         <ul className="space-y-3">
           {filtered.map((order) => {
             const openDispute = (myDisputes ?? []).find(
-              (d) => d.listingId === order.listing.id && d.status === 'open',
+              (d) =>
+                d.listingId === order.listing.id &&
+                d.respondentId === order.seller.id &&
+                d.status === 'open',
             );
             return (
               <PurchaseRow key={order.id} order={order} openDispute={openDispute} />
