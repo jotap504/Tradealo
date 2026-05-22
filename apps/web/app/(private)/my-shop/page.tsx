@@ -96,6 +96,7 @@ export default function MyShopPage() {
             <ManageLink href="/my-shop/edit" label="Editar perfil" emoji="✏️" />
             <ManageLink href="/my-shop/gallery" label="Galería" emoji="🖼️" />
             <ManageLink href="/my-shop/pinned" label="Destacados" emoji="📌" />
+            <ManageLink href="/my-shop/categories" label="Categorías" emoji="🗂️" />
             <ManageLink href="/my-shop/analytics" label="Estadísticas" emoji="📊" />
             <ManageLink href="/my-shop/subscription" label="Suscripción" emoji="💳" />
           </>

@@ -375,6 +375,7 @@ export interface PublicShop extends Shop {
   username: string;
   galleryImages: ShopGalleryImage[];
   pinnedListings: ShopPinnedListing[];
+  categoryOrder: string[];
   allListings: {
     id: string;
     title: string;
@@ -382,6 +383,7 @@ export interface PublicShop extends Shop {
     currency: 'ARS' | 'USD';
     condition: string;
     primaryImageUrl: string | null;
+    categoryName: string | null;
   }[];
 }
 

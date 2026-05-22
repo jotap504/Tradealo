@@ -66,6 +66,9 @@ export function Navbar() {
     { href: '/listings', label: 'Buscar' },
   ];
 
+  // On shop pages the ShopNav handles navigation — hide this header entirely
+  if (pathname.startsWith('/shop/')) return null;
+
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-tradealo-border shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center gap-3">

@@ -16,7 +16,6 @@ const SOCIAL_META: Record<string, { label: string; icon: string; getHref: (v: st
 export default function ShopHero({ shop }: { shop: PublicShop }) {
   const prefersReduced = useReducedMotion();
 
-  const waNumber = (shop.whatsappBusiness ?? '').replace(/\D/g, '');
   const socials = shop.socialLinks ?? {};
   const displayName = shop.shopName ?? shop.username;
   const initial = (displayName ?? '?')[0].toUpperCase();
@@ -130,22 +129,8 @@ export default function ShopHero({ shop }: { shop: PublicShop }) {
               </div>
             </motion.div>
 
-            {/* CTA + social row */}
+            {/* Social row */}
             <motion.div variants={itemVariants} transition={{ duration: 0.5, ease: 'easeOut' }} className="flex flex-wrap items-center gap-2">
-              {waNumber && (
-                <motion.a
-                  href={`https://wa.me/${waNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white"
-                  style={{ backgroundColor: '#25d366', boxShadow: '0 4px 14px rgba(37,211,102,0.40)' }}
-                  animate={prefersReduced ? {} : { scale: [1, 1.04, 1] }}
-                  transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                >
-                  💬 Contactar por WhatsApp
-                </motion.a>
-              )}
-
               {Object.entries(SOCIAL_META).map(([key, meta]) => {
                 const val = socials[key as keyof typeof socials];
                 if (!val) return null;

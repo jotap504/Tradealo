@@ -691,6 +691,8 @@ export const shop = {
     del<{ ok: true }>(`/shops/me/pinned-listings/${listingId}`),
   reorderPinned: (listingIds: string[]) =>
     patch<{ ok: true }>('/shops/me/pinned-listings/reorder', { listingIds }),
+  updateCategoryOrder: (categories: string[]) =>
+    patch<{ ok: true }>('/shops/me/category-order', { categories }),
   setAnnouncement: (dto: { text: string | null; expiresAt?: string | null }) =>
     patch<{ ok: true }>('/shops/me/announcement', dto),
   publish: () => post<{ ok: true }>('/shops/me/publish'),

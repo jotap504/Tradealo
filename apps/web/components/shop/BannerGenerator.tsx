@@ -100,20 +100,20 @@ function renderBanner(
   ctx.fillStyle = radial;
   ctx.fillRect(0, 0, w, h);
 
-  // Shop name
-  ctx.font = 'bold 72px Arial, sans-serif';
+  // Shop name — centered, proportional font size
+  ctx.font = `bold ${Math.round(h * 0.36)}px Arial, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.35)';
   ctx.shadowBlur = 12;
-  ctx.textAlign = 'left';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(shopName || 'Mi Tienda', 80, h * 0.42);
+  ctx.fillText(shopName || 'Mi Tienda', w / 2, h * 0.42);
 
   // Tagline
-  ctx.font = '32px Arial, sans-serif';
+  ctx.font = `${Math.round(h * 0.16)}px Arial, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.shadowBlur = 6;
-  ctx.fillText(tagline || '', 80, h * 0.65);
+  ctx.fillText(tagline || '', w / 2, h * 0.68);
 
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;

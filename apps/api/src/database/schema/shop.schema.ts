@@ -43,6 +43,7 @@ export const sellerShops = pgTable(
     metaTitle: varchar('meta_title', { length: 100 }),
     metaDescription: varchar('meta_description', { length: 300 }),
     ogImageUrl: varchar('og_image_url', { length: 500 }),
+    categoryOrder: jsonb('category_order').$type<string[]>(),
     announcementText: varchar('announcement_text', { length: 500 }),
     announcementExpiresAt: timestamp('announcement_expires_at', {
       withTimezone: true,

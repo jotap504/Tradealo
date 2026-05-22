@@ -8,6 +8,7 @@ import ShopAnalyticsTracker from '@/components/shop/ShopAnalyticsTracker';
 import FeaturedCarousel from '@/components/shop/FeaturedCarousel';
 import ShopProductGrid from '@/components/shop/ShopProductGrid';
 import ChatbotWidget from '@/components/shop/ChatbotWidget';
+import FloatingWhatsApp from '@/components/shop/FloatingWhatsApp';
 import ShopThemeProvider from '@/components/shop/ShopThemeProvider';
 
 export const revalidate = 60;
@@ -73,7 +74,7 @@ export default async function ShopPage({ params }: Props) {
                 style={{ height: 3, width: 48, backgroundColor: 'var(--shop-primary)' }}
               />
             </div>
-            <ShopProductGrid listings={shopData.allListings} />
+            <ShopProductGrid listings={shopData.allListings} categoryOrder={shopData.categoryOrder} />
           </section>
         )}
 
@@ -81,6 +82,10 @@ export default async function ShopPage({ params }: Props) {
           shopId={shopData.id}
           shopName={shopData.shopName}
           whatsappNumber={shopData.whatsappBusiness}
+        />
+        <FloatingWhatsApp
+          phoneNumber={shopData.whatsappBusiness ?? ''}
+          shopName={shopData.shopName}
         />
       </div>
     </ShopThemeProvider>

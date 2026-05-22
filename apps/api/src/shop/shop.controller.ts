@@ -75,6 +75,10 @@ class AnnouncementDto {
   @IsOptional() @IsString() expiresAt?: string;
 }
 
+class CategoryOrderDto {
+  @IsArray() @IsString({ each: true }) categories!: string[];
+}
+
 class TrackEventDto {
   @IsString() eventType!: string;
   @IsOptional() @IsString() visitorHash?: string;
@@ -177,6 +181,14 @@ export class ShopController {
     @Body() dto: ReorderDto,
   ) {
     return this.shopService.reorderPinnedListings(user.sub, dto.ids);
+  }
+
+  @Patch('me/category-order')
+  updateCategoryOrder(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CategoryOrderDto,
+  ) {
+    return this.shopService.updateCategoryOrder(user.sub, dto.categories);
   }
 
   @Patch('me/announcement')

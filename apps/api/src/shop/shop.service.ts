@@ -177,8 +177,10 @@ export class ShopService {
           price: schema.listings.price,
           currency: schema.listings.currency,
           condition: schema.listings.condition,
+          categoryName: schema.categories.name,
         })
         .from(schema.listings)
+        .leftJoin(schema.categories, eq(schema.listings.categoryId, schema.categories.id))
         .where(
           and(
             eq(schema.listings.userId, ownerId),
@@ -232,6 +234,7 @@ export class ShopService {
       allListings: allListings
         .filter((l) => !pinnedListingIds.has(l.id))
         .map(withImage),
+      categoryOrder: shop.categoryOrder ?? [],
     };
   }
 
@@ -560,6 +563,18 @@ export class ShopService {
       whatsappClicks: result['whatsapp_click'] ?? 0,
       chatbotSessions: result['chatbot_session'] ?? 0,
     };
+  }
+
+  // ─── Category order ───────────────────────────────────────────────────────────
+
+  async updateCategoryOrder(userId: string, categoryOrder: string[]) {
+    await this.ensureShopExists(userId);
+    const [updated] = await this.db
+      .update(sellerShops)
+      .set({ categoryOrder, updatedAt: new Date() })
+      .where(eq(sellerShops.userId, userId))
+      .returning();
+    return updated;
   }
 
   // ─── Internal helpers ─────────────────────────────────────────────────────────
