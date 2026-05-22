@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Store } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { TierBadge } from '@/components/ui/TierBadge';
@@ -11,9 +11,10 @@ import type { User } from '@/types';
 
 interface Props {
   user?: User | null;
+  shopSlug?: string | null;
 }
 
-export function SellerCard({ user }: Props) {
+export function SellerCard({ user, shopSlug }: Props) {
   if (!user) {
     return (
       <Card>
@@ -79,14 +80,20 @@ export function SellerCard({ user }: Props) {
           </p>
         )}
 
-        <Link
-          href={user.username ? `/seller/${user.username}` : '#'}
-          className="block mt-4"
-        >
-          <Button variant="secondary" fullWidth>
-            Ver perfil
-          </Button>
-        </Link>
+        <div className="mt-4 space-y-2">
+          <Link href={user.username ? `/seller/${user.username}` : '#'}>
+            <Button variant="secondary" fullWidth>
+              Ver perfil
+            </Button>
+          </Link>
+          {shopSlug && (
+            <Link href={`/shop/${shopSlug}`}>
+              <Button variant="ghost" fullWidth leftIcon={<Store size={15} />}>
+                Ver tienda
+              </Button>
+            </Link>
+          )}
+        </div>
       </CardBody>
     </Card>
   );

@@ -14,6 +14,19 @@ import { ShareButton } from '@/components/listing/ShareButton';
 import { FavoriteButton } from '@/components/listing/FavoriteButton';
 import { ReportButton } from '@/components/listing/ReportButton';
 
+async function getSellerShopSlug(username: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/shops/by-username/${username}`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data?.slug ?? data?.username) || null;
+  } catch {
+    return null;
+  }
+}
+
 async function getListing(id: string): Promise<Listing | null> {
   try {
     const res = await fetch(`${API_URL}/listings/${id}`, {
@@ -56,6 +69,10 @@ export default async function ListingDetailPage({
 }) {
   const listing = await getListing(params.id);
   if (!listing) notFound();
+
+  const sellerShopSlug = listing.seller?.username
+    ? await getSellerShopSlug(listing.seller.username)
+    : null;
 
   const attrs = listing.attributes ? Object.entries(listing.attributes) : [];
 
@@ -189,7 +206,7 @@ export default async function ListingDetailPage({
             phone={listing.phone}
             sellerUsername={listing.seller?.username}
           />
-          <SellerCard user={listing.seller} />
+          <SellerCard user={listing.seller} shopSlug={sellerShopSlug} />
           <div className="flex gap-2">
             <FavoriteButton listingId={listing.id} variant="pill" />
             <ShareButton url={`/listing/${listing.id}`} title={listing.title} />

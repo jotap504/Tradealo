@@ -1,16 +1,40 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Store,
+  Pencil,
+  Image as ImageIcon,
+  Pin,
+  LayoutGrid,
+  BarChart2,
+  CreditCard,
+  ExternalLink,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
+import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import type { Shop, ShopSubscription } from '@/types';
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: 'Activa', color: '#22c55e' },
-  trial: { label: 'Prueba', color: '#3b82f6' },
-  paused: { label: 'Pausada', color: '#f59e0b' },
-  cancelled: { label: 'Cancelada', color: '#ef4444' },
-  expired: { label: 'Expirada', color: '#6b7280' },
+const STATUS_META: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' | 'default' }> = {
+  active: { label: 'Activa', variant: 'success' },
+  trial: { label: 'Período de prueba', variant: 'default' },
+  paused: { label: 'Pausada', variant: 'warning' },
+  cancelled: { label: 'Cancelada', variant: 'danger' },
+  expired: { label: 'Expirada', variant: 'danger' },
 };
+
+const MANAGE_LINKS = [
+  { href: '/my-shop/edit', label: 'Editar perfil', description: 'Nombre, logo, banner, redes', icon: Pencil, color: 'bg-teal-50 text-teal-600' },
+  { href: '/my-shop/gallery', label: 'Galería', description: 'Fotos de tu local/productos', icon: ImageIcon, color: 'bg-blue-50 text-blue-600' },
+  { href: '/my-shop/pinned', label: 'Destacados', description: 'Fijá hasta 6 productos', icon: Pin, color: 'bg-orange-50 text-orange-600' },
+  { href: '/my-shop/categories', label: 'Categorías', description: 'Orden de categorías', icon: LayoutGrid, color: 'bg-purple-50 text-purple-600' },
+  { href: '/my-shop/analytics', label: 'Estadísticas', description: 'Visitas y clics (30 días)', icon: BarChart2, color: 'bg-green-50 text-green-600' },
+  { href: '/my-shop/subscription', label: 'Suscripción', description: 'Plan y facturación', icon: CreditCard, color: 'bg-rose-50 text-rose-600' },
+];
 
 export default function MyShopPage() {
   const [shopData, setShopData] = useState<Shop | null>(null);
@@ -29,101 +53,150 @@ export default function MyShopPage() {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-sm text-gray-500">Cargando…</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 rounded-full border-2 border-tradealo-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   const hasActiveSub = sub && (sub.status === 'active' || sub.status === 'trial');
-  const subInfo = sub ? STATUS_LABELS[sub.status] : null;
+  const subMeta = sub ? (STATUS_META[sub.status] ?? { label: sub.status, variant: 'default' as const }) : null;
+  const shopUrl = shopData?.slug ?? shopData?.username;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mi Tienda</h1>
-        <p className="text-sm text-gray-500 mt-1">Gestioná tu tienda premium en Trocalia</p>
-      </div>
-
-      <div className="rounded-2xl border border-gray-200 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-800">Suscripción</h2>
-        {sub ? (
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium px-3 py-1 rounded-full text-white" style={{ backgroundColor: subInfo?.color ?? '#6b7280' }}>
-              {subInfo?.label ?? sub.status}
-            </span>
-            {sub.billingCycleEnd && (
-              <span className="text-xs text-gray-500">
-                Próximo cobro: {new Date(sub.billingCycleEnd).toLocaleDateString('es-AR')}
-              </span>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Sin suscripción activa</span>
-            <Link
-              href="/my-shop/subscription"
-              className="text-sm font-medium px-4 py-1.5 rounded-full text-white bg-teal-500 hover:bg-teal-600 transition-colors"
-            >
-              Suscribirse
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {shopData && (
-        <div className="rounded-2xl border border-gray-200 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800">Estado de la tienda</h2>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${shopData.isPublished ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-              {shopData.isPublished ? 'Publicada' : 'No publicada'}
-            </span>
-          </div>
-          <p className="text-sm text-gray-600">{shopData.shopName ?? 'Sin nombre'}</p>
-          {shopData.isPublished && (shopData.slug ?? shopData.username) && (
-            <a
-              href={`/shop/${shopData.slug ?? shopData.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-teal-600 underline"
-            >
-              Ver mi tienda →
-            </a>
-          )}
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 shrink-0">
+          <Store size={22} />
         </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        {hasActiveSub ? (
-          <>
-            <ManageLink href="/my-shop/edit" label="Editar perfil" emoji="✏️" />
-            <ManageLink href="/my-shop/gallery" label="Galería" emoji="🖼️" />
-            <ManageLink href="/my-shop/pinned" label="Destacados" emoji="📌" />
-            <ManageLink href="/my-shop/categories" label="Categorías" emoji="🗂️" />
-            <ManageLink href="/my-shop/analytics" label="Estadísticas" emoji="📊" />
-            <ManageLink href="/my-shop/subscription" label="Suscripción" emoji="💳" />
-          </>
-        ) : (
-          <div className="col-span-2 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center space-y-3">
-            <p className="text-sm text-gray-500">Activá tu suscripción para acceder a todas las funciones de tu tienda</p>
-            <Link
-              href="/my-shop/subscription"
-              className="inline-block text-sm font-medium px-6 py-2 rounded-full text-white bg-teal-500 hover:bg-teal-600 transition-colors"
-            >
-              Ver planes
-            </Link>
-          </div>
-        )}
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-tradealo-text">Mi Tienda</h1>
+          <p className="text-sm text-tradealo-text-muted">Gestioná tu tienda premium en Trocalia</p>
+        </div>
       </div>
-    </div>
-  );
-}
 
-function ManageLink({ href, label, emoji }: { href: string; label: string; emoji: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors"
-    >
-      <span className="text-2xl">{emoji}</span>
-      <span className="text-sm font-medium text-gray-700">{label}</span>
-    </Link>
+      {/* Status cards row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Shop status card */}
+        <Card>
+          <CardHeader>
+            <p className="font-heading font-semibold text-sm text-tradealo-text">Estado de la tienda</p>
+          </CardHeader>
+          <CardBody>
+            {shopData ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-tradealo-text truncate">
+                    {shopData.shopName ?? 'Sin nombre'}
+                  </span>
+                  {shopData.isPublished ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-green-600 shrink-0">
+                      <CheckCircle size={13} /> Publicada
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-medium text-tradealo-text-muted shrink-0">
+                      <AlertCircle size={13} /> No publicada
+                    </span>
+                  )}
+                </div>
+                {shopData.isPublished && shopUrl && (
+                  <a
+                    href={`/shop/${shopUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-tradealo-primary hover:underline"
+                  >
+                    <ExternalLink size={12} />
+                    Ver mi tienda
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-tradealo-text-muted">No tenés tienda creada aún</p>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Subscription card */}
+        <Card>
+          <CardHeader>
+            <p className="font-heading font-semibold text-sm text-tradealo-text">Suscripción</p>
+          </CardHeader>
+          <CardBody>
+            {sub ? (
+              <div className="space-y-2">
+                <Badge variant={subMeta?.variant ?? 'default'}>{subMeta?.label ?? sub.status}</Badge>
+                {sub.billingCycleEnd && (
+                  <p className="text-xs text-tradealo-text-muted">
+                    Próximo cobro: {new Date(sub.billingCycleEnd).toLocaleDateString('es-AR')}
+                  </p>
+                )}
+                <Link href="/my-shop/subscription">
+                  <Button variant="ghost" size="sm" className="mt-1">
+                    Gestionar plan
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-tradealo-text-muted">Sin suscripción activa</p>
+                <Link href="/my-shop/subscription">
+                  <Button size="sm">Activar tienda</Button>
+                </Link>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Management links */}
+      {hasActiveSub ? (
+        <div>
+          <h2 className="font-heading font-semibold text-base text-tradealo-text mb-3">Gestionar tienda</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {MANAGE_LINKS.map(({ href, label, description, icon: Icon, color }) => (
+              <Link key={href} href={href} className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+                        <Icon size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-tradealo-text group-hover:text-tradealo-primary transition-colors">
+                          {label}
+                        </p>
+                        <p className="text-xs text-tradealo-text-muted truncate">{description}</p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardBody>
+            <div className="text-center py-6 space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center mx-auto">
+                <Store size={26} className="text-teal-500" />
+              </div>
+              <div>
+                <p className="font-heading font-semibold text-tradealo-text">Tu tienda te espera</p>
+                <p className="text-sm text-tradealo-text-muted mt-1">
+                  Activá tu suscripción para personalizar tu tienda, publicarla y acceder a estadísticas.
+                </p>
+              </div>
+              <Link href="/my-shop/subscription">
+                <Button className="mt-2">Ver planes disponibles</Button>
+              </Link>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
   );
 }
