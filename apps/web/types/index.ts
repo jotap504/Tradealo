@@ -363,6 +363,7 @@ export interface Shop {
   metaTitle: string | null;
   metaDescription: string | null;
   ogImageUrl: string | null;
+  categoryOrder: string[] | null;
   announcementText: string | null;
   announcementExpiresAt: string | null;
   isPublished: boolean;

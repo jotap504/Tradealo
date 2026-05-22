@@ -18,7 +18,7 @@ export default function CategoriesPage() {
       .getMyShop()
       .then(async (s) => {
         setShopData(s);
-        const savedOrder: string[] = (s as any).categoryOrder ?? [];
+        const savedOrder: string[] = s.categoryOrder ?? [];
 
         // If shop is published, also fetch live categories from public endpoint
         const identifier = s.slug ?? s.username;
