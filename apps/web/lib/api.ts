@@ -693,6 +693,8 @@ export const shop = {
     patch<{ ok: true }>('/shops/me/pinned-listings/reorder', { listingIds }),
   updateCategoryOrder: (categories: string[]) =>
     patch<{ ok: true }>('/shops/me/category-order', { categories }),
+  updateHeroTemplate: (heroTemplate: string, heroConfig: Record<string, unknown>) =>
+    patch<{ ok: true }>('/shops/me', { heroTemplate, heroConfig }),
   setAnnouncement: (dto: { text: string | null; expiresAt?: string | null }) =>
     patch<{ ok: true }>('/shops/me/announcement', dto),
   publish: () => post<{ ok: true }>('/shops/me/publish'),

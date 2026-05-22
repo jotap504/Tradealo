@@ -12,6 +12,7 @@ import {
   ExternalLink,
   CheckCircle,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -28,6 +29,7 @@ const STATUS_META: Record<string, { label: string; variant: 'success' | 'warning
 };
 
 const MANAGE_LINKS = [
+  { href: '/my-shop/hero', label: 'Hero / Portada', description: 'Estilo visual de la portada', icon: Sparkles, color: 'bg-indigo-50 text-indigo-600' },
   { href: '/my-shop/edit', label: 'Editar perfil', description: 'Nombre, logo, banner, redes', icon: Pencil, color: 'bg-teal-50 text-teal-600' },
   { href: '/my-shop/gallery', label: 'Galería', description: 'Fotos de tu local/productos', icon: ImageIcon, color: 'bg-blue-50 text-blue-600' },
   { href: '/my-shop/pinned', label: 'Destacados', description: 'Fijá hasta 6 productos', icon: Pin, color: 'bg-orange-50 text-orange-600' },

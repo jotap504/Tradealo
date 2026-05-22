@@ -366,6 +366,8 @@ export interface Shop {
   metaDescription: string | null;
   ogImageUrl: string | null;
   categoryOrder: string[] | null;
+  heroTemplate: string | null;
+  heroConfig: Record<string, unknown> | null;
   announcementText: string | null;
   announcementExpiresAt: string | null;
   isPublished: boolean;

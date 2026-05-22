@@ -180,7 +180,10 @@ export class ShopService {
           categoryName: schema.categories.name,
         })
         .from(schema.listings)
-        .leftJoin(schema.categories, eq(schema.listings.categoryId, schema.categories.id))
+        .leftJoin(
+          schema.categories,
+          eq(schema.listings.categoryId, schema.categories.id),
+        )
         .where(
           and(
             eq(schema.listings.userId, ownerId),
@@ -261,6 +264,8 @@ export class ShopService {
       locationText?: string;
       metaTitle?: string;
       metaDescription?: string;
+      heroTemplate?: string;
+      heroConfig?: Record<string, unknown>;
     },
   ) {
     await this.ensureShopExists(userId);
