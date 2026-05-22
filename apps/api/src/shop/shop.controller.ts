@@ -56,6 +56,8 @@ class UpdateShopDto {
   @IsOptional() @IsString() @MaxLength(300) metaDescription?: string;
   @IsOptional() @IsString() @MaxLength(50) heroTemplate?: string;
   @IsOptional() heroConfig?: Record<string, unknown>;
+  @IsOptional() @IsString() @MaxLength(50) footerTemplate?: string;
+  @IsOptional() footerConfig?: Record<string, unknown>;
 }
 
 class UploadImageDto {

@@ -9,6 +9,7 @@ import FeaturedCarousel from '@/components/shop/FeaturedCarousel';
 import ShopProductGrid from '@/components/shop/ShopProductGrid';
 import ChatbotWidget from '@/components/shop/ChatbotWidget';
 import FloatingWhatsApp from '@/components/shop/FloatingWhatsApp';
+import ShopFooter from '@/components/shop/ShopFooter';
 import ShopThemeProvider from '@/components/shop/ShopThemeProvider';
 
 export const revalidate = 60;
@@ -87,6 +88,8 @@ export default async function ShopPage({ params }: Props) {
           phoneNumber={shopData.whatsappBusiness ?? ''}
           shopName={shopData.shopName}
         />
+
+        <ShopFooter shop={shopData} />
       </div>
     </ShopThemeProvider>
   );

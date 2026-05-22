@@ -44,8 +44,14 @@ export const sellerShops = pgTable(
     metaDescription: varchar('meta_description', { length: 300 }),
     ogImageUrl: varchar('og_image_url', { length: 500 }),
     categoryOrder: jsonb('category_order').$type<string[]>(),
-    heroTemplate: varchar('hero_template', { length: 50 }).notNull().default('classic'),
+    heroTemplate: varchar('hero_template', { length: 50 })
+      .notNull()
+      .default('classic'),
     heroConfig: jsonb('hero_config').$type<Record<string, unknown>>(),
+    footerTemplate: varchar('footer_template', { length: 50 })
+      .notNull()
+      .default('none'),
+    footerConfig: jsonb('footer_config').$type<Record<string, unknown>>(),
     announcementText: varchar('announcement_text', { length: 500 }),
     announcementExpiresAt: timestamp('announcement_expires_at', {
       withTimezone: true,

@@ -8,6 +8,7 @@ import ShopThemeProvider from '@/components/shop/ShopThemeProvider';
 import ShopNav from '@/components/shop/ShopNav';
 import ChatbotWidget from '@/components/shop/ChatbotWidget';
 import FloatingWhatsApp from '@/components/shop/FloatingWhatsApp';
+import ShopFooter from '@/components/shop/ShopFooter';
 import { API_URL } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
 import type { Listing } from '@/types';
@@ -354,6 +355,8 @@ export default async function ShopListingPage({
           phoneNumber={shopData.whatsappBusiness ?? ''}
           shopName={shopData.shopName}
         />
+
+        <ShopFooter shop={shopData} />
       </div>
     </ShopThemeProvider>
   );

@@ -266,6 +266,8 @@ export class ShopService {
       metaDescription?: string;
       heroTemplate?: string;
       heroConfig?: Record<string, unknown>;
+      footerTemplate?: string;
+      footerConfig?: Record<string, unknown>;
     },
   ) {
     await this.ensureShopExists(userId);

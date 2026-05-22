@@ -369,6 +369,8 @@ export interface Shop {
   categoryOrder: string[] | null;
   heroTemplate: string | null;
   heroConfig: Record<string, unknown> | null;
+  footerTemplate?: string | null;
+  footerConfig?: Record<string, unknown> | null;
   announcementText: string | null;
   announcementExpiresAt: string | null;
   isPublished: boolean;
