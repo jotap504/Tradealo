@@ -80,7 +80,7 @@ export function SellerCard({ user, shopSlug }: Props) {
           </p>
         )}
 
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 flex flex-col gap-3">
           <Link href={user.username ? `/seller/${user.username}` : '#'}>
             <Button variant="secondary" fullWidth>
               Ver perfil
@@ -88,7 +88,12 @@ export function SellerCard({ user, shopSlug }: Props) {
           </Link>
           {shopSlug && (
             <Link href={`/shop/${shopSlug}`}>
-              <Button variant="ghost" fullWidth leftIcon={<Store size={15} />}>
+              <Button
+                variant="ghost"
+                fullWidth
+                leftIcon={<Store size={15} />}
+                style={{ background: '#16a34a', color: '#fff', borderColor: '#16a34a' }}
+              >
                 Ver tienda
               </Button>
             </Link>
