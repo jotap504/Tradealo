@@ -25,8 +25,6 @@ export default function HeroVideo({ shop, config }: { shop: PublicShop; config: 
   const description = config.description ?? (shop.tagline ?? '');
   const bgText = config.bgText as string | undefined;
 
-  const hasBackground = !!(videoUrl || shop.bannerUrl);
-
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const next = useCallback(() => {
@@ -39,13 +37,16 @@ export default function HeroVideo({ shop, config }: { shop: PublicShop; config: 
     return () => clearInterval(id);
   }, [next, words.length]);
 
-  return (
-    <div className="relative w-full min-h-[560px] md:min-h-[640px] flex flex-col overflow-hidden font-sans">
+  const hasMedia = !!(videoUrl || shop.bannerUrl);
 
-      {/* ── Background layer ── */}
+  return (
+    <div className="relative w-full flex flex-col overflow-hidden font-sans" style={{ minHeight: 580 }}>
+
+      {/* ── Background ── */}
       {videoUrl ? (
         <video
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ zIndex: 0 }}
           src={videoUrl}
           autoPlay
           loop
@@ -55,66 +56,70 @@ export default function HeroVideo({ shop, config }: { shop: PublicShop; config: 
       ) : shop.bannerUrl ? (
         <Image
           src={shop.bannerUrl}
-          alt="Banner de tienda"
+          alt="Banner"
           fill
           priority
-          className="object-cover z-0"
+          className="object-cover"
+          style={{ zIndex: 0 }}
           sizes="100vw"
         />
       ) : (
-        /* Animated gradient when no media is set */
-        <>
+        /* Fallback: static gradient + pulsing glow overlay */
+        <div className="absolute inset-0" style={{ zIndex: 0, background: 'linear-gradient(135deg, var(--shop-primary, #0d9488) 0%, #0f172a 55%, var(--shop-primary, #0d9488) 100%)' }}>
           <motion.div
-            className="absolute inset-0 z-0"
-            animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              background: 'linear-gradient(135deg, var(--shop-primary, #0d9488), #1e293b 40%, var(--shop-primary, #0d9488) 80%)',
-              backgroundSize: '300% 300%',
-            }}
+            className="absolute inset-0"
+            animate={{ opacity: [0.15, 0.4, 0.15] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.25) 0%, transparent 65%)' }}
           />
-          {/* Large decorative background text — shows the user-provided phrase as visual texture */}
           {bgText && (
-            <div
-              className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pointer-events-none"
-              aria-hidden
-            >
-              <p
-                className="font-black text-white/[0.06] text-center leading-none select-none whitespace-nowrap"
-                style={{ fontSize: 'clamp(4rem, 18vw, 16rem)' }}
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none" aria-hidden>
+              <span
+                className="font-black text-white/[0.05] text-center leading-none select-none whitespace-nowrap"
+                style={{ fontSize: 'clamp(5rem, 20vw, 18rem)' }}
               >
                 {bgText}
-              </p>
+              </span>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {/* Dark overlay */}
-      <div className={`absolute inset-0 z-10 ${hasBackground ? 'bg-black/65' : 'bg-black/40'}`} />
+      {/* Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{ zIndex: 1, background: hasMedia ? 'rgba(0,0,0,0.62)' : 'rgba(0,0,0,0.35)' }}
+      />
 
       {/* ── Center content ── */}
-      <div className="relative z-20 flex flex-col items-center justify-center w-full flex-1 px-4 py-20 text-center">
+      <div className="relative flex flex-col items-center justify-center flex-1 px-4 text-center" style={{ zIndex: 2, paddingTop: 80, paddingBottom: 120 }}>
 
-        {/* Prefix line */}
-        <p className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-4">
+        {/* Static prefix */}
+        <p
+          className="font-extrabold text-white leading-tight mb-4"
+          style={{ fontSize: 'clamp(2rem, 5vw, 3.75rem)' }}
+        >
           {titlePrefix}
         </p>
 
-        {/* Rotating word — single AnimatePresence with mode="wait" so exit completes before enter */}
+        {/*
+          Rotating word container.
+          Font size set HERE so em units are computed correctly.
+          height 1.4em clips the y-translate slide without cutting the text.
+        */}
         <div
           className="relative overflow-hidden w-full flex justify-center"
-          style={{ height: '1.3em' }}
+          style={{ fontSize: 'clamp(2rem, 5vw, 3.75rem)', height: '1.4em' }}
         >
           <AnimatePresence mode="wait">
             <motion.span
               key={currentIndex}
-              className="absolute text-4xl md:text-6xl font-extrabold"
-              style={{ color: 'var(--shop-primary, #0d9488)' }}
-              initial={{ opacity: 0, y: 60 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -60 }}
-              transition={{ duration: 0.45, ease: [0.25, 0.4, 0.25, 1] }}
+              className="absolute font-extrabold"
+              style={{ color: 'var(--shop-primary, #0d9488)', fontSize: 'inherit', lineHeight: 1.3 }}
+              initial={{ y: '110%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '-110%', opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             >
               {words[currentIndex]}
             </motion.span>
@@ -122,27 +127,27 @@ export default function HeroVideo({ shop, config }: { shop: PublicShop; config: 
         </div>
 
         {description && (
-          <p className="mt-6 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
+          <p className="mt-8 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
             {description}
           </p>
         )}
       </div>
 
       {/* ── Bottom: logo + name + socials ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-8 md:pb-10">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 md:pb-10" style={{ zIndex: 2 }}>
         <div className="max-w-6xl mx-auto flex flex-col gap-3">
           <div className="flex items-end gap-4">
             {shop.logoUrl ? (
               <div
                 className="relative shrink-0 rounded-2xl overflow-hidden"
-                style={{ width: 80, height: 80, border: '3px solid rgba(255,255,255,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.60)' }}
+                style={{ width: 80, height: 80, border: '3px solid rgba(255,255,255,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
               >
                 <Image src={shop.logoUrl} alt={displayName ?? 'Logo'} fill className="object-cover" />
               </div>
             ) : (
               <div
                 className="shrink-0 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
-                style={{ width: 80, height: 80, background: 'var(--shop-primary, #0d9488)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.60)' }}
+                style={{ width: 80, height: 80, background: 'var(--shop-primary, #0d9488)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
               >
                 {initial}
               </div>
@@ -151,9 +156,7 @@ export default function HeroVideo({ shop, config }: { shop: PublicShop; config: 
               <p className="text-xl font-bold text-white leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
                 {displayName}
               </p>
-              {shop.tagline && (
-                <p className="text-xs mt-0.5 text-white/60">{shop.tagline}</p>
-              )}
+              {shop.tagline && <p className="text-xs mt-0.5 text-white/60">{shop.tagline}</p>}
             </div>
           </div>
 
