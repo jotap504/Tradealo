@@ -350,6 +350,8 @@ export interface Shop {
   userId: string;
   username: string | null;
   slug: string | null;
+  gallery?: ShopGalleryImage[];
+  pinnedListingIds?: string[];
   shopName: string | null;
   tagline: string | null;
   logoUrl: string | null;

@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
+import { ArrowLeft } from 'lucide-react';
 import { shop as shopApi } from '@/lib/api';
 import type { ShopGalleryImage } from '@/types';
 
@@ -12,7 +14,8 @@ export default function ShopGalleryPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    shopApi.getMyShop().then(() => {
+    shopApi.getMyShop().then((s) => {
+      if (s?.gallery) setImages(s.gallery);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -57,9 +60,14 @@ export default function ShopGalleryPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Galería</h1>
-          <p className="text-sm text-gray-500">{images.length}/10 fotos</p>
+        <div className="flex items-center gap-3">
+          <Link href="/my-shop" className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500" aria-label="Volver">
+            <ArrowLeft size={18} />
+          </Link>
+          <div>
+            <h1 className="font-heading text-xl font-bold text-tradealo-text">Galería</h1>
+            <p className="text-sm text-tradealo-text-muted">{images.length}/10 fotos</p>
+          </div>
         </div>
         {images.length < 10 && (
           <button

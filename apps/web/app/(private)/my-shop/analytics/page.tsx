@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { shop as shopApi } from '@/lib/api';
 import type { ShopAnalytics } from '@/types';
 
@@ -34,9 +36,14 @@ export default function ShopAnalyticsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Estadísticas</h1>
-        <p className="text-sm text-gray-500 mt-1">Últimos 30 días</p>
+      <div className="flex items-center gap-3">
+        <Link href="/my-shop" className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500" aria-label="Volver">
+          <ArrowLeft size={18} />
+        </Link>
+        <div>
+          <h1 className="font-heading text-xl font-bold text-tradealo-text">Estadísticas</h1>
+          <p className="text-sm text-tradealo-text-muted mt-0.5">Últimos 30 días</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

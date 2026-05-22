@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { shopSubscription as subApi } from '@/lib/api';
 import type { ShopSubscription } from '@/types';
 
@@ -55,7 +57,12 @@ export default function ShopSubscriptionPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-10 space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Suscripción Mi Tienda</h1>
+      <div className="flex items-center gap-3">
+        <Link href="/my-shop" className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500" aria-label="Volver">
+          <ArrowLeft size={18} />
+        </Link>
+        <h1 className="font-heading text-xl font-bold text-tradealo-text">Suscripción</h1>
+      </div>
 
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">

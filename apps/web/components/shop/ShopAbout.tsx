@@ -1,3 +1,5 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { PublicShop } from '@/types';
 
@@ -10,20 +12,70 @@ const SOCIAL_META: Record<string, { label: string; icon: string; getHref: (v: st
   website: { label: 'Sitio web', icon: '🌐', getHref: (v) => v },
 };
 
-export default function ShopAbout({ shop }: { shop: PublicShop }) {
-  const hasContent =
-    !!shop.about || !!shop.locationText || (shop.galleryImages?.length ?? 0) > 0;
+function GalleryCarousel({ images }: { images: PublicShop['galleryImages'] }) {
+  const [current, setCurrent] = useState(0);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  if (!hasContent) return null;
+  useEffect(() => {
+    if (images.length < 2) return;
+    timer.current = setInterval(() => {
+      setCurrent((c) => (c + 1) % images.length);
+    }, 3500);
+    return () => { if (timer.current) clearInterval(timer.current); };
+  }, [images.length]);
+
+  if (images.length === 0) return null;
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: '16/9' }}>
+      {images.map((img, i) => (
+        <div
+          key={img.id}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ opacity: i === current ? 1 : 0 }}
+        >
+          <Image
+            src={img.url}
+            alt={img.caption ?? `Galería ${i + 1}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 80vw"
+          />
+        </div>
+      ))}
+
+      {images.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setCurrent(i);
+                if (timer.current) { clearInterval(timer.current); timer.current = null; }
+              }}
+              className="rounded-full transition-all"
+              style={{
+                width: i === current ? 18 : 6,
+                height: 6,
+                backgroundColor: i === current ? '#ffffff' : 'rgba(255,255,255,0.5)',
+              }}
+              aria-label={`Imagen ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ShopAbout({ shop }: { shop: PublicShop }) {
+  const hasText = !!shop.about || !!shop.locationText;
+  const hasGallery = (shop.galleryImages?.length ?? 0) > 0;
+  const hasSocials = Object.values(shop.socialLinks ?? {}).some(Boolean);
+
+  if (!hasText && !hasGallery) return null;
 
   const socials = shop.socialLinks ?? {};
-  const gallerySlice = (shop.galleryImages ?? []).slice(0, 4);
-
-  // Fill remaining slots with null for placeholder rendering
-  const gallerySlots: (typeof gallerySlice[number] | null)[] = [
-    ...gallerySlice,
-    ...Array(Math.max(0, 4 - gallerySlice.length)).fill(null),
-  ];
 
   return (
     <section
@@ -34,29 +86,21 @@ export default function ShopAbout({ shop }: { shop: PublicShop }) {
         borderBottom: '1px solid var(--shop-border)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left — info */}
+      <div className="max-w-6xl mx-auto px-4 space-y-8">
+        {hasText && (
           <div className="flex flex-col gap-4">
-            {/* Title with left accent bar */}
             <div className="flex items-center gap-3">
               <div
                 className="rounded-full shrink-0"
                 style={{ width: 4, height: 28, backgroundColor: 'var(--shop-primary)' }}
               />
-              <h2
-                className="text-xl font-bold"
-                style={{ color: 'var(--shop-text)' }}
-              >
+              <h2 className="text-xl font-bold" style={{ color: 'var(--shop-text)' }}>
                 Sobre nosotros
               </h2>
             </div>
 
             {shop.about && (
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: 'var(--shop-text-muted)' }}
-              >
+              <p className="text-sm leading-relaxed max-w-3xl" style={{ color: 'var(--shop-text-muted)' }}>
                 {shop.about}
               </p>
             )}
@@ -68,8 +112,7 @@ export default function ShopAbout({ shop }: { shop: PublicShop }) {
               </div>
             )}
 
-            {/* Social links */}
-            {Object.keys(socials).length > 0 && (
+            {hasSocials && (
               <div className="flex flex-wrap gap-2 mt-1">
                 {Object.entries(SOCIAL_META).map(([key, meta]) => {
                   const val = socials[key as keyof typeof socials];
@@ -86,7 +129,6 @@ export default function ShopAbout({ shop }: { shop: PublicShop }) {
                         color: 'var(--shop-text-muted)',
                         backgroundColor: 'var(--shop-surface)',
                       }}
-                      aria-label={meta.label}
                     >
                       <span>{meta.icon}</span>
                       <span>{meta.label}</span>
@@ -96,40 +138,9 @@ export default function ShopAbout({ shop }: { shop: PublicShop }) {
               </div>
             )}
           </div>
+        )}
 
-          {/* Right — gallery 2x2 grid */}
-          {(shop.galleryImages?.length ?? 0) > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              {gallerySlots.map((img, i) =>
-                img ? (
-                  <div
-                    key={img.id}
-                    className="relative rounded-xl overflow-hidden"
-                    style={{ aspectRatio: '1/1' }}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.caption ?? `Galería ${i + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 50vw, 25vw"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    key={`placeholder-${i}`}
-                    className="rounded-xl"
-                    style={{
-                      aspectRatio: '1/1',
-                      background: 'linear-gradient(135deg, var(--shop-primary) 0%, var(--shop-border) 100%)',
-                      opacity: 0.25,
-                    }}
-                  />
-                )
-              )}
-            </div>
-          )}
-        </div>
+        {hasGallery && <GalleryCarousel images={shop.galleryImages} />}
       </div>
     </section>
   );

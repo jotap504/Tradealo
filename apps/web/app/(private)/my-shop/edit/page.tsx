@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { ArrowLeft } from 'lucide-react';
 import { shop as shopApi } from '@/lib/api';
 import type { Shop, ShopTheme } from '@/types';
 
@@ -212,7 +214,12 @@ export default function EditShopPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Editar perfil de tienda</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/my-shop" className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500" aria-label="Volver">
+          <ArrowLeft size={18} />
+        </Link>
+        <h1 className="font-heading text-xl font-bold text-tradealo-text">Editar perfil de tienda</h1>
+      </div>
 
       {genericError && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{genericError}</div>
