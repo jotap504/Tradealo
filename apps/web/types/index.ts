@@ -26,6 +26,7 @@ export interface User {
   bankName?: string;
   bankAccountType?: string;
   bankAccountNumber?: string;
+  shopSlug?: string | null;
 }
 
 export interface ListingImage {

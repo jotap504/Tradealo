@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ShieldCheck, MapPin, Calendar } from 'lucide-react';
+import { ShieldCheck, MapPin, Calendar, Store } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { ReputationStars } from '@/components/ui/ReputationStars';
@@ -119,7 +120,17 @@ export default async function SellerProfilePage({
                 {user.bio}
               </p>
             )}
-            <div className="pt-1">
+            <div className="pt-2 flex items-center gap-3 flex-wrap">
+              {user.shopSlug && (
+                <Link
+                  href={`/shop/${user.shopSlug}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: 'var(--color-tradealo-primary, #0d9488)' }}
+                >
+                  <Store size={15} />
+                  Ver Tienda
+                </Link>
+              )}
               <ReportButton targetType="user" targetId={user.id} />
             </div>
           </div>

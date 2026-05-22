@@ -245,6 +245,8 @@ export class UsersService {
         city: schema.userProfiles.city,
         completenessPct: schema.userProfiles.completenessPct,
         reputation: schema.reputationScores,
+        shopSlug: schema.sellerShops.slug,
+        shopIsPublished: schema.sellerShops.isPublished,
       })
       .from(schema.users)
       .leftJoin(
@@ -255,12 +257,22 @@ export class UsersService {
         schema.reputationScores,
         eq(schema.reputationScores.userId, schema.users.id),
       )
+      .leftJoin(
+        schema.sellerShops,
+        eq(schema.sellerShops.userId, schema.users.id),
+      )
       .where(
         and(eq(schema.users.id, userId), eq(schema.users.status, 'active')),
       )
       .limit(1);
 
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      ...row,
+      shopSlug: row.shopIsPublished ? row.shopSlug : null,
+      shopIsPublished: undefined,
+    };
   }
 
   private calculateCompleteness(
