@@ -1,8 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { shop as shopApi } from '@/lib/api';
 import type { Shop, ShopTheme } from '@/types';
+
+const BannerGenerator = dynamic(
+  () => import('@/components/shop/BannerGenerator'),
+  { ssr: false },
+);
 
 const THEMES: { value: ShopTheme; label: string; preview: string }[] = [
   { value: 'minimalista', label: 'Minimalista', preview: '#14b8a6' },
@@ -72,6 +79,13 @@ export default function EditShopPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState('');
 
+  // Banner state
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [showBannerGen, setShowBannerGen] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerError, setBannerError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     slug: '',
     shopName: '',
@@ -110,11 +124,40 @@ export default function EditShopPage() {
         twitter: sl.twitter ?? '',
         website: sl.website ?? '',
       });
+      setBannerUrl(s.bannerUrl ?? null);
       setLoading(false);
     }).catch(() => {
       router.push('/my-shop');
     });
   }, [router]);
+
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerUploading(true);
+    setBannerError('');
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.replace(/^data:[^;]+;base64,/, '');
+        const mimetype = file.type || 'image/jpeg';
+        const result = await shopApi.uploadBanner(base64, mimetype);
+        setBannerUrl(result.bannerUrl);
+        setBannerUploading(false);
+      };
+      reader.onerror = () => {
+        setBannerError('No se pudo leer el archivo.');
+        setBannerUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setBannerError('No se pudo subir el banner. Intentá de nuevo.');
+      setBannerUploading(false);
+    }
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
 
   const setField = (key: FormKey, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -179,6 +222,71 @@ export default function EditShopPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Banner section */}
+        <section className="space-y-4">
+          <h2 className="font-semibold text-gray-800 border-b pb-2">Banner</h2>
+
+          {/* Current banner preview */}
+          {bannerUrl && (
+            <div className="relative w-full h-32 rounded-xl overflow-hidden">
+              <Image
+                src={bannerUrl}
+                alt="Banner actual"
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          {bannerError && (
+            <p className="text-xs text-red-600">{bannerError}</p>
+          )}
+
+          {/* Upload options */}
+          <div className="flex gap-3 flex-wrap">
+            <button
+              type="button"
+              disabled={bannerUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:border-teal-400 hover:text-teal-600 transition-colors disabled:opacity-50"
+            >
+              {bannerUploading ? 'Subiendo…' : '📁 Subir imagen'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBannerGen((v) => !v)}
+              className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                showBannerGen
+                  ? 'border-teal-500 bg-teal-50 text-teal-700'
+                  : 'border-gray-200 text-gray-700 hover:border-teal-400 hover:text-teal-600'
+              }`}
+            >
+              ✨ Generar automático
+            </button>
+          </div>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleBannerFileChange}
+          />
+
+          {/* Banner generator */}
+          {showBannerGen && (
+            <BannerGenerator
+              shopName={form.shopName}
+              tagline={form.tagline}
+              onSuccess={(url) => {
+                setBannerUrl(url);
+                setShowBannerGen(false);
+              }}
+            />
+          )}
+        </section>
+
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">Información básica</h2>
 

@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import { shop as shopApi } from '@/lib/api';
-import ShopHeader from '@/components/shop/ShopHeader';
+import ShopNav from '@/components/shop/ShopNav';
+import ShopHero from '@/components/shop/ShopHero';
 import ShopAnnouncement from '@/components/shop/ShopAnnouncement';
-import ShopGallery from '@/components/shop/ShopGallery';
+import ShopAbout from '@/components/shop/ShopAbout';
 import ShopAnalyticsTracker from '@/components/shop/ShopAnalyticsTracker';
+import FeaturedCarousel from '@/components/shop/FeaturedCarousel';
+import ShopProductGrid from '@/components/shop/ShopProductGrid';
 import ChatbotWidget from '@/components/shop/ChatbotWidget';
+import ShopThemeProvider from '@/components/shop/ShopThemeProvider';
 
 export const revalidate = 60;
 
@@ -21,96 +24,65 @@ export default async function ShopPage({ params }: Props) {
     notFound();
   }
 
-  const currency = (c: string) => (c === 'USD' ? 'U$D' : '$');
+  const resolvedUsername = shopData.username ?? params.username;
 
   return (
-    <>
-      <ShopAnalyticsTracker shopId={shopData.id} />
+    <ShopThemeProvider theme={shopData.theme}>
+      <div style={{ backgroundColor: 'var(--shop-bg)', fontFamily: 'var(--shop-font)', minHeight: '100vh' }}>
+        <ShopAnalyticsTracker shopId={shopData.id} />
 
-      <ShopAnnouncement
-        shopId={shopData.id}
-        text={shopData.announcementText}
-        expiresAt={shopData.announcementExpiresAt}
-      />
+        <ShopAnnouncement
+          shopId={shopData.id}
+          text={shopData.announcementText}
+          expiresAt={shopData.announcementExpiresAt}
+        />
 
-      <ShopHeader shop={shopData} />
-
-      {shopData.pinnedListings.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 pb-6">
-          <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--shop-text)' }}>
-            Destacados
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {shopData.pinnedListings.map(({ listing }) => (
-              <a
-                key={listing.id}
-                href={`/listing/${listing.id}`}
-                className="rounded-xl overflow-hidden border transition-shadow hover:shadow-md"
-                style={{ borderColor: 'var(--shop-border)', backgroundColor: 'var(--shop-surface)' }}
-              >
-                <div className="relative aspect-square">
-                  {listing.primaryImageUrl ? (
-                    <Image src={listing.primaryImageUrl} alt={listing.title} fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl" style={{ backgroundColor: 'var(--shop-border)' }}>
-                      📦
-                    </div>
-                  )}
-                </div>
-                <div className="p-2">
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--shop-text)' }}>{listing.title}</p>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--shop-primary)' }}>
-                    {currency(listing.currency)} {Number(listing.price).toLocaleString('es-AR')}
-                  </p>
-                </div>
-              </a>
-            ))}
+        {/* Nav + Hero — nav overlays hero (transparent → solid on scroll) */}
+        <div className="relative">
+          <ShopNav
+            shopName={shopData.shopName}
+            logoUrl={shopData.logoUrl}
+            username={resolvedUsername}
+          />
+          <div className="-mt-[60px]">
+            <ShopHero shop={shopData} />
           </div>
-        </section>
-      )}
+        </div>
 
-      <ShopGallery images={shopData.galleryImages} />
+        {/* Pinned / Featured */}
+        {shopData.pinnedListings.length > 0 && (
+          <section className="max-w-6xl mx-auto px-4 py-10">
+            <FeaturedCarousel listings={shopData.pinnedListings} />
+          </section>
+        )}
 
-      {shopData.allListings.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 pb-12">
-          <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--shop-text)' }}>
-            Todos los productos
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {shopData.allListings.map((listing) => (
-              <a
-                key={listing.id}
-                href={`/listing/${listing.id}`}
-                className="rounded-xl overflow-hidden border transition-shadow hover:shadow-md"
-                style={{ borderColor: 'var(--shop-border)', backgroundColor: 'var(--shop-surface)' }}
-              >
-                <div className="relative aspect-square">
-                  {listing.primaryImageUrl ? (
-                    <Image src={listing.primaryImageUrl} alt={listing.title} fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--shop-border)' }}>
-                      📦
-                    </div>
-                  )}
-                </div>
-                <div className="p-2">
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--shop-text)' }}>{listing.title}</p>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--shop-primary)' }}>
-                    {currency(listing.currency)} {Number(listing.price).toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs capitalize" style={{ color: 'var(--shop-text-muted)' }}>{listing.condition}</p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
+        {/* About / Gallery */}
+        {(shopData.about || shopData.locationText || (shopData.galleryImages?.length ?? 0) > 0) && (
+          <ShopAbout shop={shopData} />
+        )}
 
-      <ChatbotWidget
-        shopId={shopData.id}
-        shopName={shopData.shopName}
-        whatsappNumber={shopData.whatsappBusiness}
-      />
-    </>
+        {/* All Products */}
+        {shopData.allListings.length > 0 && (
+          <section className="max-w-6xl mx-auto px-4 py-10">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--shop-text)' }}>
+                Todos los productos
+              </h2>
+              <div
+                className="mt-1.5 rounded-full"
+                style={{ height: 3, width: 48, backgroundColor: 'var(--shop-primary)' }}
+              />
+            </div>
+            <ShopProductGrid listings={shopData.allListings} />
+          </section>
+        )}
+
+        <ChatbotWidget
+          shopId={shopData.id}
+          shopName={shopData.shopName}
+          whatsappNumber={shopData.whatsappBusiness}
+        />
+      </div>
+    </ShopThemeProvider>
   );
 }
