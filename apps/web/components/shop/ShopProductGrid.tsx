@@ -42,7 +42,7 @@ export default function ShopProductGrid({ listings, categoryOrder = [] }: Props)
       if (map.has(cat)) ordered.push(cat);
     }
     // Append remaining categories not in the order list
-    for (const cat of map.keys()) {
+    for (const cat of Array.from(map.keys())) {
       if (!ordered.includes(cat)) ordered.push(cat);
     }
 
