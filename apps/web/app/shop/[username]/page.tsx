@@ -53,7 +53,7 @@ export default async function ShopPage({ params }: Props) {
         {/* Pinned / Featured */}
         {shopData.pinnedListings.length > 0 && (
           <section className="max-w-6xl mx-auto px-4 py-10">
-            <FeaturedCarousel listings={shopData.pinnedListings} />
+            <FeaturedCarousel listings={shopData.pinnedListings} shopUsername={resolvedUsername} />
           </section>
         )}
 
@@ -74,7 +74,7 @@ export default async function ShopPage({ params }: Props) {
                 style={{ height: 3, width: 48, backgroundColor: 'var(--shop-primary)' }}
               />
             </div>
-            <ShopProductGrid listings={shopData.allListings} categoryOrder={shopData.categoryOrder} />
+            <ShopProductGrid listings={shopData.allListings} categoryOrder={shopData.categoryOrder} shopUsername={resolvedUsername} />
           </section>
         )}
 

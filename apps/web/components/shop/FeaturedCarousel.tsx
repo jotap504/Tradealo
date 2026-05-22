@@ -25,7 +25,7 @@ const cardVariants: Variants = {
   visible: { opacity: 1, x: 0 },
 };
 
-function FeaturedCard({ item, reduced }: { item: PinnedListing; reduced: boolean | null }) {
+function FeaturedCard({ item, reduced, shopUsername }: { item: PinnedListing; reduced: boolean | null; shopUsername?: string }) {
   return (
     <motion.div
       variants={reduced ? {} : cardVariants}
@@ -37,7 +37,7 @@ function FeaturedCard({ item, reduced }: { item: PinnedListing; reduced: boolean
       style={{ width: 200 }}
     >
       <Link
-        href={`/listing/${item.listing.id}`}
+        href={shopUsername ? `/shop/${shopUsername}/listing/${item.listing.id}` : `/listing/${item.listing.id}`}
         className="block rounded-2xl overflow-hidden"
         style={{
           border: '1px solid var(--shop-border)',
@@ -95,7 +95,7 @@ function FeaturedCard({ item, reduced }: { item: PinnedListing; reduced: boolean
   );
 }
 
-export default function FeaturedCarousel({ listings }: { listings: PublicShop['pinnedListings'] }) {
+export default function FeaturedCarousel({ listings, shopUsername }: { listings: PublicShop['pinnedListings']; shopUsername?: string }) {
   const prefersReduced = useReducedMotion();
 
   if (!listings || listings.length === 0) return null;
@@ -128,7 +128,7 @@ export default function FeaturedCarousel({ listings }: { listings: PublicShop['p
         }}
       >
         {listings.map((item) => (
-          <FeaturedCard key={item.listingId} item={item} reduced={prefersReduced} />
+          <FeaturedCard key={item.listingId} item={item} reduced={prefersReduced} shopUsername={shopUsername} />
         ))}
       </motion.div>
     </div>

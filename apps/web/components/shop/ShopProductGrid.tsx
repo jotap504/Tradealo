@@ -17,9 +17,10 @@ const gridVariants: Variants = {
 interface Props {
   listings: ListingItem[];
   categoryOrder?: string[];
+  shopUsername?: string;
 }
 
-export default function ShopProductGrid({ listings, categoryOrder = [] }: Props) {
+export default function ShopProductGrid({ listings, categoryOrder = [], shopUsername }: Props) {
   const [query, setQuery] = useState('');
   const prefersReduced = useReducedMotion();
 
@@ -118,7 +119,7 @@ export default function ShopProductGrid({ listings, categoryOrder = [] }: Props)
                     variants={prefersReduced ? undefined : productCardVariants}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
-                    <ProductCard listing={listing} index={i} />
+                    <ProductCard listing={listing} index={i} shopUsername={shopUsername} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -140,7 +141,7 @@ export default function ShopProductGrid({ listings, categoryOrder = [] }: Props)
               variants={prefersReduced ? undefined : productCardVariants}
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <ProductCard listing={listing} index={i} />
+              <ProductCard listing={listing} index={i} shopUsername={shopUsername} />
             </motion.div>
           ))}
         </motion.div>

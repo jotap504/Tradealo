@@ -16,6 +16,7 @@ interface ListingItem {
 interface ProductCardProps {
   listing: ListingItem;
   index: number;
+  shopUsername?: string;
 }
 
 function conditionColor(condition: string): { bg: string; text: string } {
@@ -47,7 +48,7 @@ export const productCardVariants: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function ProductCard({ listing, index }: ProductCardProps) {
+export default function ProductCard({ listing, index, shopUsername }: ProductCardProps) {
   const prefersReduced = useReducedMotion();
   const badge = conditionColor(listing.condition);
 
@@ -67,7 +68,7 @@ export default function ProductCard({ listing, index }: ProductCardProps) {
         boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
       }}
     >
-      <Link href={`/listing/${listing.id}`} className="block group">
+      <Link href={shopUsername ? `/shop/${shopUsername}/listing/${listing.id}` : `/listing/${listing.id}`} className="block group">
         {/* Image container */}
         <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '1/1' }}>
           {listing.primaryImageUrl ? (
