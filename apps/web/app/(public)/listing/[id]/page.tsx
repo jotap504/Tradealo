@@ -20,8 +20,9 @@ async function getSellerShopSlug(username: string): Promise<string | null> {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
-    const data = await res.json();
-    return (data?.slug ?? data?.username) || null;
+    const json = await res.json();
+    const shop = json?.data ?? json;
+    return shop?.slug || null;
   } catch {
     return null;
   }
