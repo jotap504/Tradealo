@@ -188,6 +188,12 @@ function VideoForm({ config, onChange }: { config: Record<string, unknown>; onCh
         <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
         <textarea value={(config.description as string) ?? ''} onChange={(e) => onChange('description', e.target.value)} placeholder="Una breve frase que describe tu tienda..." rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" maxLength={200} />
       </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Texto de fondo <span className="text-gray-400">(se usa cuando no hay video ni banner — aparece grande y sutil detrás del contenido)</span>
+        </label>
+        <input type="text" value={(config.bgText as string) ?? ''} onChange={(e) => onChange('bgText', e.target.value)} placeholder="Ej: ModaStyle · Ropa · Argentina" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" maxLength={80} />
+      </div>
     </div>
   );
 }

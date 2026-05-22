@@ -12,4 +12,5 @@ export interface HeroConfig {
   videoUrl?: string;
   titlePrefix?: string;
   description?: string;
+  bgText?: string;
 }
