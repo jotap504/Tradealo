@@ -15,6 +15,7 @@ import {
   Sparkles,
   Layout,
   Palette,
+  Megaphone,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -33,6 +34,7 @@ const STATUS_META: Record<string, { label: string; variant: 'success' | 'warning
 const MANAGE_LINKS = [
   { href: '/my-shop/hero', label: 'Hero / Portada', description: 'Estilo visual de la portada', icon: Sparkles, color: 'bg-indigo-50 text-indigo-600' },
   { href: '/my-shop/theme', label: 'Color primario', description: 'Personalizá el color de marca de tu tienda', icon: Palette, color: 'bg-pink-50 text-pink-600' },
+  { href: '/my-shop/announcement', label: 'Anuncio / Campaña', description: 'Banner de promoción con fecha de vencimiento', icon: Megaphone, color: 'bg-yellow-50 text-yellow-600' },
   { href: '/my-shop/footer', label: 'Footer / Pie de página', description: 'Elegí el estilo y datos de contacto del footer', icon: Layout, color: 'bg-slate-50 text-slate-600' },
   { href: '/my-shop/edit', label: 'Editar perfil', description: 'Nombre, logo, banner, redes', icon: Pencil, color: 'bg-teal-50 text-teal-600' },
   { href: '/my-shop/gallery', label: 'Galería', description: 'Fotos de tu local/productos', icon: ImageIcon, color: 'bg-blue-50 text-blue-600' },
