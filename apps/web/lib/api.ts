@@ -697,6 +697,8 @@ export const shop = {
     patch<{ ok: true }>('/shops/me', { heroTemplate, heroConfig }),
   updateFooterTemplate: (footerTemplate: string, footerConfig: Record<string, unknown>) =>
     patch<{ ok: true }>('/shops/me', { footerTemplate, footerConfig }),
+  updatePrimaryColor: (primaryColor: string | null) =>
+    patch<{ ok: true }>('/shops/me', { primaryColor }),
   setAnnouncement: (dto: { text: string | null; expiresAt?: string | null }) =>
     patch<{ ok: true }>('/shops/me/announcement', dto),
   publish: () => post<{ ok: true }>('/shops/me/publish'),

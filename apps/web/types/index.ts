@@ -371,6 +371,7 @@ export interface Shop {
   heroConfig: Record<string, unknown> | null;
   footerTemplate?: string | null;
   footerConfig?: Record<string, unknown> | null;
+  primaryColor?: string | null;
   announcementText: string | null;
   announcementExpiresAt: string | null;
   isPublished: boolean;

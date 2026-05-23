@@ -87,7 +87,7 @@ export default async function ShopListingPage({
     : null;
 
   return (
-    <ShopThemeProvider theme={shopData.theme}>
+    <ShopThemeProvider theme={shopData.theme} primaryColor={shopData.primaryColor}>
       <div
         style={{
           backgroundColor: 'var(--shop-bg)',

@@ -29,7 +29,7 @@ export default async function ShopPage({ params }: Props) {
   const resolvedUsername = shopData.username ?? params.username;
 
   return (
-    <ShopThemeProvider theme={shopData.theme}>
+    <ShopThemeProvider theme={shopData.theme} primaryColor={shopData.primaryColor}>
       <div style={{ backgroundColor: 'var(--shop-bg)', fontFamily: 'var(--shop-font)', minHeight: '100vh' }}>
         <ShopAnalyticsTracker shopId={shopData.id} />
 
