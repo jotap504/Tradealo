@@ -1,3 +1,4 @@
+import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
 export default function PublicLayout({
@@ -7,7 +8,8 @@ export default function PublicLayout({
 }) {
   return (
     <>
-      <main className="flex-1 flex flex-col">{children}</main>
+      <Navbar />
+      <main className="min-h-[calc(100vh-4rem)] flex flex-col">{children}</main>
       <Footer />
     </>
   );
