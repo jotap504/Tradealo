@@ -9,9 +9,10 @@ import ShopNav from '@/components/shop/ShopNav';
 import ChatbotWidget from '@/components/shop/ChatbotWidget';
 import FloatingWhatsApp from '@/components/shop/FloatingWhatsApp';
 import ShopFooter from '@/components/shop/ShopFooter';
-import { API_URL } from '@/lib/constants';
+import { API_URL, APP_URL } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
 import type { Listing } from '@/types';
+import { ProductJsonLd } from '@/components/shop/JsonLd';
 
 export const revalidate = 60;
 
@@ -37,11 +38,32 @@ export async function generateMetadata({
       shopApi.getPublic(params.username),
       getListing(params.id),
     ]);
+    const shopName = shopData.shopName ?? params.username;
+    const title = listing?.title ? `${listing.title} — ${shopName}` : shopName;
+    const description = listing?.description?.slice(0, 160) ?? shopData.metaDescription ?? undefined;
+    const listingImage = (listing?.images as Array<{ url: string }> | undefined)?.[0]?.url;
+    const image = listingImage ?? shopData.ogImageUrl ?? shopData.bannerUrl ?? undefined;
+    const url = `${APP_URL}/shop/${params.username}/listing/${params.id}`;
+
     return {
-      title: listing?.title
-        ? `${listing.title} — ${shopData.shopName ?? params.username}`
-        : shopData.shopName ?? params.username,
-      description: listing?.description?.slice(0, 160) ?? undefined,
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title,
+        description,
+        url,
+        type: 'website',
+        locale: 'es_AR',
+        siteName: shopName,
+        ...(image && { images: [{ url: image, width: 1200, height: 630, alt: title }] }),
+      },
+      twitter: {
+        card: image ? 'summary_large_image' : 'summary',
+        title,
+        description,
+        ...(image && { images: [image] }),
+      },
     };
   } catch {
     return { title: params.username };
@@ -88,6 +110,7 @@ export default async function ShopListingPage({
 
   return (
     <ShopThemeProvider theme={shopData.theme} primaryColor={shopData.primaryColor}>
+      <ProductJsonLd shop={shopData} listing={listing} />
       <div
         style={{
           backgroundColor: 'var(--shop-bg)',
