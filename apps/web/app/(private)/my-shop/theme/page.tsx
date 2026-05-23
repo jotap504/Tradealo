@@ -203,7 +203,7 @@ export default function MyShopThemePage() {
           )}
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={handleReset}
           disabled={saving}
           title="Restaurar color del tema"
