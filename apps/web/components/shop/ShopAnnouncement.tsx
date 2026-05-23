@@ -13,7 +13,12 @@ export default function ShopAnnouncement({ shopId, text, expiresAt }: ShopAnnoun
   const [dismissed, setDismissed] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const storageKey = `shop-ann-${shopId}`;
+  // Key includes a hash of the text so a new announcement always shows again
+  const textHash = text
+    ? text.split('').reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) & 0xffffffff, 0)
+        .toString(36)
+    : '';
+  const storageKey = `shop-ann-${shopId}-${textHash}`;
 
   useEffect(() => {
     setMounted(true);
