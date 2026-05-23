@@ -70,19 +70,21 @@ export default async function ShopPage({ params }: Props) {
       <div style={{ backgroundColor: 'var(--shop-bg)', fontFamily: 'var(--shop-font)', minHeight: '100vh' }}>
         <ShopAnalyticsTracker shopId={shopData.id} />
 
-        {/* Nav + Hero — nav overlays hero (transparent → solid on scroll) */}
-        <div className="relative">
-          <ShopAnnouncement
-            shopId={shopData.id}
-            text={shopData.announcementText}
-            expiresAt={shopData.announcementExpiresAt}
-          />
-          <ShopNav
-            shopName={shopData.shopName}
-            logoUrl={shopData.logoUrl}
-            username={resolvedUsername}
-          />
-          <div className="-mt-[60px]">
+        {/* Announcement + Nav overlaying Hero */}
+        <ShopAnnouncement
+          shopId={shopData.id}
+          text={shopData.announcementText}
+          expiresAt={shopData.announcementExpiresAt}
+        />
+        <div className="grid">
+          <div className="[grid-area:1/1] z-50">
+            <ShopNav
+              shopName={shopData.shopName}
+              logoUrl={shopData.logoUrl}
+              username={resolvedUsername}
+            />
+          </div>
+          <div className="[grid-area:1/1]">
             <ShopHero shop={shopData} />
           </div>
         </div>
