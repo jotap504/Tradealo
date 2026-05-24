@@ -4,20 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PublicShop } from '@/types';
 import type { HeroConfig } from './types';
-
-const SOCIAL_META: Record<string, { label: string; icon: string; getHref: (v: string) => string }> = {
-  instagram: { label: 'Instagram', icon: '📷', getHref: (v) => (v.startsWith('http') ? v : `https://instagram.com/${v}`) },
-  facebook: { label: 'Facebook', icon: '📘', getHref: (v) => (v.startsWith('http') ? v : `https://facebook.com/${v}`) },
-  tiktok: { label: 'TikTok', icon: '🎵', getHref: (v) => (v.startsWith('http') ? v : `https://tiktok.com/@${v}`) },
-  youtube: { label: 'YouTube', icon: '▶️', getHref: (v) => v },
-  twitter: { label: 'X', icon: '𝕏', getHref: (v) => (v.startsWith('http') ? v : `https://x.com/${v}`) },
-  website: { label: 'Web', icon: '🌐', getHref: (v) => v },
-};
+import SocialIconLinks from '@/components/shop/SocialIconLink';
 
 export default function HeroTextRotate({ shop, config }: { shop: PublicShop; config: HeroConfig }) {
   const displayName = shop.shopName ?? shop.username;
   const initial = (displayName ?? '?')[0].toUpperCase();
-  const socials = shop.socialLinks ?? {};
 
   const prefix = config.prefix ?? 'Encontrá lo mejor en';
   const words = config.words && config.words.length > 0 ? config.words : [displayName ?? 'tu tienda'];
@@ -103,28 +94,9 @@ export default function HeroTextRotate({ shop, config }: { shop: PublicShop; con
         </div>
       </div>
 
-      {/* Social pills */}
-      {Object.values(socials).some(Boolean) && (
-        <div className="relative z-10 px-6 md:px-12 pb-8 flex flex-wrap items-center gap-2">
-          {Object.entries(SOCIAL_META).map(([key, meta]) => {
-            const val = socials[key as keyof typeof socials];
-            if (!val) return null;
-            return (
-              <a
-                key={key}
-                href={meta.getHref(val)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors"
-                aria-label={meta.label}
-              >
-                <span>{meta.icon}</span>
-                <span>{meta.label}</span>
-              </a>
-            );
-          })}
-        </div>
-      )}
+      <div className="relative z-10 px-6 md:px-12 pb-8">
+        <SocialIconLinks socialLinks={shop.socialLinks} />
+      </div>
     </div>
   );
 }

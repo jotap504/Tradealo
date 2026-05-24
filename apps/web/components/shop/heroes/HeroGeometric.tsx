@@ -5,15 +5,7 @@ import { Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PublicShop } from '@/types';
 import type { HeroConfig } from './types';
-
-const SOCIAL_META: Record<string, { label: string; icon: string; getHref: (v: string) => string }> = {
-  instagram: { label: 'Instagram', icon: '📷', getHref: (v) => (v.startsWith('http') ? v : `https://instagram.com/${v}`) },
-  facebook: { label: 'Facebook', icon: '📘', getHref: (v) => (v.startsWith('http') ? v : `https://facebook.com/${v}`) },
-  tiktok: { label: 'TikTok', icon: '🎵', getHref: (v) => (v.startsWith('http') ? v : `https://tiktok.com/@${v}`) },
-  youtube: { label: 'YouTube', icon: '▶️', getHref: (v) => v },
-  twitter: { label: 'X', icon: '𝕏', getHref: (v) => (v.startsWith('http') ? v : `https://x.com/${v}`) },
-  website: { label: 'Web', icon: '🌐', getHref: (v) => v },
-};
+import SocialIconLinks from '@/components/shop/SocialIconLink';
 
 function ElegantShape({
   className,
@@ -62,7 +54,6 @@ function ElegantShape({
 export default function HeroGeometric({ shop, config }: { shop: PublicShop; config: HeroConfig }) {
   const displayName = shop.shopName ?? shop.username;
   const initial = (displayName ?? '?')[0].toUpperCase();
-  const socials = shop.socialLinks ?? {};
 
   const badge = config.badge ?? displayName ?? 'Bienvenido';
   const title1 = config.title1 ?? displayName ?? 'Tu tienda';
@@ -136,18 +127,7 @@ export default function HeroGeometric({ shop, config }: { shop: PublicShop; conf
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {Object.entries(SOCIAL_META).map(([key, meta]) => {
-              const val = socials[key as keyof typeof socials];
-              if (!val) return null;
-              return (
-                <a key={key} href={meta.getHref(val)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white" style={{ background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.20)' }} aria-label={meta.label}>
-                  <span>{meta.icon}</span>
-                  <span>{meta.label}</span>
-                </a>
-              );
-            })}
-          </div>
+          <SocialIconLinks socialLinks={shop.socialLinks} />
         </div>
       </div>
 

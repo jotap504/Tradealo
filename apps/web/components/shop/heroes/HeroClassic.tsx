@@ -3,19 +3,10 @@ import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import type { PublicShop } from '@/types';
-
-const SOCIAL_META: Record<string, { label: string; icon: string; getHref: (v: string) => string }> = {
-  instagram: { label: 'Instagram', icon: '📷', getHref: (v) => (v.startsWith('http') ? v : `https://instagram.com/${v}`) },
-  facebook: { label: 'Facebook', icon: '📘', getHref: (v) => (v.startsWith('http') ? v : `https://facebook.com/${v}`) },
-  tiktok: { label: 'TikTok', icon: '🎵', getHref: (v) => (v.startsWith('http') ? v : `https://tiktok.com/@${v}`) },
-  youtube: { label: 'YouTube', icon: '▶️', getHref: (v) => v },
-  twitter: { label: 'X', icon: '𝕏', getHref: (v) => (v.startsWith('http') ? v : `https://x.com/${v}`) },
-  website: { label: 'Web', icon: '🌐', getHref: (v) => v },
-};
+import SocialIconLinks from '@/components/shop/SocialIconLink';
 
 export default function HeroClassic({ shop }: { shop: PublicShop }) {
   const prefersReduced = useReducedMotion();
-  const socials = shop.socialLinks ?? {};
   const displayName = shop.shopName ?? shop.username;
   const initial = (displayName ?? '?')[0].toUpperCase();
 
@@ -72,17 +63,8 @@ export default function HeroClassic({ shop }: { shop: PublicShop }) {
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} transition={{ duration: 0.5, ease: 'easeOut' }} className="flex flex-wrap items-center gap-2">
-              {Object.entries(SOCIAL_META).map(([key, meta]) => {
-                const val = socials[key as keyof typeof socials];
-                if (!val) return null;
-                return (
-                  <a key={key} href={meta.getHref(val)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.30)' }} aria-label={meta.label}>
-                    <span>{meta.icon}</span>
-                    <span>{meta.label}</span>
-                  </a>
-                );
-              })}
+            <motion.div variants={itemVariants} transition={{ duration: 0.5, ease: 'easeOut' }}>
+              <SocialIconLinks socialLinks={shop.socialLinks} />
             </motion.div>
           </motion.div>
         </div>
