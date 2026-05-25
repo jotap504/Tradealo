@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, Star, FileCheck } from 'lucide-react';
 import { kyc } from '@/lib/api';
@@ -15,6 +16,8 @@ type KycStepStatus = 'pending' | 'verified' | 'rejected';
 
 export default function KycPage() {
   const queryClient = useQueryClient();
+  const [bcraLoading, setBcraLoading] = useState(false);
+  const [goldLoading, setGoldLoading] = useState(false);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
@@ -33,6 +36,26 @@ export default function KycPage() {
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['kyc-status'] });
     queryClient.invalidateQueries({ queryKey: ['kyc-tiers'] });
+  };
+
+  const handleBcraConsent = async () => {
+    setBcraLoading(true);
+    try {
+      await kyc.recordBcraConsent('granted');
+      refresh();
+    } finally {
+      setBcraLoading(false);
+    }
+  };
+
+  const handleGoldUpgrade = async () => {
+    setGoldLoading(true);
+    try {
+      await kyc.recalculateTier();
+      refresh();
+    } finally {
+      setGoldLoading(false);
+    }
   };
 
   const stepStatus = (done: boolean): KycStepStatus =>
@@ -131,8 +154,8 @@ export default function KycPage() {
                   Consentimiento otorgado
                 </Button>
               ) : (
-                <Button fullWidth type="button">
-                  Dar consentimiento
+                <Button fullWidth type="button" onClick={handleBcraConsent} disabled={bcraLoading}>
+                  {bcraLoading ? 'Procesando...' : 'Dar consentimiento'}
                 </Button>
               )}
             </div>
@@ -202,8 +225,8 @@ export default function KycPage() {
                   </span>
                 </div>
                 {tiers.gold.eligible && !tiers.gold.granted && (
-                  <Button fullWidth className="mt-3">
-                    Actualizar a Gold
+                  <Button fullWidth className="mt-3" onClick={handleGoldUpgrade} disabled={goldLoading}>
+                    {goldLoading ? 'Procesando...' : 'Actualizar a Gold'}
                   </Button>
                 )}
               </div>

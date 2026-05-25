@@ -50,24 +50,29 @@ Respondé ÚNICAMENTE con JSON válido con esta estructura exacta:
 
 Si no se ve claramente una persona sosteniendo un DNI, devolvé isValid: false.`;
 
+interface GeminiResponse {
+  candidates?: {
+    content?: {
+      parts?: { text?: string }[];
+    };
+  }[];
+}
+
 @Injectable()
 export class VisionProvider {
   private readonly logger = new Logger(VisionProvider.name);
-  private readonly apiUrl: string;
   private readonly apiKey: string;
-  private readonly model: string;
 
   constructor() {
-    this.apiUrl =
-      (process.env.AI_API_URL ?? 'https://api.deepseek.com/v1') +
-      '/chat/completions';
-    this.apiKey = process.env.AI_API_KEY ?? '';
-    this.model = process.env.AI_MODEL ?? 'deepseek-chat';
+    this.apiKey = process.env.GEMINI_API_KEY ?? '';
+    if (!this.apiKey) {
+      this.logger.warn('GEMINI_API_KEY not set — KYC vision validation disabled');
+    }
   }
 
-  async validateDniPhoto(base64: string): Promise<DniValidationResult> {
-    const raw = await this.callVision(base64, DNI_PROMPT);
-    const parsed = this.parseJsonResponse(raw);
+  async validateDniPhoto(base64: string, mimeType = 'image/jpeg'): Promise<DniValidationResult> {
+    const raw = await this.callGemini(base64, mimeType, DNI_PROMPT);
+    const parsed = this.parseJson(raw);
 
     if (!parsed || !parsed.isValid) {
       return { valid: false, confidence: 0, rawResponse: raw };
@@ -80,14 +85,14 @@ export class VisionProvider {
         dniNumber: String(parsed.dniNumber ?? ''),
         expirationDate: String(parsed.expirationDate ?? ''),
       },
-      confidence: Number(parsed.confidence) ?? 0,
+      confidence: Number(parsed.confidence) || 0,
       rawResponse: raw,
     };
   }
 
-  async validateSelfie(base64: string): Promise<SelfieValidationResult> {
-    const raw = await this.callVision(base64, SELFIE_PROMPT);
-    const parsed = this.parseJsonResponse(raw);
+  async validateSelfie(base64: string, mimeType = 'image/jpeg'): Promise<SelfieValidationResult> {
+    const raw = await this.callGemini(base64, mimeType, SELFIE_PROMPT);
+    const parsed = this.parseJson(raw);
 
     if (!parsed || !parsed.isValid) {
       return { valid: false, confidence: 0, rawResponse: raw };
@@ -95,70 +100,68 @@ export class VisionProvider {
 
     return {
       valid: true,
-      confidence: Number(parsed.confidence) ?? 0,
+      confidence: Number(parsed.confidence) || 0,
       rawResponse: raw,
     };
   }
 
-  private async callVision(
+  private async callGemini(
     base64: string,
+    mimeType: string,
     prompt: string,
-  ): Promise<Record<string, unknown> | string> {
+  ): Promise<string> {
+    if (!this.apiKey) return JSON.stringify({ isValid: false, confidence: 0 });
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+
     const body = {
-      model: this.model,
-      messages: [
+      contents: [
         {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/jpeg;base64,${base64}` },
-            },
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64 } },
           ],
         },
       ],
-      temperature: 0.1,
-      max_tokens: 512,
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 512,
+      },
     };
 
-    const response = await fetch(this.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      this.logger.error('Gemini Vision network error', err);
+      return JSON.stringify({ isValid: false, confidence: 0 });
+    }
 
     if (!response.ok) {
-      this.logger.error(
-        `DeepSeek Vision error: ${response.status} ${response.statusText}`,
-      );
-      return { isValid: false, confidence: 0 };
+      const text = await response.text().catch(() => '');
+      this.logger.error(`Gemini Vision error: ${response.status} ${text}`);
+      return JSON.stringify({ isValid: false, confidence: 0 });
     }
 
-    const json = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
+    const json = (await response.json()) as GeminiResponse;
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
-    const content = json.choices?.[0]?.message?.content;
-    if (!content) {
-      this.logger.warn('DeepSeek Vision returned empty response');
-      return { isValid: false, confidence: 0 };
+    if (!text) {
+      this.logger.warn('Gemini Vision returned empty response');
+      return JSON.stringify({ isValid: false, confidence: 0 });
     }
 
-    return content;
+    return text;
   }
 
-  private parseJsonResponse(
-    raw: Record<string, unknown> | string,
-  ): Record<string, unknown> | null {
-    if (typeof raw !== 'string') return raw as Record<string, unknown>;
+  private parseJson(raw: string): Record<string, unknown> | null {
     try {
       return JSON.parse(raw) as Record<string, unknown>;
     } catch {
-      // Try to extract JSON from markdown code blocks
       const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) {
         try {
@@ -167,7 +170,7 @@ export class VisionProvider {
           /* fall through */
         }
       }
-      this.logger.warn('Failed to parse DeepSeek Vision response as JSON');
+      this.logger.warn('Failed to parse Gemini Vision response as JSON', raw.slice(0, 200));
       return null;
     }
   }
