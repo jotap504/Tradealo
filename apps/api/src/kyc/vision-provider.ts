@@ -64,27 +64,48 @@ export class VisionProvider {
     const geminiKey = process.env.GEMINI_API_KEY ?? '';
     const aiUrl = process.env.AI_API_URL ?? '';
     const aiKey = process.env.AI_API_KEY ?? '';
-    const aiModel = process.env.AI_MODEL ?? 'gpt-4o';
+    const aiModel = process.env.AI_MODEL ?? '';
 
-    if (geminiKey) {
+    const effectiveKey = geminiKey || aiKey;
+    // Google API keys always start with AIzaSy — detect even when stored in AI_API_KEY
+    const isGoogleKey = effectiveKey.startsWith('AIzaSy');
+
+    if (isGoogleKey && effectiveKey) {
       this.mode = 'gemini';
-      this.apiKey = geminiKey;
+      this.apiKey = effectiveKey;
       this.apiUrl = 'https://generativelanguage.googleapis.com';
-      this.model = 'gemini-1.5-flash';
-      this.logger.log('VisionProvider: using Gemini (GEMINI_API_KEY)');
+      this.model = this.normalizeGeminiModel(aiModel);
+      this.logger.log(`VisionProvider: using Gemini (model=${this.model})`);
     } else if (aiUrl && aiKey) {
       this.mode = 'openai';
       this.apiKey = aiKey;
       this.apiUrl = aiUrl.replace(/\/+$/, '');
-      this.model = aiModel;
-      this.logger.log(`VisionProvider: using OpenAI-compatible API at ${this.apiUrl} model=${this.model}`);
+      this.model = aiModel || 'gpt-4o';
+      this.logger.log(
+        `VisionProvider: using OpenAI-compatible API at ${this.apiUrl} model=${this.model}`,
+      );
     } else {
       this.mode = 'openai';
       this.apiKey = '';
       this.apiUrl = '';
-      this.model = aiModel;
-      this.logger.warn('VisionProvider: no API key configured — vision validation disabled');
+      this.model = 'gpt-4o';
+      this.logger.warn(
+        'VisionProvider: no API key configured — vision validation disabled',
+      );
     }
+  }
+
+  private normalizeGeminiModel(raw: string): string {
+    if (!raw) return 'gemini-1.5-flash';
+    const s = raw.toLowerCase().replace(/\s+/g, '-');
+    // "gemini flash 2.0" | "gemini-flash-2.0" | "gemini-2.0-flash" → gemini-2.0-flash
+    if (/gemini.*(2[._-]0).*flash|gemini.*flash.*(2[._-]0)/.test(s)) return 'gemini-2.0-flash';
+    if (/gemini.*(2[._-]0).*pro|gemini.*pro.*(2[._-]0)/.test(s)) return 'gemini-2.0-pro';
+    if (/gemini.*1[._-]5.*flash|gemini.*flash.*1[._-]5/.test(s)) return 'gemini-1.5-flash';
+    if (/gemini.*1[._-]5.*pro|gemini.*pro.*1[._-]5/.test(s)) return 'gemini-1.5-pro';
+    // Already a valid API id (no spaces) — use as-is
+    if (!raw.includes(' ')) return raw;
+    return s;
   }
 
   async validateDniPhoto(
@@ -128,7 +149,11 @@ export class VisionProvider {
     };
   }
 
-  private async callVision(base64: string, mimeType: string, prompt: string): Promise<string> {
+  private async callVision(
+    base64: string,
+    mimeType: string,
+    prompt: string,
+  ): Promise<string> {
     if (!this.apiKey) return JSON.stringify({ isValid: false, confidence: 0 });
 
     return this.mode === 'gemini'
@@ -136,7 +161,11 @@ export class VisionProvider {
       : this.callOpenAI(base64, mimeType, prompt);
   }
 
-  private async callOpenAI(base64: string, mimeType: string, prompt: string): Promise<string> {
+  private async callOpenAI(
+    base64: string,
+    mimeType: string,
+    prompt: string,
+  ): Promise<string> {
     const url = `${this.apiUrl}/chat/completions`;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
@@ -190,7 +219,11 @@ export class VisionProvider {
     return text;
   }
 
-  private async callGemini(base64: string, mimeType: string, prompt: string): Promise<string> {
+  private async callGemini(
+    base64: string,
+    mimeType: string,
+    prompt: string,
+  ): Promise<string> {
     const url = `${this.apiUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
@@ -245,9 +278,14 @@ export class VisionProvider {
       if (match) {
         try {
           return JSON.parse(match[1]) as Record<string, unknown>;
-        } catch { /* fall through */ }
+        } catch {
+          /* fall through */
+        }
       }
-      this.logger.warn('Failed to parse Vision response as JSON', raw.slice(0, 300));
+      this.logger.warn(
+        'Failed to parse Vision response as JSON',
+        raw.slice(0, 300),
+      );
       return null;
     }
   }
