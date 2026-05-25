@@ -64,13 +64,18 @@ export class VisionProvider {
   private readonly apiKey: string;
 
   constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY ?? '';
+    this.apiKey = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY ?? '';
     if (!this.apiKey) {
-      this.logger.warn('GEMINI_API_KEY not set — KYC vision validation disabled');
+      this.logger.warn(
+        'GEMINI_API_KEY / AI_API_KEY not set — KYC vision validation disabled',
+      );
     }
   }
 
-  async validateDniPhoto(base64: string, mimeType = 'image/jpeg'): Promise<DniValidationResult> {
+  async validateDniPhoto(
+    base64: string,
+    mimeType = 'image/jpeg',
+  ): Promise<DniValidationResult> {
     const raw = await this.callGemini(base64, mimeType, DNI_PROMPT);
     const parsed = this.parseJson(raw);
 
@@ -90,7 +95,10 @@ export class VisionProvider {
     };
   }
 
-  async validateSelfie(base64: string, mimeType = 'image/jpeg'): Promise<SelfieValidationResult> {
+  async validateSelfie(
+    base64: string,
+    mimeType = 'image/jpeg',
+  ): Promise<SelfieValidationResult> {
     const raw = await this.callGemini(base64, mimeType, SELFIE_PROMPT);
     const parsed = this.parseJson(raw);
 
@@ -170,7 +178,10 @@ export class VisionProvider {
           /* fall through */
         }
       }
-      this.logger.warn('Failed to parse Gemini Vision response as JSON', raw.slice(0, 200));
+      this.logger.warn(
+        'Failed to parse Gemini Vision response as JSON',
+        raw.slice(0, 200),
+      );
       return null;
     }
   }
