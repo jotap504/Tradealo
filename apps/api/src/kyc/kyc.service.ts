@@ -168,9 +168,9 @@ export class KycService {
       });
     });
 
-    // Auto-validate with DeepSeek Vision (fire-and-forget)
+    // Auto-validate with Gemini Vision (fire-and-forget)
     this.autoValidateDni(userId, frontBase64).catch((err) =>
-      console.error('DeepSeek DNI validation error:', err),
+      console.error('Gemini DNI validation error:', err),
     );
 
     return { ok: true as const };
@@ -179,6 +179,18 @@ export class KycService {
   private async autoValidateDni(userId: string, base64: string) {
     const result = await this.visionProvider.validateDniPhoto(base64);
     if (result.valid) {
+      // Persist extracted DNI so runBcraCheck can use it later
+      if (result.extractedData?.dniNumber) {
+        await this.db
+          .update(schema.userVerifications)
+          .set({ verificationData: JSON.stringify(result.extractedData) })
+          .where(
+            and(
+              eq(schema.userVerifications.userId, userId),
+              eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+            ),
+          );
+      }
       await this.autoApproveVerification(userId, 'phone_camera');
     }
   }
@@ -224,20 +236,27 @@ export class KycService {
   }
 
   private async runBcraCheck(userId: string, consentToken: string) {
-    const [userProfile] = await this.db
-      .select({
-        firstName: schema.userProfiles.firstName,
-        lastName: schema.userProfiles.lastName,
-      })
-      .from(schema.userProfiles)
-      .where(eq(schema.userProfiles.userId, userId))
+    // Get DNI extracted by Gemini Vision during phone_camera validation
+    const [phoneCam] = await this.db
+      .select({ verificationData: schema.userVerifications.verificationData })
+      .from(schema.userVerifications)
+      .where(
+        and(
+          eq(schema.userVerifications.userId, userId),
+          eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+        ),
+      )
       .limit(1);
 
-    const identifier = userId; // placeholder — use actual DNI/CUIT in prod
-    const result = await this.bcraProvider.consult(identifier, consentToken, {
-      firstName: userProfile?.firstName ?? undefined,
-      lastName: userProfile?.lastName ?? undefined,
-    });
+    let identifier = '';
+    if (phoneCam?.verificationData) {
+      try {
+        const parsed = JSON.parse(phoneCam.verificationData as string) as Record<string, unknown>;
+        identifier = String(parsed.dniNumber ?? '');
+      } catch { /* ignore */ }
+    }
+
+    const result = await this.bcraProvider.consult(identifier);
 
     await this.db.insert(schema.bcraChecks).values({
       userId,
@@ -455,10 +474,10 @@ export class KycService {
       });
     });
 
-    // Auto-validate selfie with DeepSeek Vision (fire-and-forget)
+    // Auto-validate selfie with Gemini Vision (fire-and-forget)
     if (type === 'selfie') {
       this.autoValidateSelfie(userId, base64).catch((err) =>
-        console.error('DeepSeek selfie validation error:', err),
+        console.error('Gemini selfie validation error:', err),
       );
     }
 
