@@ -96,6 +96,11 @@ export class KycController {
     return this.kycService.recordBcraConsent(user.sub, dto.consent);
   }
 
+  @Get('bcra-result')
+  getBcraResult(@CurrentUser() user: JwtPayload) {
+    return this.kycService.getBcraResult(user.sub);
+  }
+
   @Get('gold/eligibility')
   getGoldEligibility(@CurrentUser() user: JwtPayload) {
     return this.kycService.checkGoldEligibility(user.sub);

@@ -231,9 +231,13 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
       </div>
       <div className="mt-auto pt-2 space-y-2">
         {status === 'verified' ? (
-          <Button variant="ghost" fullWidth disabled>
-            Documento verificado
-          </Button>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 border border-green-200">
+            <CheckCircle2 size={22} className="text-green-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-700 text-sm leading-tight">Completado</p>
+              <p className="text-xs text-green-600 mt-0.5">Verificado exitosamente</p>
+            </div>
+          </div>
         ) : type === 'phone_camera' ? (
           <>
             <Button

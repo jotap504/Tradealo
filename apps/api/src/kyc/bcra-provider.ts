@@ -83,13 +83,14 @@ export class BcraProvider {
 
   private assess(data: BcraDeudaResponse, cuit: string): BcraResult {
     const periodos = data.results?.periodos ?? [];
+    const denominacion = data.results?.denominacion ?? null;
 
     if (!periodos.length) {
       return {
         status: 'passed',
         score: 'low_risk',
         summary: 'Sin deudas reportadas en el BCRA.',
-        rawData: { cuit },
+        rawData: { cuit, denominacion, periodos: [], noRecords: true },
       };
     }
 
@@ -105,7 +106,8 @@ export class BcraProvider {
       }
     }
 
-    const rawData = { cuit, maxSituacion, hasJudicial, totalDebtARS };
+    // Include full periodos so frontend can render entity detail
+    const rawData = { cuit, denominacion, maxSituacion, hasJudicial, totalDebtARS, periodos };
 
     if (hasJudicial || maxSituacion >= 5) {
       return {

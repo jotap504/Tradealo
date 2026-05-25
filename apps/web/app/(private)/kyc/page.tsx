@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, Star, FileCheck } from 'lucide-react';
+import { ShieldCheck, Star, FileCheck, AlertTriangle, CheckCircle2, XCircle, Clock, Building2 } from 'lucide-react';
 import { kyc } from '@/lib/api';
+import type { BcraCheckResult, BcraPeriodo } from '@/types';
 import { KycProgress } from '@/components/kyc/KycProgress';
 import { KycStepCard } from '@/components/kyc/KycStepCard';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -11,8 +12,139 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TierBadge } from '@/components/ui/TierBadge';
+import { toast } from '@/lib/store';
 
 type KycStepStatus = 'pending' | 'verified' | 'rejected';
+
+const SITUACION_LABEL: Record<number, { label: string; color: string }> = {
+  1: { label: 'Normal', color: 'text-green-700' },
+  2: { label: 'Seguimiento especial', color: 'text-yellow-700' },
+  3: { label: 'Con problemas', color: 'text-orange-700' },
+  4: { label: 'Alto riesgo de insolvencia', color: 'text-red-600' },
+  5: { label: 'Irrecuperable', color: 'text-red-800' },
+  6: { label: 'Irrecuperable (técnica)', color: 'text-red-900' },
+};
+
+function formatCuit(cuit: string) {
+  const c = cuit.replace(/\D/g, '');
+  if (c.length === 11) return `${c.slice(0, 2)}-${c.slice(2, 10)}-${c.slice(10)}`;
+  return cuit;
+}
+
+function formatPeriodo(p: string) {
+  if (p.length === 6) return `${p.slice(4, 6)}/${p.slice(0, 4)}`;
+  return p;
+}
+
+function BcraResultCard({ result }: { result: BcraCheckResult }) {
+  const raw = result.rawResponse;
+  const periodos: BcraPeriodo[] = raw?.periodos ?? [];
+
+  const statusConfig = {
+    passed: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 border-green-200', label: 'Aprobado' },
+    flagged: { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200', label: 'En revisión' },
+    error: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 border-red-200', label: 'Error' },
+  }[result.status] ?? { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200', label: 'Pendiente' };
+
+  const StatusIcon = statusConfig.icon;
+
+  return (
+    <Card>
+      <CardBody className="space-y-4">
+        {/* Header */}
+        <div className={`flex items-center gap-3 p-3 rounded-xl border ${statusConfig.bg}`}>
+          <StatusIcon size={22} className={`${statusConfig.color} shrink-0`} />
+          <div className="flex-1 min-w-0">
+            <p className={`font-bold text-sm ${statusConfig.color}`}>{statusConfig.label}</p>
+            {result.summary && <p className="text-xs text-gray-600 mt-0.5">{result.summary}</p>}
+          </div>
+        </div>
+
+        {/* Meta */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          {raw?.cuit && (
+            <div>
+              <p className="text-xs text-tradealo-text-muted font-medium uppercase tracking-wide">CUIT</p>
+              <p className="font-mono font-semibold mt-0.5">{formatCuit(raw.cuit)}</p>
+            </div>
+          )}
+          {raw?.denominacion && (
+            <div>
+              <p className="text-xs text-tradealo-text-muted font-medium uppercase tracking-wide">Titular</p>
+              <p className="font-semibold mt-0.5">{raw.denominacion}</p>
+            </div>
+          )}
+          {raw?.totalDebtARS !== undefined && raw.totalDebtARS > 0 && (
+            <div>
+              <p className="text-xs text-tradealo-text-muted font-medium uppercase tracking-wide">Deuda total</p>
+              <p className="font-semibold mt-0.5">${raw.totalDebtARS.toLocaleString('es-AR')} ARS</p>
+            </div>
+          )}
+          {result.checkedAt && (
+            <div>
+              <p className="text-xs text-tradealo-text-muted font-medium uppercase tracking-wide">Consultado</p>
+              <p className="font-semibold mt-0.5">{new Date(result.checkedAt).toLocaleDateString('es-AR')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Periodos / Entidades */}
+        {periodos.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-tradealo-text-muted uppercase tracking-wide">Detalle por entidad</p>
+            {periodos.map((periodo) => (
+              <div key={periodo.periodo}>
+                <p className="text-xs text-tradealo-text-muted mb-2">Período {formatPeriodo(periodo.periodo)}</p>
+                <div className="space-y-2">
+                  {periodo.entidades.map((ent, i) => {
+                    const sit = SITUACION_LABEL[ent.situacion] ?? { label: `Situación ${ent.situacion}`, color: 'text-gray-700' };
+                    return (
+                      <div key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Building2 size={14} className="text-gray-500 shrink-0" />
+                            <span className="font-medium text-sm truncate">{ent.entidad}</span>
+                          </div>
+                          <span className={`text-xs font-semibold shrink-0 ${sit.color}`}>
+                            Sit. {ent.situacion} — {sit.label}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-tradealo-text-muted pl-5">
+                          {ent.monto !== undefined && (
+                            <span>Monto: <span className="font-medium text-tradealo-text">${((ent.monto ?? 0) * 1000).toLocaleString('es-AR')}</span></span>
+                          )}
+                          {ent.diasAtrasoPago !== undefined && (
+                            <span>Atraso: <span className="font-medium text-tradealo-text">{ent.diasAtrasoPago} días</span></span>
+                          )}
+                          {ent.procesoJud && <span className="text-red-600 font-semibold">⚠ Proceso judicial</span>}
+                          {ent.situacionJuridica && <span className="text-red-600 font-semibold">⚠ Situación jurídica</span>}
+                          {ent.refinanciaciones && <span className="text-amber-600">Refinanciación activa</span>}
+                          {ent.enRevision && <span className="text-amber-600">En revisión</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {raw?.noRecords && (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            No se encontraron deudas registradas en el BCRA para este CUIT.
+          </p>
+        )}
+
+        {result.expiresAt && (
+          <p className="text-xs text-tradealo-text-muted">
+            Consulta válida hasta {new Date(result.expiresAt).toLocaleDateString('es-AR')}
+          </p>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
 
 export default function KycPage() {
   const queryClient = useQueryClient();
@@ -43,16 +175,32 @@ export default function KycPage() {
     },
   });
 
+  const { data: bcraResult, refetch: refetchBcra } = useQuery({
+    queryKey: ['kyc-bcra-result'],
+    queryFn: () => kyc.getBcraResult(),
+    staleTime: 30_000,
+    // Poll while bcra_consent is pending (waiting for async BCRA check to complete)
+    refetchInterval: (query) => {
+      if (query.state.data) return false;
+      return status?.bcraConsent === false ? 5_000 : false;
+    },
+  });
+
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['kyc-status'] });
     queryClient.invalidateQueries({ queryKey: ['kyc-tiers'] });
   };
 
   const handleBcraConsent = async () => {
+    if (!status?.phoneCamera) {
+      toast.error('Primero tenés que cargar las fotos del DNI y que sean reconocidas.');
+      return;
+    }
     setBcraLoading(true);
     try {
       await kyc.recordBcraConsent('granted');
       refresh();
+      void refetchBcra();
     } finally {
       setBcraLoading(false);
     }
@@ -172,6 +320,9 @@ export default function KycPage() {
           </div>
         </div>
       </div>
+
+      {/* BCRA Result */}
+      {bcraResult && <BcraResultCard result={bcraResult} />}
 
       {tiers?.silver.granted && (
         <div>

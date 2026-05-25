@@ -211,6 +211,43 @@ export interface GoldEligibility {
   badPct: number;
 }
 
+export interface BcraEntidad {
+  entidad: string;
+  situacion: number;
+  monto?: number;
+  diasAtrasoPago?: number;
+  procesoJud?: boolean;
+  situacionJuridica?: boolean;
+  refinanciaciones?: boolean;
+  enRevision?: boolean;
+}
+
+export interface BcraPeriodo {
+  periodo: string;
+  entidades: BcraEntidad[];
+}
+
+export interface BcraCheckResult {
+  id: string;
+  userId: string;
+  cuitDni: string;
+  status: 'passed' | 'flagged' | 'error';
+  score: string | null;
+  summary: string | null;
+  rawResponse: {
+    cuit?: string;
+    denominacion?: string | null;
+    maxSituacion?: number;
+    hasJudicial?: boolean;
+    totalDebtARS?: number;
+    periodos?: BcraPeriodo[];
+    tried?: string[];
+    noRecords?: boolean;
+  } | null;
+  checkedAt: string | null;
+  expiresAt: string | null;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   nextCursor?: string;

@@ -187,7 +187,10 @@ export class KycService {
           .where(
             and(
               eq(schema.userVerifications.userId, userId),
-              eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+              eq(
+                schema.userVerifications.type,
+                'phone_camera' as UserVerificationType,
+              ),
             ),
           );
       }
@@ -243,7 +246,10 @@ export class KycService {
       .where(
         and(
           eq(schema.userVerifications.userId, userId),
-          eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+          eq(
+            schema.userVerifications.type,
+            'phone_camera' as UserVerificationType,
+          ),
         ),
       )
       .limit(1);
@@ -251,9 +257,13 @@ export class KycService {
     let identifier = '';
     if (phoneCam?.verificationData) {
       try {
-        const parsed = JSON.parse(phoneCam.verificationData as string) as Record<string, unknown>;
+        const parsed = JSON.parse(
+          phoneCam.verificationData as string,
+        ) as Record<string, unknown>;
         identifier = String(parsed.dniNumber ?? '');
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     const result = await this.bcraProvider.consult(identifier);
@@ -406,6 +416,16 @@ export class KycService {
       .where(eq(schema.users.id, userId));
 
     return { upgraded: true };
+  }
+
+  async getBcraResult(userId: string) {
+    const [check] = await this.db
+      .select()
+      .from(schema.bcraChecks)
+      .where(eq(schema.bcraChecks.userId, userId))
+      .orderBy(sql`checked_at desc`)
+      .limit(1);
+    return check ?? null;
   }
 
   async recalculateTier(userId: string) {

@@ -26,6 +26,7 @@ import type {
   PublicShop,
   ShopSubscription,
   ShopAnalytics,
+  BcraCheckResult,
 } from '@/types';
 
 export const apiClient = axios.create({
@@ -313,6 +314,7 @@ export const kyc = {
     post<{ ok: true }>('/kyc/silver/bcra-consent', { consent }),
   getGoldEligibility: () => get<TierProgress['gold']['progress']>('/kyc/gold/eligibility'),
   recalculateTier: () => post<{ tier: number; downgraded?: boolean }>('/kyc/recalculate'),
+  getBcraResult: () => get<BcraCheckResult | null>('/kyc/bcra-result'),
 };
 
 export interface FavoriteListing extends Listing {
