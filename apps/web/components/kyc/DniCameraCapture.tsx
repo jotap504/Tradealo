@@ -50,6 +50,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
 
     // Try rear camera first, then any camera as fallback
     const constraintSets = [
+      { video: { facingMode: { ideal: 'environment' } }, audio: false },
       { video: { facingMode: 'environment' }, audio: false },
       { video: true, audio: false },
     ];
@@ -58,19 +59,28 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          // iOS Safari requires explicit play() call even with autoPlay attribute
+          await videoRef.current.play().catch(() => {});
+        }
         return;
       } catch (err) {
         const name = (err as DOMException).name;
         if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
           setErrorKind('permission');
-          return; // retrying with different constraints won't help
+          return;
         }
         if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
           setErrorKind('notfound');
           return;
         }
-        // OverconstrainedError or other → try next set of constraints
+        if (name === 'NotReadableError' || name === 'TrackStartError') {
+          // Camera in use by another app — worth retrying once
+          setErrorKind('other');
+          return;
+        }
+        // OverconstrainedError → try next set of constraints
       }
     }
 
@@ -216,6 +226,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
           playsInline
           muted
           onCanPlay={() => setReady(true)}
+          onLoadedMetadata={() => setReady(true)}
           className="absolute inset-0 w-full h-full object-cover"
         />
         <canvas ref={setCanvasRef} className="absolute inset-0 w-full h-full" />
@@ -236,7 +247,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
             <div className="bg-white rounded-2xl p-6 text-center space-y-4 w-full max-w-xs">
               <p className="text-sm text-gray-700 leading-relaxed">{ERROR_MSG[errorKind]}</p>
               <div className="flex flex-col gap-2">
-                {errorKind === 'permission' && (
+                {(errorKind === 'permission' || errorKind === 'other') && (
                   <button
                     onClick={startCamera}
                     className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-teal-500 text-white rounded-xl text-sm font-medium"
