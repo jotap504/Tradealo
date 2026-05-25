@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -43,6 +44,8 @@ const KYC_REWARD_KEY: Record<string, string> = {
 
 @Injectable()
 export class KycService {
+  private readonly logger = new Logger(KycService.name);
+
   constructor(
     @Inject(DRIZZLE_TOKEN) private readonly db: DB,
     private readonly configService: ConfigService,
@@ -168,18 +171,21 @@ export class KycService {
       });
     });
 
-    // Auto-validate with Gemini Vision (fire-and-forget)
-    this.autoValidateDni(userId, frontBase64, frontMimetype).catch((err) =>
-      console.error('Gemini DNI validation error:', err),
-    );
+    void this.autoValidateDni(userId, frontBase64, frontMimetype);
 
     return { ok: true as const };
   }
 
   private async autoValidateDni(userId: string, base64: string, mimeType = 'image/jpeg') {
-    const result = await this.visionProvider.validateDniPhoto(base64, mimeType);
+    let result;
+    try {
+      result = await this.visionProvider.validateDniPhoto(base64, mimeType);
+    } catch (err) {
+      this.logger.error('autoValidateDni: vision call threw unexpectedly', err);
+      return; // leave pending → admin can approve manually
+    }
+
     if (result.valid) {
-      // Persist extracted DNI so runBcraCheck can use it later
       if (result.extractedData?.dniNumber) {
         await this.db
           .update(schema.userVerifications)
@@ -187,14 +193,25 @@ export class KycService {
           .where(
             and(
               eq(schema.userVerifications.userId, userId),
-              eq(
-                schema.userVerifications.type,
-                'phone_camera' as UserVerificationType,
-              ),
+              eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
             ),
           );
       }
       await this.autoApproveVerification(userId, 'phone_camera');
+    } else {
+      // AI ran but didn't detect a valid DNI → reject so user can retake
+      await this.db
+        .update(schema.userVerifications)
+        .set({
+          status: 'rejected',
+          rejectionReason: 'No se reconoció el DNI en la imagen. Intentalo de nuevo con mejor luz y encuadre.',
+        })
+        .where(
+          and(
+            eq(schema.userVerifications.userId, userId),
+            eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+          ),
+        );
     }
   }
 
@@ -494,20 +511,37 @@ export class KycService {
       });
     });
 
-    // Auto-validate selfie with Gemini Vision (fire-and-forget)
     if (type === 'selfie') {
-      this.autoValidateSelfie(userId, base64).catch((err) =>
-        console.error('Gemini selfie validation error:', err),
-      );
+      void this.autoValidateSelfie(userId, base64);
     }
 
     return { ok: true as const };
   }
 
   private async autoValidateSelfie(userId: string, base64: string) {
-    const result = await this.visionProvider.validateSelfie(base64);
+    let result;
+    try {
+      result = await this.visionProvider.validateSelfie(base64);
+    } catch (err) {
+      this.logger.error('autoValidateSelfie: vision call threw unexpectedly', err);
+      return;
+    }
+
     if (result.valid) {
       await this.autoApproveVerification(userId, 'selfie');
+    } else {
+      await this.db
+        .update(schema.userVerifications)
+        .set({
+          status: 'rejected',
+          rejectionReason: 'No se reconoció la selfie con DNI. Asegurate de sostener el documento bien visible.',
+        })
+        .where(
+          and(
+            eq(schema.userVerifications.userId, userId),
+            eq(schema.userVerifications.type, 'selfie' as UserVerificationType),
+          ),
+        );
     }
   }
 

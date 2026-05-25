@@ -50,25 +50,40 @@ Respondé ÚNICAMENTE con JSON válido con esta estructura exacta:
 
 Si no se ve claramente una persona sosteniendo un DNI, devolvé isValid: false.`;
 
-interface GeminiResponse {
-  candidates?: {
-    content?: {
-      parts?: { text?: string }[];
-    };
-  }[];
-}
+type ApiMode = 'openai' | 'gemini';
 
 @Injectable()
 export class VisionProvider {
   private readonly logger = new Logger(VisionProvider.name);
+  private readonly mode: ApiMode;
   private readonly apiKey: string;
+  private readonly apiUrl: string;
+  private readonly model: string;
 
   constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY ?? '';
-    if (!this.apiKey) {
-      this.logger.warn(
-        'GEMINI_API_KEY / AI_API_KEY not set — KYC vision validation disabled',
-      );
+    const geminiKey = process.env.GEMINI_API_KEY ?? '';
+    const aiUrl = process.env.AI_API_URL ?? '';
+    const aiKey = process.env.AI_API_KEY ?? '';
+    const aiModel = process.env.AI_MODEL ?? 'gpt-4o';
+
+    if (geminiKey) {
+      this.mode = 'gemini';
+      this.apiKey = geminiKey;
+      this.apiUrl = 'https://generativelanguage.googleapis.com';
+      this.model = 'gemini-1.5-flash';
+      this.logger.log('VisionProvider: using Gemini (GEMINI_API_KEY)');
+    } else if (aiUrl && aiKey) {
+      this.mode = 'openai';
+      this.apiKey = aiKey;
+      this.apiUrl = aiUrl.replace(/\/+$/, '');
+      this.model = aiModel;
+      this.logger.log(`VisionProvider: using OpenAI-compatible API at ${this.apiUrl} model=${this.model}`);
+    } else {
+      this.mode = 'openai';
+      this.apiKey = '';
+      this.apiUrl = '';
+      this.model = aiModel;
+      this.logger.warn('VisionProvider: no API key configured — vision validation disabled');
     }
   }
 
@@ -76,7 +91,7 @@ export class VisionProvider {
     base64: string,
     mimeType = 'image/jpeg',
   ): Promise<DniValidationResult> {
-    const raw = await this.callGemini(base64, mimeType, DNI_PROMPT);
+    const raw = await this.callVision(base64, mimeType, DNI_PROMPT);
     const parsed = this.parseJson(raw);
 
     if (!parsed || !parsed.isValid) {
@@ -99,7 +114,7 @@ export class VisionProvider {
     base64: string,
     mimeType = 'image/jpeg',
   ): Promise<SelfieValidationResult> {
-    const raw = await this.callGemini(base64, mimeType, SELFIE_PROMPT);
+    const raw = await this.callVision(base64, mimeType, SELFIE_PROMPT);
     const parsed = this.parseJson(raw);
 
     if (!parsed || !parsed.isValid) {
@@ -113,14 +128,70 @@ export class VisionProvider {
     };
   }
 
-  private async callGemini(
-    base64: string,
-    mimeType: string,
-    prompt: string,
-  ): Promise<string> {
+  private async callVision(base64: string, mimeType: string, prompt: string): Promise<string> {
     if (!this.apiKey) return JSON.stringify({ isValid: false, confidence: 0 });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+    return this.mode === 'gemini'
+      ? this.callGemini(base64, mimeType, prompt)
+      : this.callOpenAI(base64, mimeType, prompt);
+  }
+
+  private async callOpenAI(base64: string, mimeType: string, prompt: string): Promise<string> {
+    const url = `${this.apiUrl}/chat/completions`;
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const body = {
+      model: this.model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
+          ],
+        },
+      ],
+      max_tokens: 512,
+      temperature: 0.1,
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (err) {
+      this.logger.error('OpenAI Vision network error', err);
+      return JSON.stringify({ isValid: false, confidence: 0 });
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      this.logger.error(`OpenAI Vision HTTP ${response.status}: ${text}`);
+      return JSON.stringify({ isValid: false, confidence: 0 });
+    }
+
+    const json = (await response.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const text = json.choices?.[0]?.message?.content ?? '';
+
+    if (!text) {
+      this.logger.warn('OpenAI Vision returned empty content');
+      return JSON.stringify({ isValid: false, confidence: 0 });
+    }
+
+    return text;
+  }
+
+  private async callGemini(base64: string, mimeType: string, prompt: string): Promise<string> {
+    const url = `${this.apiUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const body = {
       contents: [
@@ -131,10 +202,7 @@ export class VisionProvider {
           ],
         },
       ],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 512,
-      },
+      generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
     };
 
     let response: Response;
@@ -143,6 +211,7 @@ export class VisionProvider {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
       });
     } catch (err) {
       this.logger.error('Gemini Vision network error', err);
@@ -151,11 +220,13 @@ export class VisionProvider {
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      this.logger.error(`Gemini Vision error: ${response.status} ${text}`);
+      this.logger.error(`Gemini Vision HTTP ${response.status}: ${text}`);
       return JSON.stringify({ isValid: false, confidence: 0 });
     }
 
-    const json = (await response.json()) as GeminiResponse;
+    const json = (await response.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!text) {
@@ -174,14 +245,9 @@ export class VisionProvider {
       if (match) {
         try {
           return JSON.parse(match[1]) as Record<string, unknown>;
-        } catch {
-          /* fall through */
-        }
+        } catch { /* fall through */ }
       }
-      this.logger.warn(
-        'Failed to parse Gemini Vision response as JSON',
-        raw.slice(0, 200),
-      );
+      this.logger.warn('Failed to parse Vision response as JSON', raw.slice(0, 300));
       return null;
     }
   }
