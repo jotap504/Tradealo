@@ -169,15 +169,15 @@ export class KycService {
     });
 
     // Auto-validate with Gemini Vision (fire-and-forget)
-    this.autoValidateDni(userId, frontBase64).catch((err) =>
+    this.autoValidateDni(userId, frontBase64, frontMimetype).catch((err) =>
       console.error('Gemini DNI validation error:', err),
     );
 
     return { ok: true as const };
   }
 
-  private async autoValidateDni(userId: string, base64: string) {
-    const result = await this.visionProvider.validateDniPhoto(base64);
+  private async autoValidateDni(userId: string, base64: string, mimeType = 'image/jpeg') {
+    const result = await this.visionProvider.validateDniPhoto(base64, mimeType);
     if (result.valid) {
       // Persist extracted DNI so runBcraCheck can use it later
       if (result.extractedData?.dniNumber) {

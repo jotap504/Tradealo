@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { kyc as kycApi } from '@/lib/api';
 import { toast } from '@/lib/store';
+import { DniCameraCapture } from './DniCameraCapture';
 
 type KycType = 'id' | 'selfie' | 'address' | 'phone_camera';
 type KycStepStatus = 'pending' | 'verified' | 'rejected';
@@ -86,8 +87,7 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
   const [loading, setLoading] = useState(false);
   const [frontDone, setFrontDone] = useState(false);
   const [backDone, setBackDone] = useState(false);
-  const frontRef = useRef<HTMLInputElement>(null);
-  const backRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState<'front' | 'back' | null>(null);
   const singleRef = useRef<HTMLInputElement>(null);
   const frontData = useRef<{ base64: string; mimetype: string } | null>(null);
   const backData = useRef<{ base64: string; mimetype: string } | null>(null);
@@ -117,91 +117,51 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
     }
   };
 
-  const handleFront = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('El documento no puede superar 5 MB');
-      e.target.value = '';
-      return;
+  const handleCameraCapture = async (base64: string, mimetype: string) => {
+    const side = cameraOpen;
+    setCameraOpen(null);
+    if (side === 'front') {
+      frontData.current = { base64, mimetype };
+      setFrontDone(true);
+    } else {
+      backData.current = { base64, mimetype };
+      setBackDone(true);
     }
-    const data = await fileToBase64(file);
-    frontData.current = data;
-    setFrontDone(true);
-    e.target.value = '';
-    if (backData.current) {
-      await doPhoneCameraUpload();
-    }
-  };
-
-  const handleBack = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('El documento no puede superar 5 MB');
-      e.target.value = '';
-      return;
-    }
-    const data = await fileToBase64(file);
-    backData.current = data;
-    setBackDone(true);
-    e.target.value = '';
-    if (frontData.current) {
-      await doPhoneCameraUpload();
-    }
-  };
-
-  const doPhoneCameraUpload = async () => {
-    if (!frontData.current || !backData.current) return;
-    setLoading(true);
-    try {
-      await kycApi.uploadPhoneCamera(
-        frontData.current.base64,
-        frontData.current.mimetype,
-        backData.current.base64,
-        backData.current.mimetype,
-      );
-      toast.success('Documentos subidos. En segundos te confirmamos si son válidos.');
-      onUploaded?.();
-      frontData.current = null;
-      backData.current = null;
-    } catch (err) {
-      const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
-      toast.error(`Error: ${msg}`);
-      setFrontDone(false);
-      setBackDone(false);
-      frontData.current = null;
-      backData.current = null;
-    } finally {
-      setLoading(false);
+    // upload when both sides are ready
+    const front = side === 'front' ? { base64, mimetype } : frontData.current;
+    const back = side === 'back' ? { base64, mimetype } : backData.current;
+    if (front && back) {
+      setLoading(true);
+      try {
+        await kycApi.uploadPhoneCamera(front.base64, front.mimetype, back.base64, back.mimetype);
+        toast.success('Documentos subidos. En segundos te confirmamos si son válidos.');
+        onUploaded?.();
+        frontData.current = null;
+        backData.current = null;
+      } catch (err) {
+        const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
+        toast.error(`Error: ${msg}`);
+        setFrontDone(false);
+        setBackDone(false);
+        frontData.current = null;
+        backData.current = null;
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
-      {/* Hidden file inputs for phone_camera dual mode */}
-      {type === 'phone_camera' && (
-        <>
-          <input
-            ref={frontRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFront}
-            className="hidden"
-          />
-          <input
-            ref={backRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleBack}
-            className="hidden"
-          />
-        </>
+    <>
+      {cameraOpen && (
+        <DniCameraCapture
+          side={cameraOpen}
+          onCapture={handleCameraCapture}
+          onClose={() => setCameraOpen(null)}
+        />
       )}
-
+    <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
       {/* Hidden file input for single-upload types */}
       {type !== 'phone_camera' && (
         <input
@@ -246,7 +206,7 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
               leftIcon={frontDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
               type="button"
               disabled={loading}
-              onClick={() => frontRef.current?.click()}
+              onClick={() => setCameraOpen('front')}
             >
               {frontDone ? 'Frente listo' : 'Foto frente'}
             </Button>
@@ -256,15 +216,13 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
               leftIcon={backDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
               type="button"
               disabled={loading}
-              onClick={() => backRef.current?.click()}
+              onClick={() => setCameraOpen('back')}
             >
               {backDone ? 'Dorso listo' : 'Foto dorso'}
             </Button>
             {(frontDone || backDone) && !loading && (
               <p className="text-xs text-tradealo-text-muted text-center">
-                {frontDone && backDone
-                  ? 'Subiendo...'
-                  : 'Tomá ambas fotos para continuar'}
+                {frontDone && backDone ? 'Subiendo...' : 'Tomá ambas fotos para continuar'}
               </p>
             )}
           </>
@@ -284,5 +242,6 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
         )}
       </div>
     </div>
+  </>
   );
 }
