@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import {
   CreditCard,
   ScanFace,
@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -88,6 +89,12 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
   const [frontDone, setFrontDone] = useState(false);
   const [backDone, setBackDone] = useState(false);
   const [cameraOpen, setCameraOpen] = useState<'front' | 'back' | null>(null);
+  const [validating, setValidating] = useState(false);
+
+  // Clear validating state when status resolves (verified or rejected)
+  useEffect(() => {
+    if (status !== 'pending') setValidating(false);
+  }, [status]);
   const singleRef = useRef<HTMLInputElement>(null);
   const frontData = useRef<{ base64: string; mimetype: string } | null>(null);
   const backData = useRef<{ base64: string; mimetype: string } | null>(null);
@@ -134,14 +141,16 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
       setLoading(true);
       try {
         await kycApi.uploadPhoneCamera(front.base64, front.mimetype, back.base64, back.mimetype);
-        toast.success('Documentos subidos. En segundos te confirmamos si son válidos.');
-        onUploaded?.();
+        setFrontDone(false);
+        setBackDone(false);
+        setValidating(true);
         frontData.current = null;
         backData.current = null;
+        onUploaded?.();
       } catch (err) {
         const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
         const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
-        toast.error(`Error: ${msg}`);
+        toast.error(`Error al subir: ${msg}`);
         setFrontDone(false);
         setBackDone(false);
         frontData.current = null;
@@ -200,30 +209,42 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
           </div>
         ) : type === 'phone_camera' ? (
           <>
-            <Button
-              fullWidth
-              variant={frontDone ? 'ghost' : status === 'rejected' ? 'danger' : 'primary'}
-              leftIcon={frontDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
-              type="button"
-              disabled={loading}
-              onClick={() => setCameraOpen('front')}
-            >
-              {frontDone ? 'Frente listo' : 'Foto frente'}
-            </Button>
-            <Button
-              fullWidth
-              variant={backDone ? 'ghost' : 'primary'}
-              leftIcon={backDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
-              type="button"
-              disabled={loading}
-              onClick={() => setCameraOpen('back')}
-            >
-              {backDone ? 'Dorso listo' : 'Foto dorso'}
-            </Button>
-            {(frontDone || backDone) && !loading && (
-              <p className="text-xs text-tradealo-text-muted text-center">
-                {frontDone && backDone ? 'Subiendo...' : 'Tomá ambas fotos para continuar'}
-              </p>
+            {validating ? (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
+                <Loader2 size={18} className="text-blue-500 shrink-0 animate-spin" />
+                <div>
+                  <p className="font-semibold text-blue-700 text-sm leading-tight">Validando con IA…</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Puede demorar unos segundos</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Button
+                  fullWidth
+                  variant={frontDone ? 'ghost' : status === 'rejected' ? 'danger' : 'primary'}
+                  leftIcon={frontDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setCameraOpen('front')}
+                >
+                  {frontDone ? 'Frente listo' : status === 'rejected' ? 'Volver a intentar frente' : 'Foto frente'}
+                </Button>
+                <Button
+                  fullWidth
+                  variant={backDone ? 'ghost' : 'primary'}
+                  leftIcon={backDone ? <CheckCircle2 size={15} /> : <Camera size={15} />}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setCameraOpen('back')}
+                >
+                  {backDone ? 'Dorso listo' : 'Foto dorso'}
+                </Button>
+                {(frontDone || backDone) && !loading && (
+                  <p className="text-xs text-tradealo-text-muted text-center">
+                    {frontDone && backDone ? 'Enviando…' : 'Tomá ambas fotos para continuar'}
+                  </p>
+                )}
+              </>
             )}
           </>
         ) : (
