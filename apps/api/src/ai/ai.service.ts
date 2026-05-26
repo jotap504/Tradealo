@@ -70,7 +70,9 @@ export class AiService {
       current = parseInt((await this.redis.get(key)) ?? '0', 10);
     } catch {
       // Redis unavailable — skip rate limiting
-      this.logger.warn('Redis unavailable in checkRateLimit, skipping rate limit');
+      this.logger.warn(
+        'Redis unavailable in checkRateLimit, skipping rate limit',
+      );
       return;
     }
     if (current >= limit) {
@@ -179,7 +181,7 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
     apiKey: string,
     prompt: string,
   ): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     let res: Response;
     try {
       res = await fetch(url, {
