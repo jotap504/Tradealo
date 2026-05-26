@@ -170,10 +170,6 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
   }
 
   private async callPlainTextApi(prompt: string): Promise<string> {
-    const geminiKey = process.env.GEMINI_API_KEY ?? '';
-    if (geminiKey) {
-      return this.callGeminiText(geminiKey, prompt);
-    }
     return this.callOpenAIText(prompt);
   }
 
