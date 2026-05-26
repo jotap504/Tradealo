@@ -238,12 +238,16 @@ export class KycService {
       );
     } else {
       // Gemini explicitly said neither photo is a DNI
+      const rawSnippet = result?.rawResponse
+        ? String(result.rawResponse).slice(0, 500)
+        : 'no response';
       await this.db
         .update(schema.userVerifications)
         .set({
           status: 'rejected',
           rejectionReason:
             'No se reconoció el DNI en las imágenes. Intentalo de nuevo con mejor luz y encuadre.',
+          verificationData: JSON.stringify({ aiRaw: rawSnippet }),
         })
         .where(
           and(

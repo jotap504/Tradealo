@@ -151,14 +151,22 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [ready, drawOverlay]);
 
+  // Resize canvas to max dimension — phone cameras can be 12-48MP which overwhelms free-tier vision APIs
+  const resizedCanvas = (srcW: number, srcH: number): HTMLCanvasElement => {
+    const MAX_DIM = 1280;
+    const scale = Math.min(1, MAX_DIM / Math.max(srcW, srcH));
+    const snap = document.createElement('canvas');
+    snap.width = Math.round(srcW * scale);
+    snap.height = Math.round(srcH * scale);
+    return snap;
+  };
+
   // capture from live video stream
   const handleShutter = () => {
     const video = videoRef.current;
     if (!video) return;
-    const snap = document.createElement('canvas');
-    snap.width = video.videoWidth;
-    snap.height = video.videoHeight;
-    snap.getContext('2d')?.drawImage(video, 0, 0);
+    const snap = resizedCanvas(video.videoWidth, video.videoHeight);
+    snap.getContext('2d')?.drawImage(video, 0, 0, snap.width, snap.height);
     snap.toBlob(
       (blob) => {
         if (!blob) return;
@@ -171,7 +179,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
         reader.readAsDataURL(blob);
       },
       'image/jpeg',
-      0.92,
+      0.88,
     );
   };
 
@@ -182,10 +190,8 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const snap = document.createElement('canvas');
-      snap.width = img.naturalWidth;
-      snap.height = img.naturalHeight;
-      snap.getContext('2d')?.drawImage(img, 0, 0);
+      const snap = resizedCanvas(img.naturalWidth, img.naturalHeight);
+      snap.getContext('2d')?.drawImage(img, 0, 0, snap.width, snap.height);
       URL.revokeObjectURL(url);
       snap.toBlob(
         (blob) => {
@@ -198,7 +204,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
           reader.readAsDataURL(blob);
         },
         'image/jpeg',
-        0.92,
+        0.88,
       );
     };
     img.src = url;
