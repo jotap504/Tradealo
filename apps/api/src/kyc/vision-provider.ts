@@ -122,20 +122,36 @@ export class VisionProvider {
 
     // Network/API errors return this sentinel
     if (raw === '{"indeterminate":true}') {
-      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+      return {
+        valid: false,
+        indeterminate: true,
+        confidence: 0,
+        rawResponse: raw,
+      };
     }
 
     const parsed = this.parseJson(raw);
 
     // Could not parse response (safety block, unexpected format, free-tier refusal)
     if (!parsed) {
-      this.logger.warn('validateDniPhoto: unparseable response, treating as indeterminate');
-      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+      this.logger.warn(
+        'validateDniPhoto: unparseable response, treating as indeterminate',
+      );
+      return {
+        valid: false,
+        indeterminate: true,
+        confidence: 0,
+        rawResponse: raw,
+      };
     }
 
     if (!parsed.isValid) {
       // Gemini explicitly said this is not a DNI
-      return { valid: false, confidence: Number(parsed.confidence) || 0.1, rawResponse: raw };
+      return {
+        valid: false,
+        confidence: Number(parsed.confidence) || 0.1,
+        rawResponse: raw,
+      };
     }
 
     return {
@@ -195,7 +211,8 @@ export class VisionProvider {
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
+            // Note: no `detail` param — it's OpenAI-specific and causes 4xx on other providers
+            { type: 'image_url', image_url: { url: dataUrl } },
           ],
         },
       ],
@@ -212,17 +229,17 @@ export class VisionProvider {
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(60_000),
       });
     } catch (err) {
-      this.logger.error('OpenAI Vision network error', err);
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      this.logger.error('OpenAI Vision network/timeout error', err);
+      return '{"indeterminate":true}';
     }
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      this.logger.error(`OpenAI Vision HTTP ${response.status}: ${text}`);
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      this.logger.error(`OpenAI Vision HTTP ${response.status}: ${text.slice(0, 300)}`);
+      return '{"indeterminate":true}';
     }
 
     const json = (await response.json()) as {
@@ -231,8 +248,8 @@ export class VisionProvider {
     const text = json.choices?.[0]?.message?.content ?? '';
 
     if (!text) {
-      this.logger.warn('OpenAI Vision returned empty content');
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      this.logger.warn('OpenAI Vision returned empty content', JSON.stringify(json).slice(0, 300));
+      return '{"indeterminate":true}';
     }
 
     return text;
@@ -277,25 +294,35 @@ export class VisionProvider {
     }
 
     const json = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      candidates?: {
+        content?: { parts?: { text?: string }[] };
+        finishReason?: string;
+      }[];
       promptFeedback?: { blockReason?: string };
     };
 
     if (json.promptFeedback?.blockReason) {
-      this.logger.warn(`Gemini blocked request: ${json.promptFeedback.blockReason}`);
+      this.logger.warn(
+        `Gemini blocked request: ${json.promptFeedback.blockReason}`,
+      );
       return '{"indeterminate":true}';
     }
 
     const finishReason = json.candidates?.[0]?.finishReason;
     if (finishReason && finishReason !== 'STOP') {
-      this.logger.warn(`Gemini finishReason=${finishReason}, treating as indeterminate`);
+      this.logger.warn(
+        `Gemini finishReason=${finishReason}, treating as indeterminate`,
+      );
       return '{"indeterminate":true}';
     }
 
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!text) {
-      this.logger.warn('Gemini Vision returned empty text', JSON.stringify(json).slice(0, 300));
+      this.logger.warn(
+        'Gemini Vision returned empty text',
+        JSON.stringify(json).slice(0, 300),
+      );
       return '{"indeterminate":true}';
     }
 
