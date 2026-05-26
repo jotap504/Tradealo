@@ -163,10 +163,17 @@ export class AiService {
   }
 
   private buildDescriptionPrompt(title: string, category: string): string {
-    return `Escribí una descripción corta y atractiva para esta publicación de marketplace en Argentina.
-Título: "${title}"${category ? `\nCategoría: ${category}` : ''}
+    return `Sos un experto en ventas de marketplace argentino. Generá una descripción completa y detallada para esta publicación.
 
-Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español argentino, sin emojis, sin repetir el título, sin etiquetas ni marcas adicionales.`;
+Producto: "${title}"${category ? `\nCategoría: ${category}` : ''}
+
+La descripción debe incluir:
+- Características principales y especificaciones técnicas relevantes
+- Usos y aplicaciones del producto
+- Estado y condición (asumí "usado en buen estado" si no se especifica)
+- Detalles que ayuden al comprador a tomar la decisión
+
+Escribí entre 300 y 800 caracteres, en español argentino informal, sin emojis, sin repetir el título como primera línea. Respondé SOLO con la descripción, sin títulos ni encabezados.`;
   }
 
   private async callOpenAIText(prompt: string): Promise<string> {
@@ -189,7 +196,7 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
           model: this.model,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
-          max_tokens: 256,
+          max_tokens: 600,
         }),
         signal: AbortSignal.timeout(20_000),
       });
