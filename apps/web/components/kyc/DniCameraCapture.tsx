@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback, ChangeEvent } from 'react';
 import { Camera, X, RotateCcw, ImageIcon } from 'lucide-react';
 
 interface Props {
-  side: 'front' | 'back';
+  side: 'front' | 'back' | 'selfie';
   onCapture: (base64: string, mimeType: 'image/jpeg') => void;
   onClose: () => void;
 }
@@ -48,12 +48,17 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
       return;
     }
 
-    // Try rear camera first, then any camera as fallback
-    const constraintSets = [
-      { video: { facingMode: { ideal: 'environment' } }, audio: false },
-      { video: { facingMode: 'environment' }, audio: false },
-      { video: true, audio: false },
-    ];
+    // Selfie uses front camera; DNI uses rear camera
+    const constraintSets = side === 'selfie'
+      ? [
+          { video: { facingMode: { ideal: 'user' } }, audio: false },
+          { video: true, audio: false },
+        ]
+      : [
+          { video: { facingMode: { ideal: 'environment' } }, audio: false },
+          { video: { facingMode: 'environment' }, audio: false },
+          { video: true, audio: false },
+        ];
 
     for (const constraints of constraintSets) {
       try {
@@ -98,37 +103,60 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
 
     ctx.clearRect(0, 0, w, h);
 
-    const padding = w * 0.06;
-    const guideW = w - padding * 2;
-    const guideH = guideW / GUIDE_RATIO;
-    const guideX = padding;
-    const guideY = (h - guideH) / 2;
+    if (side === 'selfie') {
+      // Oval face guide for selfie
+      const cx = w / 2;
+      const cy = h * 0.42;
+      const rx = w * 0.38;
+      const ry = h * 0.30;
 
-    // dark vignette outside guide
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.clearRect(guideX, guideY, guideW, guideH);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, w, h);
 
-    // corner brackets
-    const corner = 24;
-    ctx.strokeStyle = '#14b8a6';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    for (const [cx, cy, dx, dy] of [
-      [guideX, guideY, 1, 1],
-      [guideX + guideW, guideY, -1, 1],
-      [guideX, guideY + guideH, 1, -1],
-      [guideX + guideW, guideY + guideH, -1, -1],
-    ] as [number, number, number, number][]) {
+      ctx.save();
       ctx.beginPath();
-      ctx.moveTo(cx + dx * corner, cy);
-      ctx.lineTo(cx, cy);
-      ctx.lineTo(cx, cy + dy * corner);
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.clearRect(0, 0, w, h);
+      ctx.restore();
+
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.stroke();
+    } else {
+      // DNI card rectangle guide
+      const padding = w * 0.06;
+      const guideW = w - padding * 2;
+      const guideH = guideW / GUIDE_RATIO;
+      const guideX = padding;
+      const guideY = (h - guideH) / 2;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, w, h);
+      ctx.clearRect(guideX, guideY, guideW, guideH);
+
+      const corner = 24;
+      ctx.strokeStyle = '#14b8a6';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      for (const [cx, cy, dx, dy] of [
+        [guideX, guideY, 1, 1],
+        [guideX + guideW, guideY, -1, 1],
+        [guideX, guideY + guideH, 1, -1],
+        [guideX + guideW, guideY + guideH, -1, -1],
+      ] as [number, number, number, number][]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + dx * corner, cy);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(cx, cy + dy * corner);
+        ctx.stroke();
+      }
     }
 
     rafRef.current = requestAnimationFrame(drawOverlay);
-  }, [ready]);
+  }, [ready, side]);
 
   const setCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
     roRef.current?.disconnect();
@@ -210,7 +238,7 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
     img.src = url;
   };
 
-  const sideLabel = side === 'front' ? 'frente' : 'dorso';
+  const sideLabel = side === 'selfie' ? 'selfie con DNI' : side === 'front' ? 'frente' : 'dorso';
   const canShowFallback = errorKind && errorKind !== 'permission';
 
   return (
@@ -240,10 +268,21 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
         {/* instruction overlay */}
         {!errorKind && (
           <div className="absolute bottom-0 left-0 right-0 pb-5 flex flex-col items-center gap-1 pointer-events-none">
-            <p className="text-white text-sm font-semibold drop-shadow-md">
-              Colocá el <span className="text-teal-300">{sideLabel}</span> de tu DNI dentro del marco
-            </p>
-            <p className="text-white/60 text-xs drop-shadow">Buena luz · sin reflejos · bien enfocado</p>
+            {side === 'selfie' ? (
+              <>
+                <p className="text-white text-sm font-semibold drop-shadow-md text-center px-4">
+                  Mirá a la cámara sosteniendo tu <span className="text-teal-300">DNI visible</span>
+                </p>
+                <p className="text-white/60 text-xs drop-shadow">Buena luz · rostro y DNI visibles</p>
+              </>
+            ) : (
+              <>
+                <p className="text-white text-sm font-semibold drop-shadow-md">
+                  Colocá el <span className="text-teal-300">{sideLabel}</span> de tu DNI dentro del marco
+                </p>
+                <p className="text-white/60 text-xs drop-shadow">Buena luz · sin reflejos · bien enfocado</p>
+              </>
+            )}
           </div>
         )}
 

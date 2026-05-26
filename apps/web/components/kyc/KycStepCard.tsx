@@ -88,7 +88,7 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
   const [loading, setLoading] = useState(false);
   const [frontDone, setFrontDone] = useState(false);
   const [backDone, setBackDone] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState<'front' | 'back' | null>(null);
+  const [cameraOpen, setCameraOpen] = useState<'front' | 'back' | 'selfie' | null>(null);
   const [validating, setValidating] = useState(false);
   const [validationTimeout, setValidationTimeout] = useState(false);
 
@@ -132,6 +132,22 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
     }
   };
 
+  const handleSelfieCapture = async (base64: string, mimetype: string) => {
+    setCameraOpen(null);
+    setLoading(true);
+    try {
+      await kycApi.uploadSelfie(base64, mimetype);
+      toast.success('Selfie subida. Te avisaremos cuando se verifique.');
+      onUploaded?.();
+    } catch (err) {
+      const axiosMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = axiosMsg ?? (err instanceof Error ? err.message : String(err));
+      toast.error(`Error: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCameraCapture = async (base64: string, mimetype: string) => {
     const side = cameraOpen;
     setCameraOpen(null);
@@ -171,16 +187,23 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
 
   return (
     <>
-      {cameraOpen && (
+      {cameraOpen && cameraOpen !== 'selfie' && (
         <DniCameraCapture
           side={cameraOpen}
           onCapture={handleCameraCapture}
           onClose={() => setCameraOpen(null)}
         />
       )}
+      {cameraOpen === 'selfie' && (
+        <DniCameraCapture
+          side="selfie"
+          onCapture={handleSelfieCapture}
+          onClose={() => setCameraOpen(null)}
+        />
+      )}
     <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
-      {/* Hidden file input for single-upload types */}
-      {type !== 'phone_camera' && (
+      {/* Hidden file input for address upload */}
+      {type === 'address' && (
         <input
           ref={singleRef}
           type="file"
@@ -273,6 +296,17 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
               </>
             )}
           </>
+        ) : type === 'selfie' ? (
+          <Button
+            fullWidth
+            variant={status === 'rejected' ? 'danger' : 'primary'}
+            loading={loading}
+            leftIcon={<Camera size={15} />}
+            type="button"
+            onClick={() => setCameraOpen('selfie')}
+          >
+            {status === 'rejected' ? 'Volver a intentar selfie' : 'Tomar selfie con DNI'}
+          </Button>
         ) : (
           <Button
             fullWidth
