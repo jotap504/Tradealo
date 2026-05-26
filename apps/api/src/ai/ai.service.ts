@@ -156,7 +156,7 @@ export class AiService {
       title,
       String(context.category ?? ''),
     );
-    const text = await this.callPlainTextApi(prompt);
+    const text = await this.callOpenAIText(prompt);
 
     await this.incrementUsage(userId);
     return { text };
@@ -167,46 +167,6 @@ export class AiService {
 Título: "${title}"${category ? `\nCategoría: ${category}` : ''}
 
 Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español argentino, sin emojis, sin repetir el título, sin etiquetas ni marcas adicionales.`;
-  }
-
-  private async callPlainTextApi(prompt: string): Promise<string> {
-    return this.callOpenAIText(prompt);
-  }
-
-  private async callGeminiText(
-    apiKey: string,
-    prompt: string,
-  ): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
-        }),
-        signal: AbortSignal.timeout(20_000),
-      });
-    } catch (err) {
-      this.logger.error('Gemini text API error', err);
-      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY);
-    }
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      this.logger.error(
-        `Gemini text HTTP ${res.status}: ${body.slice(0, 200)}`,
-      );
-      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY);
-    }
-    const json = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    if (!text)
-      throw new HttpException('AI_EMPTY_RESPONSE', HttpStatus.BAD_GATEWAY);
-    return text.trim();
   }
 
   private async callOpenAIText(prompt: string): Promise<string> {
