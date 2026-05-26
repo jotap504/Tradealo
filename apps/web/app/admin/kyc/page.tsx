@@ -24,13 +24,13 @@ export default function AdminKycPage() {
     staleTime: 60_000,
   });
 
-  const approveKyc = async (userId: string) => {
+  const approveKyc = async (verificationId: string) => {
     try {
-      await admin.approveKyc(userId, 2);
-      toast.success('KYC aprobado — nivel 2 otorgado');
+      await admin.approveKyc(verificationId, 1);
+      toast.success('Verificación aprobada');
       queryClient.invalidateQueries({ queryKey: ['admin-kyc-pending'] });
     } catch {
-      toast.error('Error al aprobar KYC');
+      toast.error('Error al aprobar');
     }
   };
 
@@ -38,10 +38,10 @@ export default function AdminKycPage() {
     if (!rejectUserId) return;
     try {
       await admin.rejectKyc(rejectUserId, rejectReason);
-      toast.success('KYC rechazado');
+      toast.success('Verificación rechazada');
       queryClient.invalidateQueries({ queryKey: ['admin-kyc-pending'] });
     } catch {
-      toast.error('Error al rechazar KYC');
+      toast.error('Error al rechazar');
     } finally {
       setRejectUserId(null);
       setRejectReason('');
@@ -75,6 +75,7 @@ export default function AdminKycPage() {
                   <tr className="border-b border-tradealo-border text-left text-tradealo-text-muted text-xs">
                     <th className="pb-2 font-medium">Usuario</th>
                     <th className="pb-2 font-medium">Email</th>
+                    <th className="pb-2 font-medium">Tipo</th>
                     <th className="pb-2 font-medium">Nivel actual</th>
                     <th className="pb-2 font-medium">Registro</th>
                     <th className="pb-2 font-medium">Acciones</th>
@@ -100,6 +101,11 @@ export default function AdminKycPage() {
                       </td>
                       <td className="py-3 pr-4 text-tradealo-text-muted">
                         {u.email}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <Badge variant="default" size="sm">
+                          {u.type === 'phone_camera' ? 'Cámara' : u.type === 'selfie' ? 'Selfie' : u.type === 'id' ? 'DNI' : u.type}
+                        </Badge>
                       </td>
                       <td className="py-3 pr-4">
                         <Badge variant="warning" size="sm">

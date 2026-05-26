@@ -238,7 +238,9 @@ export class VisionProvider {
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      this.logger.error(`OpenAI Vision HTTP ${response.status}: ${text.slice(0, 300)}`);
+      this.logger.error(
+        `OpenAI Vision HTTP ${response.status}: ${text.slice(0, 300)}`,
+      );
       return '{"indeterminate":true}';
     }
 
@@ -248,7 +250,10 @@ export class VisionProvider {
     const text = json.choices?.[0]?.message?.content ?? '';
 
     if (!text) {
-      this.logger.warn('OpenAI Vision returned empty content', JSON.stringify(json).slice(0, 300));
+      this.logger.warn(
+        'OpenAI Vision returned empty content',
+        JSON.stringify(json).slice(0, 300),
+      );
       return '{"indeterminate":true}';
     }
 

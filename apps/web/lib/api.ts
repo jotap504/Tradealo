@@ -27,6 +27,7 @@ import type {
   ShopSubscription,
   ShopAnalytics,
   BcraCheckResult,
+  KycPendingVerification,
 } from '@/types';
 
 export const apiClient = axios.create({
@@ -504,7 +505,7 @@ export const admin = {
     post<{ ok: true }>(`/admin/listings/${id}/approve`),
   rejectListing: (id: string, reason: string) =>
     post<{ ok: true }>(`/admin/listings/${id}/reject`, { reason }),
-  getKycPending: () => get<PaginatedResponse<User>>('/admin/kyc/pending'),
+  getKycPending: () => get<PaginatedResponse<KycPendingVerification>>('/admin/kyc/pending'),
   approveKyc: (userId: string, level: number) =>
     post<{ ok: true }>(`/admin/kyc/${userId}/approve`, { level }),
   rejectKyc: (userId: string, reason: string) =>

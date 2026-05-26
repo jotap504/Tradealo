@@ -645,12 +645,32 @@ export class AdminService {
       );
     }
 
-    return this.db
-      .select()
+    const rows = await this.db
+      .select({
+        id: schema.userVerifications.id,
+        userId: schema.userVerifications.userId,
+        type: schema.userVerifications.type,
+        status: schema.userVerifications.status,
+        createdAt: schema.userVerifications.createdAt,
+        email: schema.users.email,
+        kycLevel: schema.users.kycLevel,
+        username: schema.userProfiles.username,
+        avatarUrl: schema.userProfiles.avatarUrl,
+      })
       .from(schema.userVerifications)
+      .leftJoin(
+        schema.users,
+        eq(schema.userVerifications.userId, schema.users.id),
+      )
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userVerifications.userId, schema.userProfiles.userId),
+      )
       .where(and(...conditions))
       .orderBy(desc(schema.userVerifications.createdAt))
       .limit(100);
+
+    return { data: rows, total: rows.length };
   }
 
   async approveKyc(verificationId: string, adminId: string) {

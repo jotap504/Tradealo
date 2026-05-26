@@ -248,6 +248,18 @@ export interface BcraCheckResult {
   expiresAt: string | null;
 }
 
+export interface KycPendingVerification {
+  id: string;
+  userId: string;
+  type: 'id' | 'selfie' | 'address' | 'phone_camera';
+  status: string;
+  createdAt: string;
+  email: string;
+  kycLevel: number;
+  username?: string;
+  avatarUrl?: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   nextCursor?: string;
