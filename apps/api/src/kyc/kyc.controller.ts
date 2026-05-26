@@ -101,6 +101,11 @@ export class KycController {
     return this.kycService.getBcraResult(user.sub);
   }
 
+  @Get('debug')
+  getDebugInfo(@CurrentUser() user: JwtPayload) {
+    return this.kycService.getDebugInfo(user.sub);
+  }
+
   @Get('gold/eligibility')
   getGoldEligibility(@CurrentUser() user: JwtPayload) {
     return this.kycService.checkGoldEligibility(user.sub);

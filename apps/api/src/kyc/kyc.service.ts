@@ -176,7 +176,11 @@ export class KycService {
     return { ok: true as const };
   }
 
-  private async autoValidateDni(userId: string, base64: string, mimeType = 'image/jpeg') {
+  private async autoValidateDni(
+    userId: string,
+    base64: string,
+    mimeType = 'image/jpeg',
+  ) {
     let result;
     try {
       result = await this.visionProvider.validateDniPhoto(base64, mimeType);
@@ -193,7 +197,10 @@ export class KycService {
           .where(
             and(
               eq(schema.userVerifications.userId, userId),
-              eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+              eq(
+                schema.userVerifications.type,
+                'phone_camera' as UserVerificationType,
+              ),
             ),
           );
       }
@@ -204,12 +211,16 @@ export class KycService {
         .update(schema.userVerifications)
         .set({
           status: 'rejected',
-          rejectionReason: 'No se reconoció el DNI en la imagen. Intentalo de nuevo con mejor luz y encuadre.',
+          rejectionReason:
+            'No se reconoció el DNI en la imagen. Intentalo de nuevo con mejor luz y encuadre.',
         })
         .where(
           and(
             eq(schema.userVerifications.userId, userId),
-            eq(schema.userVerifications.type, 'phone_camera' as UserVerificationType),
+            eq(
+              schema.userVerifications.type,
+              'phone_camera' as UserVerificationType,
+            ),
           ),
         );
     }
@@ -435,6 +446,30 @@ export class KycService {
     return { upgraded: true };
   }
 
+  async getDebugInfo(userId: string) {
+    const verifications = await this.db
+      .select()
+      .from(schema.userVerifications)
+      .where(eq(schema.userVerifications.userId, userId));
+
+    const visionMode = this.visionProvider['mode'] as string;
+    const visionModel = this.visionProvider['model'] as string;
+    const visionUrl = this.visionProvider['apiUrl'] as string;
+    const hasKey = !!(this.visionProvider['apiKey'] as string);
+
+    return {
+      verifications: verifications.map((v) => ({
+        type: v.type,
+        status: v.status,
+        rejectionReason: v.rejectionReason,
+        verificationData: v.verificationData,
+        createdAt: v.createdAt,
+        verifiedAt: v.verifiedAt,
+      })),
+      visionProvider: { mode: visionMode, model: visionModel, apiUrl: visionUrl, hasKey },
+    };
+  }
+
   async getBcraResult(userId: string) {
     const [check] = await this.db
       .select()
@@ -523,7 +558,10 @@ export class KycService {
     try {
       result = await this.visionProvider.validateSelfie(base64);
     } catch (err) {
-      this.logger.error('autoValidateSelfie: vision call threw unexpectedly', err);
+      this.logger.error(
+        'autoValidateSelfie: vision call threw unexpectedly',
+        err,
+      );
       return;
     }
 
@@ -534,7 +572,8 @@ export class KycService {
         .update(schema.userVerifications)
         .set({
           status: 'rejected',
-          rejectionReason: 'No se reconoció la selfie con DNI. Asegurate de sostener el documento bien visible.',
+          rejectionReason:
+            'No se reconoció la selfie con DNI. Asegurate de sostener el documento bien visible.',
         })
         .where(
           and(

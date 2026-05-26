@@ -90,11 +90,19 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
   const [backDone, setBackDone] = useState(false);
   const [cameraOpen, setCameraOpen] = useState<'front' | 'back' | null>(null);
   const [validating, setValidating] = useState(false);
+  const [validationTimeout, setValidationTimeout] = useState(false);
 
   // Clear validating state when status resolves (verified or rejected)
   useEffect(() => {
-    if (status !== 'pending') setValidating(false);
+    if (status !== 'pending') { setValidating(false); setValidationTimeout(false); }
   }, [status]);
+
+  // After 90s of validating, show timeout error so user can retry
+  useEffect(() => {
+    if (!validating) { setValidationTimeout(false); return; }
+    const t = setTimeout(() => setValidationTimeout(true), 90_000);
+    return () => clearTimeout(t);
+  }, [validating]);
   const singleRef = useRef<HTMLInputElement>(null);
   const frontData = useRef<{ base64: string; mimetype: string } | null>(null);
   const backData = useRef<{ base64: string; mimetype: string } | null>(null);
@@ -210,13 +218,31 @@ export function KycStepCard({ type, status, onUploaded }: Props) {
         ) : type === 'phone_camera' ? (
           <>
             {validating ? (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
-                <Loader2 size={18} className="text-blue-500 shrink-0 animate-spin" />
-                <div>
-                  <p className="font-semibold text-blue-700 text-sm leading-tight">Validando con IA…</p>
-                  <p className="text-xs text-blue-600 mt-0.5">Puede demorar unos segundos</p>
+              validationTimeout ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+                    <AlertCircle size={18} className="text-amber-500 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-amber-700 text-sm leading-tight">La validación tardó demasiado</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Podés volver a intentarlo</p>
+                    </div>
+                  </div>
+                  <Button
+                    fullWidth variant="primary" type="button"
+                    onClick={() => { setValidating(false); setValidationTimeout(false); }}
+                  >
+                    Volver a intentar
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
+                  <Loader2 size={18} className="text-blue-500 shrink-0 animate-spin" />
+                  <div>
+                    <p className="font-semibold text-blue-700 text-sm leading-tight">Validando con IA…</p>
+                    <p className="text-xs text-blue-600 mt-0.5">Puede demorar unos segundos</p>
+                  </div>
+                </div>
+              )
             ) : (
               <>
                 <Button
