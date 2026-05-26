@@ -12,6 +12,7 @@ interface Props {
   onGenerate: (text: string) => void;
   className?: string;
   size?: 'sm' | 'md';
+  titleRequired?: boolean;
 }
 
 export function AIGeneratorButton({
@@ -20,19 +21,20 @@ export function AIGeneratorButton({
   onGenerate,
   className,
   size = 'sm',
+  titleRequired = false,
 }: Props) {
   const [loading, setLoading] = useState(false);
 
   const run = async () => {
+    if (titleRequired) {
+      toast.error('Escribí un título primero para que la IA genere la descripción');
+      return;
+    }
     setLoading(true);
     try {
       const res = await ai.generateText(type, context);
       onGenerate(res.text);
-      toast.success(
-        type === 'title'
-          ? 'Título sugerido por IA'
-          : 'Descripción sugerida por IA'
-      );
+      toast.success(type === 'title' ? 'Título sugerido por IA' : 'Descripción sugerida por IA');
     } catch {
       toast.error('No pudimos generar el texto. Probá de nuevo.');
     } finally {

@@ -115,6 +115,95 @@ export class AiService {
     }
   }
 
+  async generateText(
+    userId: string,
+    type: 'description',
+    context: Record<string, unknown>,
+  ): Promise<{ text: string }> {
+    await this.checkRateLimit(userId)
+
+    const title = String(context.title ?? '').trim()
+    if (!title) throw new HttpException('TITLE_REQUIRED', HttpStatus.BAD_REQUEST)
+
+    const prompt = this.buildDescriptionPrompt(title, String(context.category ?? ''))
+    const text = await this.callPlainTextApi(prompt)
+
+    await this.incrementUsage(userId)
+    return { text }
+  }
+
+  private buildDescriptionPrompt(title: string, category: string): string {
+    return `Escribí una descripción corta y atractiva para esta publicación de marketplace en Argentina.
+Título: "${title}"${category ? `\nCategoría: ${category}` : ''}
+
+Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español argentino, sin emojis, sin repetir el título, sin etiquetas ni marcas adicionales.`
+  }
+
+  private async callPlainTextApi(prompt: string): Promise<string> {
+    const geminiKey = process.env.GEMINI_API_KEY ?? ''
+    if (geminiKey) {
+      return this.callGeminiText(geminiKey, prompt)
+    }
+    return this.callOpenAIText(prompt)
+  }
+
+  private async callGeminiText(apiKey: string, prompt: string): Promise<string> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+    let res: Response
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
+        }),
+        signal: AbortSignal.timeout(20_000),
+      })
+    } catch (err) {
+      this.logger.error('Gemini text API error', err)
+      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY)
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      this.logger.error(`Gemini text HTTP ${res.status}: ${body.slice(0, 200)}`)
+      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY)
+    }
+    const json = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[]
+    }
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    if (!text) throw new HttpException('AI_EMPTY_RESPONSE', HttpStatus.BAD_GATEWAY)
+    return text.trim()
+  }
+
+  private async callOpenAIText(prompt: string): Promise<string> {
+    const res = await fetch(this.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 256,
+      }),
+      signal: AbortSignal.timeout(20_000),
+    })
+    if (!res.ok) {
+      this.logger.error(`OpenAI text HTTP ${res.status}`)
+      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY)
+    }
+    const json = (await res.json()) as {
+      choices?: { message?: { content?: string } }[]
+    }
+    const text = json.choices?.[0]?.message?.content ?? ''
+    if (!text) throw new HttpException('AI_EMPTY_RESPONSE', HttpStatus.BAD_GATEWAY)
+    return text.trim()
+  }
+
   private rateKey(userId: string): string {
     const today = new Date().toISOString().slice(0, 10)
     return `ai:gen:${userId}:${today}`

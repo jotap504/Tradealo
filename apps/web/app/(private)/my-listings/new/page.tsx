@@ -363,9 +363,10 @@ export default function NewListingPage() {
               </h2>
               <CategorySelector
                 value={formData.categoryId}
-                onChange={(catId, isCollectible, attrs) =>
-                  update({ categoryId: catId, isCollectible, categoryAttributes: attrs })
-                }
+                onChange={(catId, isCollectible, attrs) => {
+                  update({ categoryId: catId, isCollectible, categoryAttributes: attrs });
+                  setStep(2);
+                }}
               />
             </div>
           )}
@@ -477,11 +478,6 @@ export default function NewListingPage() {
                   minLength={5}
                   maxLength={150}
                 />
-                <AIGeneratorButton
-                  type="title"
-                  context={{ category: formData.categoryId }}
-                  onGenerate={(text) => update({ title: text })}
-                />
               </div>
               <div className="space-y-1">
                 <Textarea
@@ -498,6 +494,7 @@ export default function NewListingPage() {
                   type="description"
                   context={{ category: formData.categoryId, title: formData.title }}
                   onGenerate={(text) => update({ description: text })}
+                  titleRequired={!formData.title.trim() || formData.title.trim().length < 5}
                 />
               </div>
               <div>
