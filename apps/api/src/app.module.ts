@@ -25,8 +25,7 @@ import { SupportModule } from './support/support.module';
 import { ShopModule } from './shop/shop.module';
 import { ShopSubscriptionModule } from './shop-subscription/shop-subscription.module';
 import { ShopChatbotModule } from './shop-chatbot/shop-chatbot.module';
-// Disabled until external services are configured:
-// import { AiModule } from './ai/ai.module'
+import { AiModule } from './ai/ai.module';
 // import { SearchModule } from './search/search.module'
 // import { ModerationModule } from './moderation/moderation.module'
 // import { JobsModule } from './jobs/jobs.module'
@@ -62,6 +61,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     ShopModule,
     ShopSubscriptionModule,
     ShopChatbotModule,
+    AiModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
