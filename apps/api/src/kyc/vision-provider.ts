@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 
 export interface DniValidationResult {
   valid: boolean;
+  /** true when the AI couldn't or refused to process the image (safety block, parse error, network error) */
+  indeterminate?: boolean;
   extractedData?: {
     fullName: string;
     dniNumber: string;
@@ -117,10 +119,23 @@ export class VisionProvider {
     mimeType = 'image/jpeg',
   ): Promise<DniValidationResult> {
     const raw = await this.callVision(base64, mimeType, DNI_PROMPT);
+
+    // Network/API errors return this sentinel
+    if (raw === '{"indeterminate":true}') {
+      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+    }
+
     const parsed = this.parseJson(raw);
 
-    if (!parsed || !parsed.isValid) {
-      return { valid: false, confidence: 0, rawResponse: raw };
+    // Could not parse response (safety block, unexpected format, free-tier refusal)
+    if (!parsed) {
+      this.logger.warn('validateDniPhoto: unparseable response, treating as indeterminate');
+      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+    }
+
+    if (!parsed.isValid) {
+      // Gemini explicitly said this is not a DNI
+      return { valid: false, confidence: Number(parsed.confidence) || 0.1, rawResponse: raw };
     }
 
     return {
@@ -252,23 +267,36 @@ export class VisionProvider {
       });
     } catch (err) {
       this.logger.error('Gemini Vision network error', err);
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      return '{"indeterminate":true}';
     }
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       this.logger.error(`Gemini Vision HTTP ${response.status}: ${text}`);
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      return '{"indeterminate":true}';
     }
 
     const json = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      promptFeedback?: { blockReason?: string };
     };
+
+    if (json.promptFeedback?.blockReason) {
+      this.logger.warn(`Gemini blocked request: ${json.promptFeedback.blockReason}`);
+      return '{"indeterminate":true}';
+    }
+
+    const finishReason = json.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
+      this.logger.warn(`Gemini finishReason=${finishReason}, treating as indeterminate`);
+      return '{"indeterminate":true}';
+    }
+
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!text) {
-      this.logger.warn('Gemini Vision returned empty response');
-      return JSON.stringify({ isValid: false, confidence: 0 });
+      this.logger.warn('Gemini Vision returned empty text', JSON.stringify(json).slice(0, 300));
+      return '{"indeterminate":true}';
     }
 
     return text;

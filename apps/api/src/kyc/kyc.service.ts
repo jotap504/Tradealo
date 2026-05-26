@@ -192,16 +192,24 @@ export class KycService {
     // Try front first, then back — approve if either is recognized
     let result;
     try {
-      result = await this.visionProvider.validateDniPhoto(frontBase64, frontMimeType);
+      result = await this.visionProvider.validateDniPhoto(
+        frontBase64,
+        frontMimeType,
+      );
     } catch (err) {
       this.logger.error('autoValidateDni: front vision call threw', err);
       return;
     }
 
-    if (!result.valid && backBase64) {
-      this.logger.log('autoValidateDni: front not recognized, trying back photo');
+    if ((!result.valid || result.indeterminate) && backBase64) {
+      this.logger.log(
+        `autoValidateDni: front result valid=${result.valid} indeterminate=${result.indeterminate ?? false}, trying back photo`,
+      );
       try {
-        result = await this.visionProvider.validateDniPhoto(backBase64, backMimeType);
+        result = await this.visionProvider.validateDniPhoto(
+          backBase64,
+          backMimeType,
+        );
       } catch (err) {
         this.logger.error('autoValidateDni: back vision call threw', err);
       }
@@ -223,7 +231,13 @@ export class KycService {
           );
       }
       await this.autoApproveVerification(userId, 'phone_camera');
+    } else if (result?.indeterminate) {
+      // AI blocked or couldn't process — leave as pending for manual admin review
+      this.logger.warn(
+        `autoValidateDni: both photos indeterminate for user ${userId}, leaving pending`,
+      );
     } else {
+      // Gemini explicitly said neither photo is a DNI
       await this.db
         .update(schema.userVerifications)
         .set({
