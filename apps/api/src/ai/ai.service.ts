@@ -65,8 +65,14 @@ export class AiService {
   private async checkRateLimit(userId: string): Promise<void> {
     const limit = await this.configService.getNumber('ai.daily_limit', 3);
     const key = this.rateKey(userId);
-    const current = parseInt((await this.redis.get(key)) ?? '0', 10);
-
+    let current = 0;
+    try {
+      current = parseInt((await this.redis.get(key)) ?? '0', 10);
+    } catch {
+      // Redis unavailable — skip rate limiting
+      this.logger.warn('Redis unavailable in checkRateLimit, skipping rate limit');
+      return;
+    }
     if (current >= limit) {
       throw new HttpException(
         { message: 'AI_DAILY_LIMIT_EXCEEDED', limit },
@@ -78,7 +84,11 @@ export class AiService {
   private async incrementUsage(userId: string): Promise<void> {
     const key = this.rateKey(userId);
     const ttl = this.secondsUntilMidnight();
-    await this.redis.multi().incr(key).expire(key, ttl).exec();
+    try {
+      await this.redis.multi().incr(key).expire(key, ttl).exec();
+    } catch {
+      this.logger.warn('Redis unavailable in incrementUsage, skipping');
+    }
   }
 
   private async callApi(prompt: string): Promise<GeneratedListing> {
@@ -204,7 +214,10 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
   private async callOpenAIText(prompt: string): Promise<string> {
     if (!this.apiKey || !this.apiUrl) {
       this.logger.error('AI_API_KEY or AI_API_URL not configured');
-      throw new HttpException('AI_NOT_CONFIGURED', HttpStatus.SERVICE_UNAVAILABLE);
+      throw new HttpException(
+        'AI_NOT_CONFIGURED',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
     let res: Response;
     try {
@@ -228,7 +241,9 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
     }
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      this.logger.error(`OpenAI text HTTP ${res.status}: ${body.slice(0, 300)}`);
+      this.logger.error(
+        `OpenAI text HTTP ${res.status}: ${body.slice(0, 300)}`,
+      );
       throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY);
     }
     const json = (await res.json()) as {
