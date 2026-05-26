@@ -202,22 +202,33 @@ Respondé SOLO con la descripción (entre 150 y 400 caracteres), en español arg
   }
 
   private async callOpenAIText(prompt: string): Promise<string> {
-    const res = await fetch(this.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 256,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
+    if (!this.apiKey || !this.apiUrl) {
+      this.logger.error('AI_API_KEY or AI_API_URL not configured');
+      throw new HttpException('AI_NOT_CONFIGURED', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    let res: Response;
+    try {
+      res = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 256,
+        }),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch (err) {
+      this.logger.error('OpenAI text network/timeout error', err);
+      throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY);
+    }
     if (!res.ok) {
-      this.logger.error(`OpenAI text HTTP ${res.status}`);
+      const body = await res.text().catch(() => '');
+      this.logger.error(`OpenAI text HTTP ${res.status}: ${body.slice(0, 300)}`);
       throw new HttpException('AI_SERVICE_UNAVAILABLE', HttpStatus.BAD_GATEWAY);
     }
     const json = (await res.json()) as {
