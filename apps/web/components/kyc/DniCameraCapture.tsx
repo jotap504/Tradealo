@@ -301,7 +301,13 @@ export function DniCameraCapture({ side, onCapture, onClose }: Props) {
             <Camera size={28} className="text-gray-800" />
           </button>
 
-          <div className="w-12" />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center text-white active:bg-white/25"
+            aria-label="Subir desde galería"
+          >
+            <ImageIcon size={18} />
+          </button>
         </div>
       )}
     </div>
