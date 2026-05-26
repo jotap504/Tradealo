@@ -171,25 +171,43 @@ export class KycService {
       });
     });
 
-    void this.autoValidateDni(userId, frontBase64, frontMimetype);
+    void this.autoValidateDni(
+      userId,
+      frontBase64,
+      frontMimetype,
+      backBase64,
+      backMimetype,
+    );
 
     return { ok: true as const };
   }
 
   private async autoValidateDni(
     userId: string,
-    base64: string,
-    mimeType = 'image/jpeg',
+    frontBase64: string,
+    frontMimeType = 'image/jpeg',
+    backBase64?: string,
+    backMimeType = 'image/jpeg',
   ) {
+    // Try front first, then back — approve if either is recognized
     let result;
     try {
-      result = await this.visionProvider.validateDniPhoto(base64, mimeType);
+      result = await this.visionProvider.validateDniPhoto(frontBase64, frontMimeType);
     } catch (err) {
-      this.logger.error('autoValidateDni: vision call threw unexpectedly', err);
-      return; // leave pending → admin can approve manually
+      this.logger.error('autoValidateDni: front vision call threw', err);
+      return;
     }
 
-    if (result.valid) {
+    if (!result.valid && backBase64) {
+      this.logger.log('autoValidateDni: front not recognized, trying back photo');
+      try {
+        result = await this.visionProvider.validateDniPhoto(backBase64, backMimeType);
+      } catch (err) {
+        this.logger.error('autoValidateDni: back vision call threw', err);
+      }
+    }
+
+    if (result?.valid) {
       if (result.extractedData?.dniNumber) {
         await this.db
           .update(schema.userVerifications)
@@ -206,13 +224,12 @@ export class KycService {
       }
       await this.autoApproveVerification(userId, 'phone_camera');
     } else {
-      // AI ran but didn't detect a valid DNI → reject so user can retake
       await this.db
         .update(schema.userVerifications)
         .set({
           status: 'rejected',
           rejectionReason:
-            'No se reconoció el DNI en la imagen. Intentalo de nuevo con mejor luz y encuadre.',
+            'No se reconoció el DNI en las imágenes. Intentalo de nuevo con mejor luz y encuadre.',
         })
         .where(
           and(

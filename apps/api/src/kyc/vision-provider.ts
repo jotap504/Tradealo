@@ -17,22 +17,22 @@ export interface SelfieValidationResult {
   rawResponse: unknown;
 }
 
-const DNI_PROMPT = `Sos un validador de documentos argentinos. Analizá la imagen del DNI (Documento Nacional de Identidad) argentino y extraé:
+const DNI_PROMPT = `Sos un validador de documentos argentinos. Analizá la imagen y determiná si muestra un DNI argentino (Documento Nacional de Identidad), ya sea el frente o el dorso.
 
-1. El nombre completo del titular
-2. El número de DNI
-3. La fecha de vencimiento
+El DNI argentino puede ser:
+- Frente: tiene foto, nombre, número de DNI, fecha de nacimiento
+- Dorso: tiene código de barras PDF417, número de DNI, domicilio
 
 Respondé ÚNICAMENTE con JSON válido con esta estructura exacta:
 {
-  "fullName": "Nombre completo",
-  "dniNumber": "12345678",
-  "expirationDate": "DD/MM/AAAA",
+  "fullName": "Nombre completo o null si no se ve",
+  "dniNumber": "12345678 o null si no se ve",
+  "expirationDate": "DD/MM/AAAA o null si no se ve",
   "isValid": true,
   "confidence": 0.95
 }
 
-Si no se ve claramente un DNI argentino o no se pueden extraer los datos, devolvé isValid: false y confidence bajo.`;
+Usá isValid: true si la imagen muestra claramente un documento que parece un DNI argentino, aunque no todos los datos sean legibles. Solo devolvé isValid: false si definitivamente NO es un DNI argentino (ej. es un selfie, una hoja en blanco, otro tipo de documento, o la imagen es completamente ilegible).`;
 
 const SELFIE_PROMPT = `Sos un validador de identidad. Analizá la selfie y verificá:
 
