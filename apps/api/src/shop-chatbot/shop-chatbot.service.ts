@@ -50,7 +50,10 @@ export class ShopChatbotService {
     const shopName = shop.shopName ?? 'esta tienda';
 
     const messages = [
-      { role: 'system' as const, content: buildSystemPrompt(shopName, catalog) },
+      {
+        role: 'system' as const,
+        content: buildSystemPrompt(shopName, catalog),
+      },
       ...history.slice(-8),
       { role: 'user' as const, content: userMessage },
     ];
@@ -63,12 +66,20 @@ export class ShopChatbotService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify({ model: this.model, messages, temperature: 0.5, max_tokens: 512 }),
+        body: JSON.stringify({
+          model: this.model,
+          messages,
+          temperature: 0.5,
+          max_tokens: 512,
+        }),
       });
 
       if (!response.ok) {
         this.logger.warn(`AI API error ${response.status}`);
-        return { answer: 'No pude procesar tu consulta. Intentá de nuevo.', suggestWhatsapp: false };
+        return {
+          answer: 'No pude procesar tu consulta. Intentá de nuevo.',
+          suggestWhatsapp: false,
+        };
       }
 
       const json = (await response.json()) as {
@@ -83,13 +94,16 @@ export class ShopChatbotService {
     if (rawAnswer.includes('SUGGEST_WHATSAPP')) {
       const waNumber = (shop.whatsappBusiness ?? '').replace(/\D/g, '');
       return {
-        answer: 'No tengo esa información con certeza. Te recomiendo contactar al vendedor directamente.',
+        answer:
+          'No tengo esa información con certeza. Te recomiendo contactar al vendedor directamente.',
         suggestWhatsapp: true,
         whatsappUrl: waNumber ? `https://wa.me/${waNumber}` : undefined,
       };
     }
 
-    this.shopService.trackEvent({ shopId, eventType: 'chatbot_session' }).catch(() => null);
+    this.shopService
+      .trackEvent({ shopId, eventType: 'chatbot_session' })
+      .catch(() => null);
 
     return { answer: rawAnswer, suggestWhatsapp: false };
   }
@@ -104,7 +118,9 @@ export class ShopChatbotService {
     try {
       const cached = await this.redis.get(key);
       if (cached) return cached;
-    } catch { /* Redis unavailable */ }
+    } catch {
+      /* Redis unavailable */
+    }
 
     const listings = await this.db
       .select({
@@ -123,12 +139,19 @@ export class ShopChatbotService {
       .limit(50);
 
     const catalog = listings.length
-      ? listings.map((l, i) => `[${i + 1}] ${l.title} | ${l.currency} ${l.price} | ${l.condition}`).join('\n')
+      ? listings
+          .map(
+            (l, i) =>
+              `[${i + 1}] ${l.title} | ${l.currency} ${l.price} | ${l.condition}`,
+          )
+          .join('\n')
       : '(Sin productos activos)';
 
     try {
       await this.redis.set(key, catalog, 'EX', CATALOG_TTL);
-    } catch { /* Redis unavailable */ }
+    } catch {
+      /* Redis unavailable */
+    }
 
     return catalog;
   }

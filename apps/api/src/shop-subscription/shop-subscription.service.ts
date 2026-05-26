@@ -65,19 +65,21 @@ export class ShopSubscriptionService {
     const shop = await this.shopService.initShop(userId);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await this.preApproval.create({ body: {
-      reason: 'Trocalia Seller Shop — Suscripción Mensual',
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: 'months',
-        transaction_amount: this.subscriptionPriceArs,
-        currency_id: 'ARS',
-      },
-      payer_email: userEmail,
-      back_url: `${this.backUrl}/my-shop/subscription?result=success`,
-      external_reference: `${userId}|${shop.id}`,
-      status: 'pending',
-    } as any });
+    const result = await this.preApproval.create({
+      body: {
+        reason: 'Trocalia Seller Shop — Suscripción Mensual',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: this.subscriptionPriceArs,
+          currency_id: 'ARS',
+        },
+        payer_email: userEmail,
+        back_url: `${this.backUrl}/my-shop/subscription?result=success`,
+        external_reference: `${userId}|${shop.id}`,
+        status: 'pending',
+      } as any,
+    });
 
     await this.db.insert(shopSubscriptions).values({
       userId,
@@ -117,15 +119,25 @@ export class ShopSubscriptionService {
     if (sub.mpSubscriptionId) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await this.preApproval.update({ id: sub.mpSubscriptionId, body: { status: 'cancelled' } as any });
+        await this.preApproval.update({
+          id: sub.mpSubscriptionId,
+          body: { status: 'cancelled' } as any,
+        });
       } catch (err) {
-        this.logger.warn(`Failed to cancel MP subscription ${sub.mpSubscriptionId}`, err);
+        this.logger.warn(
+          `Failed to cancel MP subscription ${sub.mpSubscriptionId}`,
+          err,
+        );
       }
     }
 
     await this.db
       .update(shopSubscriptions)
-      .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(shopSubscriptions.id, sub.id));
 
     await this.shopService.unpublishShop(userId);
@@ -154,7 +166,9 @@ export class ShopSubscriptionService {
     }
 
     const mpStatus = preApprovalData.status;
-    const externalRef = (preApprovalData as { external_reference?: string }).external_reference ?? '';
+    const externalRef =
+      (preApprovalData as { external_reference?: string }).external_reference ??
+      '';
     const [userId] = externalRef.split('|');
     if (!userId) return;
 

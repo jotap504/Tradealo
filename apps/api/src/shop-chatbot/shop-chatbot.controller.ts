@@ -6,7 +6,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { IsString, IsArray, IsOptional, IsIn, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsIn,
+  MaxLength,
+} from 'class-validator';
 import { ShopChatbotService } from './shop-chatbot.service';
 import { Public } from '../common/decorators/public.decorator';
 

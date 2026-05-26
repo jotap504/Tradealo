@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, Star, FileCheck, AlertTriangle, CheckCircle2, XCircle, Clock, Building2 } from 'lucide-react';
+import { ShieldCheck, Star, FileCheck, AlertTriangle, CheckCircle2, XCircle, Clock, Building2, Bug, ChevronDown, ChevronUp } from 'lucide-react';
 import { kyc } from '@/lib/api';
 import type { BcraCheckResult, BcraPeriodo } from '@/types';
 import { KycProgress } from '@/components/kyc/KycProgress';
@@ -150,6 +150,7 @@ export default function KycPage() {
   const queryClient = useQueryClient();
   const [bcraLoading, setBcraLoading] = useState(false);
   const [goldLoading, setGoldLoading] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
@@ -184,6 +185,13 @@ export default function KycPage() {
       if (query.state.data) return false;
       return status?.bcraConsent === false ? 5_000 : false;
     },
+  });
+
+  const { data: debugInfo, refetch: refetchDebug, isFetching: debugFetching } = useQuery({
+    queryKey: ['kyc-debug'],
+    queryFn: () => kyc.getDebugInfo(),
+    enabled: debugOpen,
+    staleTime: 0,
   });
 
   const refresh = () => {
@@ -395,6 +403,48 @@ export default function KycPage() {
           </Card>
         </div>
       )}
+
+      {/* Debug panel — tap to expand, shows raw validation state */}
+      <div className="border border-gray-200 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => { setDebugOpen(v => !v); if (!debugOpen) void refetchDebug(); }}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 text-left"
+        >
+          <span className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+            <Bug size={15} />
+            Debug — estado de validación
+          </span>
+          {debugOpen ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+        </button>
+        {debugOpen && (
+          <div className="p-4 space-y-3 bg-white text-xs font-mono overflow-x-auto">
+            {debugFetching && <p className="text-gray-400">Cargando…</p>}
+            {debugInfo && (
+              <>
+                <div>
+                  <p className="text-gray-500 font-sans font-semibold mb-1">Vision Provider</p>
+                  <pre className="bg-gray-50 rounded-lg p-2 whitespace-pre-wrap break-all">{JSON.stringify(debugInfo.visionProvider, null, 2)}</pre>
+                </div>
+                <div>
+                  <p className="text-gray-500 font-sans font-semibold mb-1">Verificaciones ({debugInfo.verifications.length})</p>
+                  {debugInfo.verifications.length === 0 && <p className="text-gray-400">Sin registros</p>}
+                  {debugInfo.verifications.map((v, i) => (
+                    <pre key={i} className="bg-gray-50 rounded-lg p-2 mb-2 whitespace-pre-wrap break-all">{JSON.stringify(v, null, 2)}</pre>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void refetchDebug()}
+                  className="text-tradealo-primary underline font-sans"
+                >
+                  Actualizar
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -254,7 +254,8 @@ export class WalletService {
       name: r.label,
       tokens: r.tokens,
       priceArs: Number(r.price),
-      bonusTokens: r.bonusPct > 0 ? Math.floor(r.tokens * r.bonusPct / 100) : undefined,
+      bonusTokens:
+        r.bonusPct > 0 ? Math.floor((r.tokens * r.bonusPct) / 100) : undefined,
       popular: r.isFeatured,
     }));
   }

@@ -315,6 +315,10 @@ export const kyc = {
   getGoldEligibility: () => get<TierProgress['gold']['progress']>('/kyc/gold/eligibility'),
   recalculateTier: () => post<{ tier: number; downgraded?: boolean }>('/kyc/recalculate'),
   getBcraResult: () => get<BcraCheckResult | null>('/kyc/bcra-result'),
+  getDebugInfo: () => get<{
+    verifications: { type: string; status: string; rejectionReason: string | null; verificationData: unknown; createdAt: string; verifiedAt: string | null }[];
+    visionProvider: { mode: string; model: string; apiUrl: string; hasKey: boolean };
+  }>('/kyc/debug'),
 };
 
 export interface FavoriteListing extends Listing {

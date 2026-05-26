@@ -149,6 +149,21 @@ export class NotificationsService {
       );
   }
 
+  async sendDirectEmail(
+    to: string,
+    subject: string,
+    text: string,
+  ): Promise<void> {
+    try {
+      await this.sendEmail(to, subject, text);
+    } catch (err) {
+      this.logger.error(
+        `sendDirectEmail failed: to=${to} subject=${subject}`,
+        err,
+      );
+    }
+  }
+
   private async sendEmail(
     to: string,
     subject: string,

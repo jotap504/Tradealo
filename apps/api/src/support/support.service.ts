@@ -10,12 +10,26 @@ import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
 import { supportTickets, ticketMessages } from '../database/schema';
 import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type DB = NodePgDatabase<typeof schema>;
 
+const ADMIN_EMAIL = process.env.ADMIN_SUPPORT_EMAIL ?? 'soporte@trocalia.ar';
+
+const STATUS_LABEL: Record<string, string> = {
+  open: 'Abierto',
+  in_progress: 'En proceso',
+  waiting_user: 'Esperando respuesta del usuario',
+  resolved: 'Resuelto',
+  closed: 'Cerrado',
+};
+
 @Injectable()
 export class SupportService {
-  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {}
+  constructor(
+    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ─── User: create a ticket + first message ────────────────────────────────────
 
@@ -41,6 +55,14 @@ export class SupportService {
         message: dto.message,
       })
       .returning();
+
+    this.notificationsService
+      .sendDirectEmail(
+        ADMIN_EMAIL,
+        `[Nuevo ticket] ${dto.subject}`,
+        `Se abrió un nuevo ticket de soporte.\n\nAsunto: ${dto.subject}\nCategoría: ${dto.category}\n\nMensaje inicial:\n${dto.message}\n\nID del ticket: ${ticket.id}`,
+      )
+      .catch(() => {});
 
     return { ...ticket, messages: [firstMessage] };
   }
@@ -130,6 +152,30 @@ export class SupportService {
       .set(updatedFields)
       .where(eq(supportTickets.id, ticketId));
 
+    const preview =
+      message.length > 100 ? message.slice(0, 100) + '…' : message;
+
+    if (authorType === 'admin') {
+      this.notificationsService
+        .send({
+          userId: ticket.userId,
+          channel: 'in_app',
+          type: 'ticket_reply',
+          title: 'Soporte respondió tu ticket',
+          body: preview,
+          data: { ticketId, href: `/support/${ticketId}` },
+        })
+        .catch(() => {});
+    } else {
+      this.notificationsService
+        .sendDirectEmail(
+          ADMIN_EMAIL,
+          `[Ticket] Nueva respuesta del usuario`,
+          `El usuario respondió en el ticket: ${ticket.subject}\n\nMensaje:\n${message}\n\nID: ${ticketId}`,
+        )
+        .catch(() => {});
+    }
+
     return msg;
   }
 
@@ -216,6 +262,21 @@ export class SupportService {
     if (!updated) {
       throw new NotFoundException(`Ticket ${id} not found`);
     }
+
+    if (updates.status) {
+      const label = STATUS_LABEL[updates.status] ?? updates.status;
+      this.notificationsService
+        .send({
+          userId: updated.userId,
+          channel: 'in_app',
+          type: 'ticket_status',
+          title: `Tu ticket fue actualizado`,
+          body: `Estado: ${label} — "${updated.subject}"`,
+          data: { ticketId: id, href: `/support/${id}` },
+        })
+        .catch(() => {});
+    }
+
     return updated;
   }
 }

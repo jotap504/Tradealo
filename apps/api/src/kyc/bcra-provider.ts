@@ -107,7 +107,14 @@ export class BcraProvider {
     }
 
     // Include full periodos so frontend can render entity detail
-    const rawData = { cuit, denominacion, maxSituacion, hasJudicial, totalDebtARS, periodos };
+    const rawData = {
+      cuit,
+      denominacion,
+      maxSituacion,
+      hasJudicial,
+      totalDebtARS,
+      periodos,
+    };
 
     if (hasJudicial || maxSituacion >= 5) {
       return {

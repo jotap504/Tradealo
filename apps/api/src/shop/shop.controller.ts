@@ -58,6 +58,7 @@ class UpdateShopDto {
   @IsOptional() heroConfig?: Record<string, unknown>;
   @IsOptional() @IsString() @MaxLength(50) footerTemplate?: string;
   @IsOptional() footerConfig?: Record<string, unknown>;
+  @IsOptional() @IsString() @MaxLength(7) primaryColor?: string;
 }
 
 class UploadImageDto {

@@ -466,7 +466,12 @@ export class KycService {
         createdAt: v.createdAt,
         verifiedAt: v.verifiedAt,
       })),
-      visionProvider: { mode: visionMode, model: visionModel, apiUrl: visionUrl, hasKey },
+      visionProvider: {
+        mode: visionMode,
+        model: visionModel,
+        apiUrl: visionUrl,
+        hasKey,
+      },
     };
   }
 

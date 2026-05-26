@@ -6,12 +6,14 @@ import {
   AdminSupportController,
 } from './support.controller';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     JwtModule.register({
       secret: process.env.JWT_ACCESS_SECRET ?? 'changeme_dev_only',
     }),
+    NotificationsModule,
   ],
   controllers: [SupportController, AdminSupportController],
   providers: [SupportService, AdminJwtGuard],

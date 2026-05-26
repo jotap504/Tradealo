@@ -980,13 +980,23 @@ export class AdminService {
     if (existing) {
       await this.db
         .update(schema.sellerShops)
-        .set({ isPublished: true, isActive: true, publishedAt: new Date(), updatedAt: new Date() })
+        .set({
+          isPublished: true,
+          isActive: true,
+          publishedAt: new Date(),
+          updatedAt: new Date(),
+        })
         .where(eq(schema.sellerShops.userId, targetUserId));
       shopId = existing.id;
     } else {
       const [created] = await this.db
         .insert(schema.sellerShops)
-        .values({ userId: targetUserId, isPublished: true, isActive: true, publishedAt: new Date() })
+        .values({
+          userId: targetUserId,
+          isPublished: true,
+          isActive: true,
+          publishedAt: new Date(),
+        })
         .returning({ id: schema.sellerShops.id });
       shopId = created.id;
     }
@@ -1011,7 +1021,10 @@ export class AdminService {
       });
     }
 
-    await this.logAudit(adminId, 'shop.grant', 'user', targetUserId, null, { shopId, status: 'active' });
+    await this.logAudit(adminId, 'shop.grant', 'user', targetUserId, null, {
+      shopId,
+      status: 'active',
+    });
 
     return { ok: true, shopId };
   }
@@ -1031,11 +1044,17 @@ export class AdminService {
 
       await this.db
         .update(schema.shopSubscriptions)
-        .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+        .set({
+          status: 'cancelled',
+          cancelledAt: new Date(),
+          updatedAt: new Date(),
+        })
         .where(eq(schema.shopSubscriptions.userId, targetUserId));
     }
 
-    await this.logAudit(adminId, 'shop.revoke', 'user', targetUserId, null, { status: 'cancelled' });
+    await this.logAudit(adminId, 'shop.revoke', 'user', targetUserId, null, {
+      status: 'cancelled',
+    });
 
     return { ok: true };
   }

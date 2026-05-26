@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { TicketCheck, Plus } from 'lucide-react';
+import { TicketCheck, Plus, ChevronRight } from 'lucide-react';
 import { support } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -100,11 +101,12 @@ export default function SupportPage() {
           ) : (
             <div className="space-y-3">
               {items.map((ticket) => (
-                <div
+                <Link
                   key={ticket.id}
-                  className="flex items-start justify-between gap-3 border border-tradealo-border rounded-xl p-4"
+                  href={`/support/${ticket.id}`}
+                  className="flex items-start justify-between gap-3 border border-tradealo-border rounded-xl p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-tradealo-text text-sm truncate">
                       {ticket.subject}
                     </p>
@@ -114,10 +116,13 @@ export default function SupportPage() {
                       <RelativeTime iso={ticket.updatedAt} />
                     </p>
                   </div>
-                  <Badge variant={STATUS_VARIANT[ticket.status] ?? 'default'} size="sm">
-                    {STATUS_LABEL[ticket.status] ?? ticket.status}
-                  </Badge>
-                </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={STATUS_VARIANT[ticket.status] ?? 'default'} size="sm">
+                      {STATUS_LABEL[ticket.status] ?? ticket.status}
+                    </Badge>
+                    <ChevronRight size={16} className="text-tradealo-text-muted" />
+                  </div>
+                </Link>
               ))}
             </div>
           )}

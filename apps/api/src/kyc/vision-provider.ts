@@ -99,10 +99,14 @@ export class VisionProvider {
     if (!raw) return 'gemini-1.5-flash';
     const s = raw.toLowerCase().replace(/\s+/g, '-');
     // "gemini flash 2.0" | "gemini-flash-2.0" | "gemini-2.0-flash" → gemini-2.0-flash
-    if (/gemini.*(2[._-]0).*flash|gemini.*flash.*(2[._-]0)/.test(s)) return 'gemini-2.0-flash';
-    if (/gemini.*(2[._-]0).*pro|gemini.*pro.*(2[._-]0)/.test(s)) return 'gemini-2.0-pro';
-    if (/gemini.*1[._-]5.*flash|gemini.*flash.*1[._-]5/.test(s)) return 'gemini-1.5-flash';
-    if (/gemini.*1[._-]5.*pro|gemini.*pro.*1[._-]5/.test(s)) return 'gemini-1.5-pro';
+    if (/gemini.*(2[._-]0).*flash|gemini.*flash.*(2[._-]0)/.test(s))
+      return 'gemini-2.0-flash';
+    if (/gemini.*(2[._-]0).*pro|gemini.*pro.*(2[._-]0)/.test(s))
+      return 'gemini-2.0-pro';
+    if (/gemini.*1[._-]5.*flash|gemini.*flash.*1[._-]5/.test(s))
+      return 'gemini-1.5-flash';
+    if (/gemini.*1[._-]5.*pro|gemini.*pro.*1[._-]5/.test(s))
+      return 'gemini-1.5-pro';
     // Already a valid API id (no spaces) — use as-is
     if (!raw.includes(' ')) return raw;
     return s;

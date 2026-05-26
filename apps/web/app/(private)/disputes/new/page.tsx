@@ -27,14 +27,14 @@ export default function NewDisputePage() {
     }
     setSubmitting(true);
     try {
-      await disputes.create({
+      const result = await disputes.create({
         respondentId: respondentId.trim(),
         listingId: listingId.trim() || undefined,
         subject: subject.trim(),
         description: description.trim(),
       });
       toast.success('Disputa iniciada. Un administrador se pondrá en contacto.');
-      router.push('/dashboard');
+      router.push(`/disputes/${result.id}`);
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'No se pudo crear la disputa. Intentá de nuevo.';

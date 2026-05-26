@@ -21,6 +21,7 @@ import {
   LifeBuoy,
   ShoppingBag,
   Store,
+  Swords,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
@@ -206,6 +207,11 @@ export function Navbar() {
                       label="Verificación KYC"
                     />
                     <DropdownLink
+                      href="/disputes"
+                      icon={<Swords size={15} />}
+                      label="Mis disputas"
+                    />
+                    <DropdownLink
                       href="/support"
                       icon={<LifeBuoy size={15} />}
                       label="Soporte"
@@ -329,6 +335,12 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Verificación
+                  </Link>
+                  <Link
+                    href="/disputes"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Mis disputas
                   </Link>
                   <Link
                     href="/support"

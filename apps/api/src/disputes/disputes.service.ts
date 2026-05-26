@@ -227,7 +227,9 @@ export class DisputesService {
       .returning();
 
     const recipientId =
-      userId === dispute.initiatorId ? dispute.respondentId : dispute.initiatorId;
+      userId === dispute.initiatorId
+        ? dispute.respondentId
+        : dispute.initiatorId;
     const recipientHref =
       userId === dispute.initiatorId ? '/my-sales' : '/my-purchases';
 
@@ -238,7 +240,11 @@ export class DisputesService {
         type: 'dispute',
         title: 'Reclamo cerrado',
         body: `El reclamo "${dispute.subject}" fue cerrado por la otra parte.`,
-        data: { disputeId: id, listingId: dispute.listingId, href: recipientHref },
+        data: {
+          disputeId: id,
+          listingId: dispute.listingId,
+          href: recipientHref,
+        },
       })
       .catch(() => null);
 

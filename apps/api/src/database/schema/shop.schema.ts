@@ -52,6 +52,7 @@ export const sellerShops = pgTable(
       .notNull()
       .default('none'),
     footerConfig: jsonb('footer_config').$type<Record<string, unknown>>(),
+    primaryColor: varchar('primary_color', { length: 7 }),
     announcementText: varchar('announcement_text', { length: 500 }),
     announcementExpiresAt: timestamp('announcement_expires_at', {
       withTimezone: true,
