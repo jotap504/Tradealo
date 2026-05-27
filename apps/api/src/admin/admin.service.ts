@@ -945,8 +945,20 @@ export class AdminService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: schema.adminAuditLog.id,
+        adminId: schema.adminAuditLog.adminId,
+        adminEmail: schema.users.email,
+        action: schema.adminAuditLog.action,
+        entityType: schema.adminAuditLog.entityType,
+        entityId: schema.adminAuditLog.entityId,
+        oldValue: schema.adminAuditLog.oldValue,
+        newValue: schema.adminAuditLog.newValue,
+        ipAddress: schema.adminAuditLog.ipAddress,
+        createdAt: schema.adminAuditLog.createdAt,
+      })
       .from(schema.adminAuditLog)
+      .leftJoin(schema.users, eq(schema.adminAuditLog.adminId, schema.users.id))
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(desc(schema.adminAuditLog.createdAt))
       .limit(limit + 1);

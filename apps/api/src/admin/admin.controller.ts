@@ -25,6 +25,8 @@ import { Type } from 'class-transformer';
 import { AdminService } from './admin.service';
 import { Public } from '../common/decorators/public.decorator';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
+import { AdminRolesGuard } from '../common/guards/admin-roles.guard';
+import { AdminRoles } from '../common/decorators/admin-roles.decorator';
 import { CurrentAdmin } from '../common/decorators/current-admin.decorator';
 import type { AdminSessionPayload } from './admin-auth.service';
 
@@ -158,7 +160,7 @@ class CreateTokenPackDto {
 
 @Controller('admin')
 @Public()
-@UseGuards(AdminJwtGuard)
+@UseGuards(AdminJwtGuard, AdminRolesGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -201,6 +203,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/role')
+  @AdminRoles('super_admin')
   @HttpCode(HttpStatus.OK)
   updateRole(
     @Param('id') id: string,
@@ -211,6 +214,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/suspend')
+  @AdminRoles('super_admin', 'moderator', 'support')
   @HttpCode(HttpStatus.OK)
   suspendUser(
     @Param('id') id: string,
@@ -221,12 +225,14 @@ export class AdminController {
   }
 
   @Patch('users/:id/ban')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   banUser(@Param('id') id: string, @CurrentAdmin() admin: AdminSessionPayload) {
     return this.adminService.banUser(id, admin.sub);
   }
 
   @Patch('users/:id/restore')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   restoreUser(
     @Param('id') id: string,
@@ -236,6 +242,7 @@ export class AdminController {
   }
 
   @Delete('users/:id')
+  @AdminRoles('super_admin')
   @HttpCode(HttpStatus.OK)
   deleteUser(
     @Param('id') id: string,
@@ -245,6 +252,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/kyc-level')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   setKycLevel(
     @Param('id') id: string,
@@ -255,6 +263,7 @@ export class AdminController {
   }
 
   @Post('users/:id/tokens')
+  @AdminRoles('super_admin', 'finance')
   @HttpCode(HttpStatus.OK)
   adjustTokens(
     @Param('id') id: string,
@@ -270,6 +279,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/shop/grant')
+  @AdminRoles('super_admin')
   @HttpCode(HttpStatus.OK)
   grantShopAccess(
     @Param('id') id: string,
@@ -279,6 +289,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/shop/revoke')
+  @AdminRoles('super_admin')
   @HttpCode(HttpStatus.OK)
   revokeShopAccess(
     @Param('id') id: string,
@@ -295,6 +306,7 @@ export class AdminController {
   }
 
   @Patch('configs/:key')
+  @AdminRoles('super_admin', 'finance')
   @HttpCode(HttpStatus.OK)
   updateConfig(
     @Param('key') key: string,
@@ -317,6 +329,7 @@ export class AdminController {
   }
 
   @Post('token-packs')
+  @AdminRoles('super_admin', 'finance')
   @HttpCode(HttpStatus.CREATED)
   createTokenPack(
     @CurrentAdmin() admin: AdminSessionPayload,
@@ -326,6 +339,7 @@ export class AdminController {
   }
 
   @Patch('token-packs/:id')
+  @AdminRoles('super_admin', 'finance')
   @HttpCode(HttpStatus.OK)
   updateTokenPack(
     @Param('id') id: string,
@@ -336,6 +350,7 @@ export class AdminController {
   }
 
   @Patch('token-packs/prices/:priceId')
+  @AdminRoles('super_admin', 'finance')
   @HttpCode(HttpStatus.OK)
   updateTokenPackPrice(
     @Param('priceId') priceId: string,
@@ -357,6 +372,7 @@ export class AdminController {
   }
 
   @Post('kyc/:id/approve')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   approveKyc(
     @Param('id') id: string,
@@ -366,6 +382,7 @@ export class AdminController {
   }
 
   @Post('kyc/:id/reject')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   rejectKyc(
     @Param('id') id: string,
@@ -390,6 +407,7 @@ export class AdminController {
   }
 
   @Post('listings/:id/approve')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   approveListing(
     @Param('id') id: string,
@@ -399,6 +417,7 @@ export class AdminController {
   }
 
   @Post('listings/:id/reject')
+  @AdminRoles('super_admin', 'moderator')
   @HttpCode(HttpStatus.OK)
   rejectListing(
     @Param('id') id: string,

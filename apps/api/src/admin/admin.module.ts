@@ -6,6 +6,7 @@ import { AdminAuthService } from './admin-auth.service';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { AdminPreAuthGuard } from '../common/guards/admin-preauth.guard';
+import { AdminRolesGuard } from '../common/guards/admin-roles.guard';
 import { AdminConfigService } from '../config/admin-config.service';
 import { ConfigService } from '../config/config.service';
 
@@ -21,6 +22,7 @@ import { ConfigService } from '../config/config.service';
     AdminAuthService,
     AdminJwtGuard,
     AdminPreAuthGuard,
+    AdminRolesGuard,
     AdminConfigService,
     ConfigService,
   ],

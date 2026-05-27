@@ -148,6 +148,7 @@ export default function AdminReportsPage() {
                     <tr className="border-b border-tradealo-border text-left text-tradealo-text-muted text-xs">
                       <th className="pb-2 font-medium">Fecha</th>
                       <th className="pb-2 font-medium">Tipo</th>
+                      <th className="pb-2 font-medium">Denunciante</th>
                       <th className="pb-2 font-medium">Denunciado</th>
                       <th className="pb-2 font-medium">Motivo</th>
                       <th className="pb-2 font-medium">Estado</th>
@@ -164,6 +165,9 @@ export default function AdminReportsPage() {
                           <Badge size="sm" variant="default">
                             {r.targetType === 'listing' ? 'Publicación' : 'Usuario'}
                           </Badge>
+                        </td>
+                        <td className="py-3 pr-4 font-mono text-xs text-tradealo-text-muted">
+                          {r.reporterEmail ?? r.reporterId.slice(0, 8) + '…'}
                         </td>
                         <td className="py-3 pr-4">
                           {r.targetType === 'listing' ? (

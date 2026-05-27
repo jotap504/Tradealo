@@ -3,7 +3,7 @@ import { eq, desc, and, lt, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
-import { reports } from '../database/schema';
+import { reports, users } from '../database/schema';
 import { encodeCursor, decodeCursor } from '../common/utils/cursor.util';
 
 type DB = NodePgDatabase<typeof schema>;
@@ -68,8 +68,22 @@ export class ReportsService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: reports.id,
+        reporterId: reports.reporterId,
+        reporterEmail: users.email,
+        targetType: reports.targetType,
+        targetId: reports.targetId,
+        reason: reports.reason,
+        description: reports.description,
+        status: reports.status,
+        resolution: reports.resolution,
+        resolvedAt: reports.resolvedAt,
+        assignedTo: reports.assignedTo,
+        createdAt: reports.createdAt,
+      })
       .from(reports)
+      .leftJoin(users, eq(reports.reporterId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(reports.createdAt), desc(reports.id))
       .limit(limit + 1);
