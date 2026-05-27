@@ -487,7 +487,7 @@ export class KycService {
       .from(schema.userVerifications)
       .where(eq(schema.userVerifications.userId, userId));
 
-    const visionMode = this.visionProvider['mode'] as string;
+    const visionMode = 'openai';
     const visionModel = this.visionProvider['model'] as string;
     const visionUrl = this.visionProvider['apiUrl'] as string;
     const hasKey = !!(this.visionProvider['apiKey'] as string);
