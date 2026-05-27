@@ -278,8 +278,23 @@ export class DisputesService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: disputes.id,
+        initiatorId: disputes.initiatorId,
+        initiatorEmail: schema.users.email,
+        respondentId: disputes.respondentId,
+        listingId: disputes.listingId,
+        subject: disputes.subject,
+        description: disputes.description,
+        status: disputes.status,
+        assignedTo: disputes.assignedTo,
+        resolution: disputes.resolution,
+        resolvedAt: disputes.resolvedAt,
+        createdAt: disputes.createdAt,
+        updatedAt: disputes.updatedAt,
+      })
       .from(disputes)
+      .leftJoin(schema.users, eq(disputes.initiatorId, schema.users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(disputes.createdAt), desc(disputes.id))
       .limit(limit + 1);
@@ -311,6 +326,14 @@ export class DisputesService {
   // ─── Admin: resolve dispute ───────────────────────────────────────────────────
 
   async resolveDispute(id: string, resolution: string, _adminId: string) {
+    const [before] = await this.db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id))
+      .limit(1);
+
+    if (!before) throw new NotFoundException(`Dispute ${id} not found`);
+
     const [updated] = await this.db
       .update(disputes)
       .set({
@@ -322,13 +345,33 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
-    if (!updated) throw new NotFoundException(`Dispute ${id} not found`);
+    for (const userId of [before.initiatorId, before.respondentId]) {
+      this.notificationsService
+        .send({
+          userId,
+          channel: 'in_app',
+          type: 'dispute',
+          title: 'Reclamo resuelto',
+          body: `El reclamo "${before.subject}" fue resuelto por un administrador.`,
+          data: { disputeId: id, href: `/disputes/${id}` },
+        })
+        .catch(() => null);
+    }
+
     return updated;
   }
 
   // ─── Admin: close dispute ─────────────────────────────────────────────────────
 
   async closeDispute(id: string, resolution: string, _adminId: string) {
+    const [before] = await this.db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id))
+      .limit(1);
+
+    if (!before) throw new NotFoundException(`Dispute ${id} not found`);
+
     const [updated] = await this.db
       .update(disputes)
       .set({
@@ -340,7 +383,19 @@ export class DisputesService {
       .where(eq(disputes.id, id))
       .returning();
 
-    if (!updated) throw new NotFoundException(`Dispute ${id} not found`);
+    for (const userId of [before.initiatorId, before.respondentId]) {
+      this.notificationsService
+        .send({
+          userId,
+          channel: 'in_app',
+          type: 'dispute',
+          title: 'Reclamo cerrado',
+          body: `El reclamo "${before.subject}" fue cerrado por un administrador.`,
+          data: { disputeId: id, href: `/disputes/${id}` },
+        })
+        .catch(() => null);
+    }
+
     return updated;
   }
 }

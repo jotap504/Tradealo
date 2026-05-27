@@ -91,6 +91,7 @@ export default function AdminDisputesPage() {
                   <thead>
                     <tr className="border-b border-tradealo-border text-left text-tradealo-text-muted text-xs">
                       <th className="pb-2 font-medium">Fecha</th>
+                      <th className="pb-2 font-medium">Iniciador</th>
                       <th className="pb-2 font-medium">Asunto</th>
                       <th className="pb-2 font-medium">Estado</th>
                       <th className="pb-2 font-medium"></th>
@@ -102,7 +103,10 @@ export default function AdminDisputesPage() {
                         <td className="py-3 pr-4 text-tradealo-text-muted whitespace-nowrap">
                           <RelativeTime iso={d.createdAt} />
                         </td>
-                        <td className="py-3 pr-4 text-tradealo-text max-w-[320px] truncate">
+                        <td className="py-3 pr-4 text-xs text-tradealo-text-muted truncate max-w-[180px]">
+                          {d.initiatorEmail ?? d.initiatorId.slice(0, 8) + '…'}
+                        </td>
+                        <td className="py-3 pr-4 text-tradealo-text max-w-[280px] truncate">
                           {d.subject.length > 50 ? d.subject.slice(0, 50) + '…' : d.subject}
                         </td>
                         <td className="py-3 pr-4">

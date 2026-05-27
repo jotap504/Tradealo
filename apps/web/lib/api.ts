@@ -597,6 +597,7 @@ export interface DisputeMessage {
 export interface AdminDispute {
   id: string;
   initiatorId: string;
+  initiatorEmail?: string;
   respondentId: string;
   listingId?: string;
   subject: string;
