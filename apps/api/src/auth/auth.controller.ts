@@ -6,7 +6,11 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -17,6 +21,7 @@ import {
   type JwtPayload,
 } from '../common/decorators/current-user.decorator';
 import { RateLimit } from '../common/decorators/rate-limit.decorator';
+import type { GoogleProfile } from './strategies/google.strategy';
 import type { Request } from 'express';
 
 @Controller('auth')
@@ -55,5 +60,27 @@ export class AuthController {
   @Get('me')
   async me(@CurrentUser() user: JwtPayload, @Req() _req: Request) {
     return this.authService.getMe(user.sub);
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth() {
+    // Passport redirects to Google — nothing to do here
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(
+    @Req() req: Request & { user: GoogleProfile },
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.findOrCreateGoogleUser(req.user);
+    const frontendUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
+    const userEncoded = Buffer.from(JSON.stringify(result.user)).toString('base64url');
+    res.redirect(
+      `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&user=${userEncoded}`,
+    );
   }
 }

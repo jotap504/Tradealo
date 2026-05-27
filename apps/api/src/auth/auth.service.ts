@@ -18,6 +18,7 @@ import { TOKEN } from '../common/constants/token.constants';
 import type { JwtPayload } from '../common/decorators/current-user.decorator';
 import type { RegisterDto } from './dto/register.dto';
 import type { LoginDto } from './dto/login.dto';
+import type { GoogleProfile } from './strategies/google.strategy';
 
 type DB = NodePgDatabase<typeof schema>;
 
@@ -170,6 +171,7 @@ export class AuthService {
 
     const { user, profile } = row;
 
+    if (!user.passwordHash) throw new UnauthorizedException('PASSWORD_LOGIN_NOT_AVAILABLE');
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordValid) throw new UnauthorizedException('PASSWORD_MISMATCH');
 
@@ -303,6 +305,181 @@ export class AuthService {
       referralCode: user.referralCode,
       createdAt: user.createdAt,
     };
+  }
+
+  async findOrCreateGoogleUser(
+    profile: GoogleProfile,
+  ): Promise<TokenPair & { user: UserSummary }> {
+    // 1. Find by googleId
+    const [byGoogleId] = await this.db
+      .select({ user: schema.users, profile: schema.userProfiles })
+      .from(schema.users)
+      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
+      .where(eq(schema.users.googleId, profile.googleId))
+      .limit(1);
+
+    if (byGoogleId) {
+      await this.db
+        .update(schema.users)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(schema.users.id, byGoogleId.user.id));
+      const tokens = await this.createTokenPair(
+        byGoogleId.user.id,
+        byGoogleId.user.email,
+        byGoogleId.user.role,
+        byGoogleId.user.kycLevel,
+        byGoogleId.user.accountType,
+      );
+      return {
+        ...tokens,
+        user: {
+          id: byGoogleId.user.id,
+          email: byGoogleId.user.email,
+          username: byGoogleId.profile?.username ?? undefined,
+          role: byGoogleId.user.role,
+          kycLevel: byGoogleId.user.kycLevel,
+          accountType: byGoogleId.user.accountType,
+          referralCode: byGoogleId.user.referralCode,
+          createdAt: byGoogleId.user.createdAt,
+        },
+      };
+    }
+
+    // 2. Find by email (existing email/password account) → link googleId
+    const [byEmail] = await this.db
+      .select({ user: schema.users, profile: schema.userProfiles })
+      .from(schema.users)
+      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
+      .where(eq(schema.users.email, profile.email))
+      .limit(1);
+
+    if (byEmail) {
+      await this.db
+        .update(schema.users)
+        .set({ googleId: profile.googleId, lastLoginAt: new Date() })
+        .where(eq(schema.users.id, byEmail.user.id));
+      const tokens = await this.createTokenPair(
+        byEmail.user.id,
+        byEmail.user.email,
+        byEmail.user.role,
+        byEmail.user.kycLevel,
+        byEmail.user.accountType,
+      );
+      return {
+        ...tokens,
+        user: {
+          id: byEmail.user.id,
+          email: byEmail.user.email,
+          username: byEmail.profile?.username ?? undefined,
+          role: byEmail.user.role,
+          kycLevel: byEmail.user.kycLevel,
+          accountType: byEmail.user.accountType,
+          referralCode: byEmail.user.referralCode,
+          createdAt: byEmail.user.createdAt,
+        },
+      };
+    }
+
+    // 3. New user — create account
+    const username = await this.generateUniqueUsername(profile.displayName);
+    const referralCode = this.generateReferralCode();
+    const rewardTokens = await this.configService.getNumber(
+      TOKEN.CONFIG_KEYS.REWARD_REGISTRATION,
+      5,
+    );
+
+    const newUser = await this.db.transaction(async (tx) => {
+      const [inserted] = await tx
+        .insert(schema.users)
+        .values({
+          email: profile.email,
+          googleId: profile.googleId,
+          referralCode,
+        })
+        .returning({
+          id: schema.users.id,
+          email: schema.users.email,
+          role: schema.users.role,
+          kycLevel: schema.users.kycLevel,
+          accountType: schema.users.accountType,
+          referralCode: schema.users.referralCode,
+          createdAt: schema.users.createdAt,
+        });
+
+      await tx.insert(schema.userProfiles).values({
+        userId: inserted.id,
+        username,
+        avatarUrl: profile.avatarUrl,
+      });
+
+      await tx.insert(schema.wallets).values({
+        userId: inserted.id,
+        balance: rewardTokens,
+        lifetimeEarned: rewardTokens,
+      });
+
+      if (rewardTokens > 0) {
+        await tx.insert(schema.creditTransactions).values({
+          userId: inserted.id,
+          amount: rewardTokens,
+          balanceAfter: rewardTokens,
+          reason: 'registration_bonus',
+        });
+      }
+
+      return { ...inserted, username };
+    });
+
+    const tokens = await this.createTokenPair(
+      newUser.id,
+      newUser.email,
+      newUser.role,
+      newUser.kycLevel,
+      newUser.accountType,
+    );
+    return {
+      ...tokens,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        username: newUser.username,
+        role: newUser.role,
+        kycLevel: newUser.kycLevel,
+        accountType: newUser.accountType,
+        referralCode: newUser.referralCode,
+        createdAt: newUser.createdAt,
+      },
+    };
+  }
+
+  private async generateUniqueUsername(displayName: string): Promise<string> {
+    const base = (displayName || 'usuario')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_]/g, '')
+      .toLowerCase()
+      .slice(0, 25) || 'usuario';
+
+    const [existing] = await this.db
+      .select({ id: schema.userProfiles.userId })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.username, base))
+      .limit(1);
+
+    if (!existing) return base;
+
+    for (let i = 1; i <= 99; i++) {
+      const candidate = `${base}_${i}`;
+      const [taken] = await this.db
+        .select({ id: schema.userProfiles.userId })
+        .from(schema.userProfiles)
+        .where(eq(schema.userProfiles.username, candidate))
+        .limit(1);
+      if (!taken) return candidate;
+    }
+
+    return `${base}_${randomBytes(3).toString('hex')}`;
   }
 
   private async createTokenPair(
