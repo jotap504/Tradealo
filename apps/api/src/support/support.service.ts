@@ -221,8 +221,20 @@ export class SupportService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        id: supportTickets.id,
+        userId: supportTickets.userId,
+        userEmail: schema.users.email,
+        subject: supportTickets.subject,
+        category: supportTickets.category,
+        priority: supportTickets.priority,
+        status: supportTickets.status,
+        assignedTo: supportTickets.assignedTo,
+        createdAt: supportTickets.createdAt,
+        updatedAt: supportTickets.updatedAt,
+      })
       .from(supportTickets)
+      .leftJoin(schema.users, eq(supportTickets.userId, schema.users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(supportTickets.updatedAt), desc(supportTickets.id))
       .limit(limit + 1);
