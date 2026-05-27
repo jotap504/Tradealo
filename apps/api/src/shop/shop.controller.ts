@@ -210,6 +210,12 @@ export class ShopController {
     return this.shopService.publishShop(user.sub);
   }
 
+  @Post('me/unpublish')
+  @HttpCode(HttpStatus.OK)
+  unpublishShop(@CurrentUser() user: JwtPayload) {
+    return this.shopService.unpublishShop(user.sub);
+  }
+
   @Get('me/analytics')
   getAnalytics(@CurrentUser() user: JwtPayload, @Query('days') days?: string) {
     return this.shopService.getAnalytics(user.sub, days ? Number(days) : 30);

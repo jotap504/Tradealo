@@ -16,11 +16,14 @@ import {
   Layout,
   Palette,
   Megaphone,
+  Globe,
+  EyeOff,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { toast } from '@/lib/store';
 import type { Shop, ShopSubscription } from '@/types';
 
 const STATUS_META: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' | 'default' }> = {
@@ -48,6 +51,7 @@ export default function MyShopPage() {
   const [shopData, setShopData] = useState<Shop | null>(null);
   const [sub, setSub] = useState<ShopSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -59,6 +63,33 @@ export default function MyShopPage() {
       setLoading(false);
     });
   }, []);
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      await shopApi.publish();
+      setShopData((prev) => prev ? { ...prev, isPublished: true } : prev);
+      toast.success('¡Tienda publicada! Ya es visible para todos.');
+    } catch {
+      toast.error('No se pudo publicar. Verificá que tengas suscripción activa.');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!confirm('¿Despublicar tu tienda? Dejará de ser visible para los visitantes.')) return;
+    setPublishing(true);
+    try {
+      await shopApi.unpublish();
+      setShopData((prev) => prev ? { ...prev, isPublished: false } : prev);
+      toast.success('Tienda despublicada.');
+    } catch {
+      toast.error('No se pudo despublicar. Intentá de nuevo.');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -119,6 +150,28 @@ export default function MyShopPage() {
                     <ExternalLink size={12} />
                     Ver mi tienda
                   </a>
+                )}
+                {hasActiveSub && (
+                  shopData.isPublished ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={publishing}
+                      onClick={handleUnpublish}
+                      className="w-full text-tradealo-text-muted"
+                    >
+                      <EyeOff size={13} className="mr-1.5" /> Despublicar
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      loading={publishing}
+                      onClick={handlePublish}
+                      className="w-full"
+                    >
+                      <Globe size={13} className="mr-1.5" /> Publicar tienda
+                    </Button>
+                  )
                 )}
               </div>
             ) : (
