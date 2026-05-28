@@ -58,12 +58,19 @@ export class VisionProvider {
   private readonly apiUrl: string;
   private readonly model: string;
 
+  // Tried in order until one succeeds (skips 404 "no endpoints" errors)
+  private static readonly FALLBACK_MODELS = [
+    'qwen/qwen-2-vl-7b-instruct:free',
+    'meta-llama/llama-4-scout:free',
+    'google/gemini-2.0-flash-lite-001',
+  ];
+
   constructor() {
     this.apiKey = process.env.AI_API_KEY ?? '';
     this.apiUrl = (process.env.AI_API_URL ?? '').replace(/\/+$/, '');
     this.model =
       process.env.AI_VISION_MODEL ??
-      'meta-llama/llama-3.2-11b-vision-instruct:free';
+      VisionProvider.FALLBACK_MODELS[0];
 
     if (this.apiKey && this.apiUrl) {
       this.logger.log(
@@ -83,7 +90,12 @@ export class VisionProvider {
     const raw = await this.callVision(base64, mimeType, DNI_PROMPT);
 
     if (raw === '{"indeterminate":true}') {
-      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+      return {
+        valid: false,
+        indeterminate: true,
+        confidence: 0,
+        rawResponse: raw,
+      };
     }
 
     const parsed = this.parseJson(raw);
@@ -91,7 +103,12 @@ export class VisionProvider {
       this.logger.warn(
         'validateDniPhoto: unparseable response, treating as indeterminate',
       );
-      return { valid: false, indeterminate: true, confidence: 0, rawResponse: raw };
+      return {
+        valid: false,
+        indeterminate: true,
+        confidence: 0,
+        rawResponse: raw,
+      };
     }
 
     if (!parsed.isValid) {
@@ -144,59 +161,80 @@ export class VisionProvider {
     const url = `${this.apiUrl}/chat/completions`;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    const body = {
-      model: this.model,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: dataUrl } },
-          ],
-        },
-      ],
-      max_tokens: 512,
-      temperature: 0.1,
-    };
+    const modelsToTry = [
+      this.model,
+      ...VisionProvider.FALLBACK_MODELS.filter((m) => m !== this.model),
+    ];
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(60_000),
-      });
-    } catch (err) {
-      this.logger.error('Vision network/timeout error', err);
-      return '{"indeterminate":true}';
+    for (const model of modelsToTry) {
+      const body = {
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+        max_tokens: 512,
+        temperature: 0.1,
+      };
+
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(60_000),
+        });
+      } catch (err) {
+        this.logger.error(`Vision network/timeout error (model=${model})`, err);
+        return '{"indeterminate":true}';
+      }
+
+      if (response.status === 404) {
+        const errText = await response.text().catch(() => '');
+        this.logger.warn(
+          `Vision model unavailable, trying next (${model}): ${errText.slice(0, 200)}`,
+        );
+        continue;
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        this.logger.error(
+          `Vision HTTP ${response.status} (model=${model}): ${text.slice(0, 300)}`,
+        );
+        return '{"indeterminate":true}';
+      }
+
+      const json = (await response.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const text = json.choices?.[0]?.message?.content ?? '';
+
+      if (!text) {
+        this.logger.warn(
+          `Vision returned empty content (model=${model})`,
+          JSON.stringify(json).slice(0, 300),
+        );
+        return '{"indeterminate":true}';
+      }
+
+      if (model !== this.model) {
+        this.logger.log(`Vision succeeded with fallback model: ${model}`);
+      }
+      return text;
     }
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      this.logger.error(
-        `Vision HTTP ${response.status}: ${text.slice(0, 300)}`,
-      );
-      return '{"indeterminate":true}';
-    }
-
-    const json = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const text = json.choices?.[0]?.message?.content ?? '';
-
-    if (!text) {
-      this.logger.warn(
-        'Vision returned empty content',
-        JSON.stringify(json).slice(0, 300),
-      );
-      return '{"indeterminate":true}';
-    }
-
-    return text;
+    this.logger.error('All vision models exhausted, returning indeterminate');
+    return '{"indeterminate":true}';
   }
 
   private parseJson(raw: string): Record<string, unknown> | null {
