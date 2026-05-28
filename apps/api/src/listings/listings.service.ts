@@ -220,7 +220,11 @@ export class ListingsService {
       conditions.push(isNull(schema.listings.youtubeLiveId));
     }
 
-    const isPremiumSort = !dto.sort || (dto.sort !== 'price_asc' && dto.sort !== 'price_desc' && dto.sort !== 'reputation');
+    const isPremiumSort =
+      !dto.sort ||
+      (dto.sort !== 'price_asc' &&
+        dto.sort !== 'price_desc' &&
+        dto.sort !== 'reputation');
     const typeRankExpr = sql<number>`CASE WHEN ${schema.listings.type} = 'premium' THEN 0 ELSE 1 END`;
 
     if (dto.cursor) {
@@ -229,15 +233,25 @@ export class ListingsService {
         conditions.push(
           or(
             gt(typeRankExpr, typeRank),
-            and(eq(typeRankExpr, typeRank), lt(schema.listings.createdAt, createdAt)),
-            and(eq(typeRankExpr, typeRank), eq(schema.listings.createdAt, createdAt), lt(schema.listings.id, id)),
+            and(
+              eq(typeRankExpr, typeRank),
+              lt(schema.listings.createdAt, createdAt),
+            ),
+            and(
+              eq(typeRankExpr, typeRank),
+              eq(schema.listings.createdAt, createdAt),
+              lt(schema.listings.id, id),
+            ),
           )!,
         );
       } else {
         conditions.push(
           or(
             lt(schema.listings.createdAt, createdAt),
-            and(eq(schema.listings.createdAt, createdAt), lt(schema.listings.id, id)),
+            and(
+              eq(schema.listings.createdAt, createdAt),
+              lt(schema.listings.id, id),
+            ),
           )!,
         );
       }
@@ -248,7 +262,11 @@ export class ListingsService {
         ? [asc(schema.listings.price), desc(schema.listings.createdAt)]
         : dto.sort === 'price_desc'
           ? [desc(schema.listings.price), desc(schema.listings.createdAt)]
-          : [asc(typeRankExpr), desc(schema.listings.createdAt), desc(schema.listings.id)];
+          : [
+              asc(typeRankExpr),
+              desc(schema.listings.createdAt),
+              desc(schema.listings.id),
+            ];
 
     let rows: (typeof schema.listings.$inferSelect)[];
     if (dto.sort === 'reputation') {
@@ -282,7 +300,11 @@ export class ListingsService {
     const nextCursor =
       hasMore && last
         ? encodeCursor({
-            typeRank: isPremiumSort ? (last.type === 'premium' ? 0 : 1) : undefined,
+            typeRank: isPremiumSort
+              ? last.type === 'premium'
+                ? 0
+                : 1
+              : undefined,
             createdAt: last.createdAt,
             id: last.id,
           })

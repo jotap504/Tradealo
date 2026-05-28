@@ -69,8 +69,7 @@ export class VisionProvider {
     this.apiKey = process.env.AI_API_KEY ?? '';
     this.apiUrl = (process.env.AI_API_URL ?? '').replace(/\/+$/, '');
     this.model =
-      process.env.AI_VISION_MODEL ??
-      VisionProvider.FALLBACK_MODELS[0];
+      process.env.AI_VISION_MODEL ?? VisionProvider.FALLBACK_MODELS[0];
 
     if (this.apiKey && this.apiUrl) {
       this.logger.log(
