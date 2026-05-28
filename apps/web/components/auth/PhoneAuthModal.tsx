@@ -47,7 +47,7 @@ export function PhoneAuthModal({ open, onClose, onVerified, mode = 'login' }: Pr
   const setupRecaptcha = () => {
     if (recaptchaRef.current) return recaptchaRef.current;
     const verifier = new RecaptchaVerifier(
-      firebaseAuth,
+      firebaseAuth!,
       'recaptcha-container',
       { size: 'invisible' },
     );
@@ -56,6 +56,10 @@ export function PhoneAuthModal({ open, onClose, onVerified, mode = 'login' }: Pr
   };
 
   const handleSendOtp = async () => {
+    if (!firebaseAuth) {
+      toast.error('Autenticación por celular no configurada. Contactá soporte.');
+      return;
+    }
     const normalized = phone.trim().startsWith('+') ? phone.trim() : `+54${phone.trim()}`;
     if (normalized.length < 10) {
       toast.error('Ingresá un número válido');
