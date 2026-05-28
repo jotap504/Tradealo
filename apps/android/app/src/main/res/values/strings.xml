@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Tradealo</string>
+    <string name="no_internet">Sin conexión a Internet</string>
+    <string name="no_internet_desc">Por favor, comprueba tu Wi-Fi o datos móviles e inténtalo de nuevo.</string>
+    <string name="retry">Reintentar</string>
+    <string name="loading">Cargando Tradealo...</string>
+    <string name="download_started">Iniciando descarga...</string>
+    <string name="download_completed">Descarga completa</string>
+    <string name="download_failed">Error en la descarga</string>
+</resources>

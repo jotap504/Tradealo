@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FileProvider paths for camera capture output.
+    external-files-path exposes getExternalFilesDir(), which is app-private
+    (no WRITE_EXTERNAL_STORAGE permission needed on API 29+).
+-->
+<paths>
+    <external-files-path
+        name="kyc_images"
+        path="Pictures/" />
+</paths>

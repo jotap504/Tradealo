@@ -1,0 +1,27 @@
+# Android build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Local configuration (contains SDK path, machine-specific)
+local.properties
+
+# Gradle
+.gradle/
+build/
+app/build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+captures/
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+Thumbs.db
