@@ -1,15 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "apps/web/next.config.mjs",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "apps/web/$1" }
-  ],
+  "buildCommand": "npx pnpm@10 --filter web run build",
   "outputDirectory": "apps/web/.next",
+  "installCommand": "npx pnpm@10 install --frozen-lockfile",
+  "framework": "nextjs",
   "github": {
     "enabled": true
   }

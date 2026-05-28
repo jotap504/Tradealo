@@ -159,24 +159,23 @@ export default function KycPage() {
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
     queryFn: () => kyc.getKycStatus(),
-    staleTime: 5_000,
-    // Poll every 5s only while there's something unverified (Gemini may auto-approve)
+    staleTime: 15_000,
     refetchInterval: (query) => {
       const d = query.state.data;
       if (!d) return false;
-      const allDone = d.phoneCamera && d.selfie && d.bcraConsent;
-      return allDone ? false : 5_000;
+      const allDone = d.phoneCamera && d.selfie && d.bcraConsent && d.phoneVerified;
+      return allDone ? false : 15_000;
     },
   });
 
   const { data: tiers } = useQuery({
     queryKey: ['kyc-tiers'],
     queryFn: () => kyc.getTierProgress(),
-    staleTime: 5_000,
+    staleTime: 30_000,
     refetchInterval: (query) => {
       const d = query.state.data;
       if (!d) return false;
-      return d.silver.granted && d.gold.granted ? false : 5_000;
+      return d.silver.granted && d.gold.granted ? false : 30_000;
     },
   });
 
