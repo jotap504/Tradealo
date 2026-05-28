@@ -374,7 +374,10 @@ export class KycService {
     const status = await this.getStatus(userId);
 
     const allSilverSteps =
-      status.phoneVerified && status.selfie && status.phoneCamera && status.bcraConsent;
+      status.phoneVerified &&
+      status.selfie &&
+      status.phoneCamera &&
+      status.bcraConsent;
 
     if (!allSilverSteps) return { upgraded: false };
 

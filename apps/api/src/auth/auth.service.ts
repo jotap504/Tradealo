@@ -44,6 +44,8 @@ export interface UserSummary {
   accountType: string;
   referralCode: string | null;
   createdAt: Date;
+  phone: string | null;
+  phoneVerified: boolean;
 }
 
 @Injectable()
@@ -150,6 +152,8 @@ export class AuthService {
         accountType: user.accountType,
         referralCode: user.referralCode,
         createdAt: user.createdAt,
+        phone: null,
+        phoneVerified: false,
       },
     };
   }
@@ -216,6 +220,8 @@ export class AuthService {
         accountType: user.accountType,
         referralCode: user.referralCode,
         createdAt: user.createdAt,
+        phone: user.phone ?? null,
+        phoneVerified: user.phoneVerified ?? false,
       },
     };
   }
@@ -307,6 +313,8 @@ export class AuthService {
       accountType: user.accountType,
       referralCode: user.referralCode,
       createdAt: user.createdAt,
+      phone: user.phone ?? null,
+      phoneVerified: user.phoneVerified ?? false,
     };
   }
 
@@ -347,6 +355,8 @@ export class AuthService {
           accountType: byGoogleId.user.accountType,
           referralCode: byGoogleId.user.referralCode,
           createdAt: byGoogleId.user.createdAt,
+          phone: byGoogleId.user.phone ?? null,
+          phoneVerified: byGoogleId.user.phoneVerified ?? false,
         },
       };
     }
@@ -385,6 +395,8 @@ export class AuthService {
           accountType: byEmail.user.accountType,
           referralCode: byEmail.user.referralCode,
           createdAt: byEmail.user.createdAt,
+          phone: byEmail.user.phone ?? null,
+          phoneVerified: byEmail.user.phoneVerified ?? false,
         },
       };
     }
@@ -457,6 +469,8 @@ export class AuthService {
         accountType: newUser.accountType,
         referralCode: newUser.referralCode,
         createdAt: newUser.createdAt,
+        phone: null,
+        phoneVerified: false,
       },
     };
   }
@@ -546,6 +560,8 @@ export class AuthService {
         accountType: user.accountType,
         referralCode: user.referralCode,
         createdAt: user.createdAt,
+        phone: user.phone ?? null,
+        phoneVerified: true,
       },
     };
   }
