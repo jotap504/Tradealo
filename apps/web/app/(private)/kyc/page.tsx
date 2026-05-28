@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, Star, FileCheck, AlertTriangle, CheckCircle2, XCircle, Clock, Building2, Bug, ChevronDown, ChevronUp } from 'lucide-react';
-import { kyc } from '@/lib/api';
+import { ShieldCheck, Star, FileCheck, AlertTriangle, CheckCircle2, XCircle, Clock, Building2, Bug, ChevronDown, ChevronUp, Smartphone } from 'lucide-react';
+import { kyc, auth } from '@/lib/api';
 import type { BcraCheckResult, BcraPeriodo } from '@/types';
 import { KycProgress } from '@/components/kyc/KycProgress';
 import { KycStepCard } from '@/components/kyc/KycStepCard';
@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TierBadge } from '@/components/ui/TierBadge';
-import { toast } from '@/lib/store';
+import { useAuthStore, toast } from '@/lib/store';
+import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
 
 type KycStepStatus = 'pending' | 'verified' | 'rejected';
 
@@ -148,9 +149,12 @@ function BcraResultCard({ result }: { result: BcraCheckResult }) {
 
 export default function KycPage() {
   const queryClient = useQueryClient();
+  const setUser = useAuthStore((s) => s.setUser);
+  const user = useAuthStore((s) => s.user);
   const [bcraLoading, setBcraLoading] = useState(false);
   const [goldLoading, setGoldLoading] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
@@ -195,6 +199,14 @@ export default function KycPage() {
   });
 
   const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['kyc-status'] });
+    queryClient.invalidateQueries({ queryKey: ['kyc-tiers'] });
+  };
+
+  const handlePhoneVerified = async (idToken: string) => {
+    const res = await auth.phoneLink(idToken);
+    toast.success(`Celular ${res.phone} verificado`);
+    if (user) setUser({ ...user, phone: res.phone, phoneVerified: res.phoneVerified });
     queryClient.invalidateQueries({ queryKey: ['kyc-status'] });
     queryClient.invalidateQueries({ queryKey: ['kyc-tiers'] });
   };
@@ -285,7 +297,47 @@ export default function KycPage() {
           </p>
         )}
 
+        <PhoneAuthModal
+          open={phoneModalOpen}
+          onClose={() => setPhoneModalOpen(false)}
+          onVerified={handlePhoneVerified}
+          mode="link"
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Celular — paso 1 */}
+          <div className="bg-white rounded-2xl border border-tradealo-border p-5 flex flex-col gap-3">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-lg bg-tradealo-primary-light flex items-center justify-center text-tradealo-primary">
+                <Smartphone size={20} />
+              </div>
+              <Badge variant={status?.phoneVerified ? 'success' : 'warning'}>
+                {status?.phoneVerified ? 'Verificado' : 'Pendiente'}
+              </Badge>
+            </div>
+            <div>
+              <h4 className="font-heading font-semibold">Celular verificado</h4>
+              <p className="text-sm text-tradealo-text-muted mt-0.5">
+                Verificá tu número con un código SMS. Solo para seguridad de tu cuenta.
+              </p>
+            </div>
+            <div className="mt-auto pt-2">
+              {status?.phoneVerified ? (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 border border-green-200">
+                  <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-green-700 text-sm leading-tight">Verificado</p>
+                    <p className="text-xs text-green-600 mt-0.5 break-all">{status.phone}</p>
+                  </div>
+                </div>
+              ) : (
+                <Button fullWidth onClick={() => setPhoneModalOpen(true)}>
+                  Verificar celular
+                </Button>
+              )}
+            </div>
+          </div>
+
           <KycStepCard
             type="phone_camera"
             status={stepStatus(status?.phoneCamera ?? false)}

@@ -8,8 +8,10 @@ interface Props {
 }
 
 const STEPS = [
+  { key: 'phoneVerified', label: 'Celular verificado' },
   { key: 'phoneCamera', label: 'Foto del DNI' },
   { key: 'selfie', label: 'Selfie con DNI' },
+  { key: 'bcraConsent', label: 'Consulta BCRA' },
 ] as const;
 
 export function KycProgress({ status, className }: Props) {

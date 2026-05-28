@@ -70,6 +70,8 @@ export class KycService {
         accountType: schema.users.accountType,
         silverGrantedAt: schema.users.silverGrantedAt,
         goldGrantedAt: schema.users.goldGrantedAt,
+        phoneVerified: schema.users.phoneVerified,
+        phone: schema.users.phone,
       })
       .from(schema.users)
       .where(eq(schema.users.id, userId))
@@ -87,6 +89,8 @@ export class KycService {
       address: approved.has('address'),
       phoneCamera: approved.has('phone_camera'),
       bcraConsent: approved.has('bcra_consent'),
+      phoneVerified: user?.phoneVerified ?? false,
+      phone: user?.phone ?? null,
       level: tier,
       accountType: user?.accountType ?? 'individual',
       silverGrantedAt: user?.silverGrantedAt ?? null,
@@ -98,6 +102,7 @@ export class KycService {
     const status = await this.getStatus(userId);
 
     const silverSteps = {
+      phoneVerified: status.phoneVerified,
       selfie: status.selfie,
       phoneCamera: status.phoneCamera,
       bcraConsent: status.bcraConsent,
@@ -369,7 +374,7 @@ export class KycService {
     const status = await this.getStatus(userId);
 
     const allSilverSteps =
-      status.selfie && status.phoneCamera && status.bcraConsent;
+      status.phoneVerified && status.selfie && status.phoneCamera && status.bcraConsent;
 
     if (!allSilverSteps) return { upgraded: false };
 

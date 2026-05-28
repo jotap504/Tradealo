@@ -180,6 +180,8 @@ export interface KycStatus {
   address: boolean;
   phoneCamera: boolean;
   bcraConsent: boolean;
+  phoneVerified: boolean;
+  phone: string | null;
   level: number;
   accountType: string;
   silverGrantedAt: string | null;
