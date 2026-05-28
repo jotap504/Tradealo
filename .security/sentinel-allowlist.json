@@ -2,7 +2,8 @@
   "paths": [
     "render.yaml",
     "apps/api/.env.production.example",
-    "apps/api/src/database/database.module.ts"
+    "apps/api/src/database/database.module.ts",
+    "apps/api/src/auth/firebase.service.ts"
   ],
   "domains": [],
   "commands": []

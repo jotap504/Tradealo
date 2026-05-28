@@ -219,6 +219,16 @@ export const auth = {
     return res;
   },
   getMe: () => get<User>('/auth/me'),
+  phoneLogin: async (idToken: string) => {
+    const res = await post<{ user: User; accessToken: string; refreshToken: string }>('/auth/phone/login', { idToken });
+    if (typeof window !== 'undefined') {
+      if (res.accessToken) localStorage.setItem('accessToken', res.accessToken);
+      if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken);
+    }
+    return res;
+  },
+  phoneLink: async (idToken: string) =>
+    post<{ phone: string; phoneVerified: boolean }>('/auth/phone/link', { idToken }),
 };
 
 export interface ListingsQuery {

@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, MapPin, Calendar, Star, Pencil } from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
-import { kyc, reviews, users } from '@/lib/api';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ShieldCheck, MapPin, Calendar, Star, Pencil, Smartphone, CheckCircle } from 'lucide-react';
+import { useAuthStore, toast } from '@/lib/store';
+import { auth, kyc, reviews, users } from '@/lib/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -14,9 +15,21 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { KycProgress } from '@/components/kyc/KycProgress';
 import { formatDate } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
+  const [phoneLinkOpen, setPhoneLinkOpen] = useState(false);
+
+  const handlePhoneLinkVerified = async (idToken: string) => {
+    const res = await auth.phoneLink(idToken);
+    toast.success(`Celular ${res.phone} vinculado correctamente`);
+    const me = await auth.getMe();
+    setUser({ ...user!, ...me });
+    queryClient.invalidateQueries({ queryKey: ['my-profile-reputation'] });
+  };
 
   const { data: kycStatus, isLoading: loadingKyc } = useQuery({
     queryKey: ['kyc-status'],
@@ -118,6 +131,45 @@ export default function ProfilePage() {
       ) : kycStatus ? (
         <KycProgress status={kycStatus} />
       ) : null}
+
+      <PhoneAuthModal
+        open={phoneLinkOpen}
+        onClose={() => setPhoneLinkOpen(false)}
+        onVerified={handlePhoneLinkVerified}
+        mode="link"
+      />
+
+      <Card>
+        <CardBody className="p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-tradealo-primary/10 flex items-center justify-center">
+                <Smartphone size={18} className="text-tradealo-primary" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-tradealo-text">Celular verificado</p>
+                {user?.phone ? (
+                  <p className="text-xs text-tradealo-text-muted flex items-center gap-1">
+                    <CheckCircle size={12} className="text-green-500" />
+                    {user.phone}
+                  </p>
+                ) : (
+                  <p className="text-xs text-tradealo-text-muted">
+                    Vinculá tu celular para mayor seguridad
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPhoneLinkOpen(true)}
+            >
+              {user?.phone ? 'Cambiar' : 'Vincular'}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
 
       <div>
         <h2 className="font-heading font-semibold text-base mb-4">

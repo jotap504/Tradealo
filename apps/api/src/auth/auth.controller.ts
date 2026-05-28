@@ -23,6 +23,7 @@ import {
 import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import type { GoogleProfile } from './strategies/google.strategy';
 import type { Request } from 'express';
+import { PhoneVerifyDto } from './dto/phone.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -63,6 +64,23 @@ export class AuthController {
   }
 
   @Public()
+  @Post('phone/login')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ ttl: 60, limit: 10, keyBy: 'ip' })
+  async phoneLogin(@Body() dto: PhoneVerifyDto) {
+    return this.authService.loginWithPhone(dto.idToken);
+  }
+
+  @Post('phone/link')
+  @HttpCode(HttpStatus.OK)
+  async phoneLink(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PhoneVerifyDto,
+  ) {
+    return this.authService.linkPhone(user.sub, dto.idToken);
+  }
+
+  @Public()
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleAuth() {
@@ -77,8 +95,12 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const result = await this.authService.findOrCreateGoogleUser(req.user);
-    const frontendUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
-    const userEncoded = Buffer.from(JSON.stringify(result.user)).toString('base64url');
+    const frontendUrl = (
+      process.env.FRONTEND_URL ?? 'http://localhost:3000'
+    ).replace(/\/+$/, '');
+    const userEncoded = Buffer.from(JSON.stringify(result.user)).toString(
+      'base64url',
+    );
     res.redirect(
       `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&user=${userEncoded}`,
     );

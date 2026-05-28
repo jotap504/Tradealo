@@ -27,6 +27,8 @@ export interface User {
   bankAccountType?: string;
   bankAccountNumber?: string;
   shopSlug?: string | null;
+  phone?: string;
+  phoneVerified?: boolean;
 }
 
 export interface ListingImage {

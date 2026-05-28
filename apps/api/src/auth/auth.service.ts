@@ -19,6 +19,7 @@ import type { JwtPayload } from '../common/decorators/current-user.decorator';
 import type { RegisterDto } from './dto/register.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { GoogleProfile } from './strategies/google.strategy';
+import { FirebaseService } from './firebase.service';
 
 type DB = NodePgDatabase<typeof schema>;
 
@@ -51,6 +52,7 @@ export class AuthService {
     @Inject(DRIZZLE_TOKEN) private readonly db: DB,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async register(dto: RegisterDto): Promise<TokenPair & { user: UserSummary }> {
@@ -171,7 +173,8 @@ export class AuthService {
 
     const { user, profile } = row;
 
-    if (!user.passwordHash) throw new UnauthorizedException('PASSWORD_LOGIN_NOT_AVAILABLE');
+    if (!user.passwordHash)
+      throw new UnauthorizedException('PASSWORD_LOGIN_NOT_AVAILABLE');
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordValid) throw new UnauthorizedException('PASSWORD_MISMATCH');
 
@@ -314,7 +317,10 @@ export class AuthService {
     const [byGoogleId] = await this.db
       .select({ user: schema.users, profile: schema.userProfiles })
       .from(schema.users)
-      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
       .where(eq(schema.users.googleId, profile.googleId))
       .limit(1);
 
@@ -349,7 +355,10 @@ export class AuthService {
     const [byEmail] = await this.db
       .select({ user: schema.users, profile: schema.userProfiles })
       .from(schema.users)
-      .leftJoin(schema.userProfiles, eq(schema.userProfiles.userId, schema.users.id))
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
       .where(eq(schema.users.email, profile.email))
       .limit(1);
 
@@ -452,14 +461,104 @@ export class AuthService {
     };
   }
 
+  async linkPhone(
+    userId: string,
+    idToken: string,
+  ): Promise<{ phone: string; phoneVerified: boolean }> {
+    let decoded: Awaited<ReturnType<FirebaseService['verifyIdToken']>>;
+    try {
+      decoded = await this.firebaseService.verifyIdToken(idToken);
+    } catch {
+      throw new UnauthorizedException('INVALID_FIREBASE_TOKEN');
+    }
+
+    const phone = decoded.phone_number;
+    if (!phone) throw new UnauthorizedException('FIREBASE_TOKEN_HAS_NO_PHONE');
+
+    const [conflict] = await this.db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.phone, phone))
+      .limit(1);
+
+    if (conflict && conflict.id !== userId) {
+      throw new ConflictException('PHONE_ALREADY_LINKED_TO_ANOTHER_ACCOUNT');
+    }
+
+    await this.db
+      .update(schema.users)
+      .set({ phone, phoneVerified: true })
+      .where(eq(schema.users.id, userId));
+
+    return { phone, phoneVerified: true };
+  }
+
+  async loginWithPhone(
+    idToken: string,
+  ): Promise<TokenPair & { user: UserSummary }> {
+    let decoded: Awaited<ReturnType<FirebaseService['verifyIdToken']>>;
+    try {
+      decoded = await this.firebaseService.verifyIdToken(idToken);
+    } catch {
+      throw new UnauthorizedException('INVALID_FIREBASE_TOKEN');
+    }
+
+    const phone = decoded.phone_number;
+    if (!phone) throw new UnauthorizedException('FIREBASE_TOKEN_HAS_NO_PHONE');
+
+    const rows = await this.db
+      .select({ user: schema.users, profile: schema.userProfiles })
+      .from(schema.users)
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.users.id),
+      )
+      .where(eq(schema.users.phone, phone))
+      .limit(1);
+
+    if (!rows[0]) throw new UnauthorizedException('PHONE_NOT_REGISTERED');
+
+    const { user, profile } = rows[0];
+
+    if (user.status !== 'active')
+      throw new ForbiddenException('ACCOUNT_SUSPENDED');
+
+    await this.db
+      .update(schema.users)
+      .set({ lastLoginAt: new Date(), phoneVerified: true })
+      .where(eq(schema.users.id, user.id));
+
+    const tokens = await this.createTokenPair(
+      user.id,
+      user.email,
+      user.role,
+      user.kycLevel,
+      user.accountType,
+    );
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: profile?.username ?? undefined,
+        role: user.role,
+        kycLevel: user.kycLevel,
+        accountType: user.accountType,
+        referralCode: user.referralCode,
+        createdAt: user.createdAt,
+      },
+    };
+  }
+
   private async generateUniqueUsername(displayName: string): Promise<string> {
-    const base = (displayName || 'usuario')
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/[^a-zA-Z0-9_]/g, '')
-      .toLowerCase()
-      .slice(0, 25) || 'usuario';
+    const base =
+      (displayName || 'usuario')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '')
+        .toLowerCase()
+        .slice(0, 25) || 'usuario';
 
     const [existing] = await this.db
       .select({ id: schema.userProfiles.userId })
