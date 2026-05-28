@@ -224,7 +224,7 @@ export default function AdminTicketDetailPage() {
             <CardBody className="flex flex-col gap-4">
               <h2 className="font-medium text-tradealo-text text-sm">Mensajes</h2>
 
-              <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[480px] overflow-y-auto overflow-x-hidden pr-1">
                 {!ticket.messages?.length ? (
                   <p className="text-sm text-tradealo-text-muted text-center py-8">Sin mensajes aún.</p>
                 ) : (
@@ -233,12 +233,12 @@ export default function AdminTicketDetailPage() {
                       key={msg.id}
                       className={`flex gap-3 ${msg.authorType === 'admin' ? 'flex-row-reverse' : ''}`}
                     >
-                      <div className={`flex-1 rounded-lg px-3 py-2.5 text-sm ${
+                      <div className={`flex-1 min-w-0 rounded-lg px-3 py-2.5 text-sm ${
                         msg.authorType === 'admin'
                           ? 'bg-tradealo-primary/10 text-tradealo-text ml-8'
                           : 'bg-tradealo-border/30 text-tradealo-text mr-8'
                       }`}>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Badge size="sm" variant={msg.authorType === 'admin' ? 'default' : 'warning'}>
                             {msg.authorType === 'admin' ? 'Admin' : 'Usuario'}
                           </Badge>
@@ -246,7 +246,7 @@ export default function AdminTicketDetailPage() {
                             <RelativeTime iso={msg.createdAt} />
                           </span>
                         </div>
-                        <p>{msg.message}</p>
+                        <p className="break-words">{msg.message}</p>
                       </div>
                     </div>
                   ))
@@ -254,9 +254,9 @@ export default function AdminTicketDetailPage() {
               </div>
 
               {isActive && (
-                <div className="flex gap-2 pt-3 border-t border-tradealo-border">
+                <div className="flex flex-col gap-2 pt-3 border-t border-tradealo-border sm:flex-row sm:items-end">
                   <textarea
-                    className="flex-1 rounded-lg border border-tradealo-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
+                    className="flex-1 min-w-0 rounded-lg border border-tradealo-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
                     rows={2}
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
@@ -267,6 +267,7 @@ export default function AdminTicketDetailPage() {
                     loading={sending}
                     onClick={sendReply}
                     disabled={!reply.trim()}
+                    className="shrink-0 sm:self-end"
                   >
                     Enviar
                   </Button>

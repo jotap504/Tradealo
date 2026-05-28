@@ -128,7 +128,7 @@ export default function SupportTicketDetailPage() {
 
       <Card>
         <CardBody className="flex flex-col gap-4">
-          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[480px] overflow-y-auto overflow-x-hidden pr-1">
             {!ticket.messages?.length ? (
               <p className="text-sm text-tradealo-text-muted text-center py-8">
                 Sin mensajes aún.
@@ -142,7 +142,7 @@ export default function SupportTicketDetailPage() {
                     className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                      className={`max-w-[80%] min-w-0 rounded-2xl px-4 py-2.5 text-sm ${
                         isAdmin
                           ? 'bg-tradealo-primary text-white rounded-tr-none'
                           : 'bg-gray-100 text-tradealo-text rounded-tl-none'
@@ -151,7 +151,7 @@ export default function SupportTicketDetailPage() {
                       <p className="text-xs font-medium mb-1 opacity-75">
                         {isAdmin ? 'Soporte Trocalia' : 'Vos'}
                       </p>
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                      <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
                       <p className={`text-xs mt-1.5 opacity-60 ${isAdmin ? 'text-right' : ''}`}>
                         <RelativeTime iso={msg.createdAt} />
                       </p>
@@ -164,9 +164,9 @@ export default function SupportTicketDetailPage() {
           </div>
 
           {isActive ? (
-            <div className="flex gap-2 pt-3 border-t border-tradealo-border">
+            <div className="flex flex-col gap-2 pt-3 border-t border-tradealo-border sm:flex-row sm:items-end">
               <textarea
-                className="flex-1 rounded-xl border border-tradealo-border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
+                className="flex-1 min-w-0 rounded-xl border border-tradealo-border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tradealo-primary-light focus:border-tradealo-primary resize-none"
                 rows={3}
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
@@ -178,7 +178,7 @@ export default function SupportTicketDetailPage() {
                 loading={sending}
                 onClick={sendReply}
                 disabled={!reply.trim()}
-                className="self-end"
+                className="shrink-0 sm:self-end"
               >
                 Enviar
               </Button>

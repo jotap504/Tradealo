@@ -100,12 +100,12 @@ function BcraResultCard({ result }: { result: BcraCheckResult }) {
                     const sit = SITUACION_LABEL[ent.situacion] ?? { label: `Situación ${ent.situacion}`, color: 'text-gray-700' };
                     return (
                       <div key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                           <div className="flex items-center gap-2 min-w-0">
                             <Building2 size={14} className="text-gray-500 shrink-0" />
                             <span className="font-medium text-sm truncate">{ent.entidad}</span>
                           </div>
-                          <span className={`text-xs font-semibold shrink-0 ${sit.color}`}>
+                          <span className={`text-xs font-semibold ${sit.color}`}>
                             Sit. {ent.situacion} — {sit.label}
                           </span>
                         </div>
@@ -228,7 +228,7 @@ export default function KycPage() {
     done ? 'verified' : 'pending';
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 space-y-6 overflow-x-hidden">
       <div>
         <h1 className="font-heading text-2xl font-bold text-tradealo-text">
           Verificación de identidad
@@ -418,19 +418,19 @@ export default function KycPage() {
           {debugOpen ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
         </button>
         {debugOpen && (
-          <div className="p-4 space-y-3 bg-white text-xs font-mono overflow-x-auto">
+          <div className="p-4 space-y-3 bg-white text-xs font-mono">
             {debugFetching && <p className="text-gray-400">Cargando…</p>}
             {debugInfo && (
               <>
                 <div>
                   <p className="text-gray-500 font-sans font-semibold mb-1">Vision Provider</p>
-                  <pre className="bg-gray-50 rounded-lg p-2 whitespace-pre-wrap break-all">{JSON.stringify(debugInfo.visionProvider, null, 2)}</pre>
+                  <pre className="bg-gray-50 rounded-lg p-2 whitespace-pre-wrap break-all overflow-x-auto">{JSON.stringify(debugInfo.visionProvider, null, 2)}</pre>
                 </div>
                 <div>
                   <p className="text-gray-500 font-sans font-semibold mb-1">Verificaciones ({debugInfo.verifications.length})</p>
                   {debugInfo.verifications.length === 0 && <p className="text-gray-400">Sin registros</p>}
                   {debugInfo.verifications.map((v, i) => (
-                    <pre key={i} className="bg-gray-50 rounded-lg p-2 mb-2 whitespace-pre-wrap break-all">{JSON.stringify(v, null, 2)}</pre>
+                    <pre key={i} className="bg-gray-50 rounded-lg p-2 mb-2 whitespace-pre-wrap break-all overflow-x-auto">{JSON.stringify(v, null, 2)}</pre>
                   ))}
                 </div>
                 <button
