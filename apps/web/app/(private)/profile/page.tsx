@@ -15,7 +15,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { KycProgress } from '@/components/kyc/KycProgress';
 import { formatDate } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
+import dynamic from 'next/dynamic';
+
+const PhoneAuthModal = dynamic(
+  () => import('@/components/auth/PhoneAuthModal').then((m) => ({ default: m.PhoneAuthModal })),
+  { ssr: false },
+);
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);

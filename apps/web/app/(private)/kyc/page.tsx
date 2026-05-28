@@ -13,7 +13,12 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TierBadge } from '@/components/ui/TierBadge';
 import { useAuthStore, toast } from '@/lib/store';
-import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
+import dynamic from 'next/dynamic';
+
+const PhoneAuthModal = dynamic(
+  () => import('@/components/auth/PhoneAuthModal').then((m) => ({ default: m.PhoneAuthModal })),
+  { ssr: false },
+);
 
 type KycStepStatus = 'pending' | 'verified' | 'rejected';
 

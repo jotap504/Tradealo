@@ -13,7 +13,12 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore, toast } from '@/lib/store';
 import { auth } from '@/lib/api';
 import { API_URL } from '@/lib/constants';
-import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
+import dynamic from 'next/dynamic';
+
+const PhoneAuthModal = dynamic(
+  () => import('@/components/auth/PhoneAuthModal').then((m) => ({ default: m.PhoneAuthModal })),
+  { ssr: false },
+);
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
