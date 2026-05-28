@@ -18,7 +18,7 @@ import type { User } from '@/types';
 
 const PhoneAuthModal = dynamic(
   () => import('@/components/auth/PhoneAuthModal').then((m) => ({ default: m.PhoneAuthModal })),
-  { ssr: false },
+  { ssr: false, loading: () => null },
 );
 
 const schema = z

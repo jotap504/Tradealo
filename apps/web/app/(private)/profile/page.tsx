@@ -19,7 +19,7 @@ import dynamic from 'next/dynamic';
 
 const PhoneAuthModal = dynamic(
   () => import('@/components/auth/PhoneAuthModal').then((m) => ({ default: m.PhoneAuthModal })),
-  { ssr: false },
+  { ssr: false, loading: () => null },
 );
 
 export default function ProfilePage() {
