@@ -57,10 +57,20 @@ export default function LoginPage() {
   };
 
   const handlePhoneVerified = async (idToken: string) => {
-    const res = await auth.phoneLogin(idToken);
-    setUser(res.user);
-    setInitialized(true);
-    router.push('/dashboard');
+    try {
+      const res = await auth.phoneLogin(idToken);
+      setUser(res.user);
+      setInitialized(true);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      const code = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      if (code === 'PHONE_NOT_REGISTERED') {
+        toast.error('Este número no tiene cuenta. Registrate con email y luego vinculá tu celular desde KYC.');
+      } else {
+        toast.error('Error al iniciar sesión con celular');
+      }
+      throw err;
+    }
   };
 
   if (initialized && user) return null;

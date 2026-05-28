@@ -1,17 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Repeat } from 'lucide-react';
+import { Repeat, Smartphone, ShieldCheck, ArrowRight } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { toast } from '@/lib/store';
+import { useAuthStore, toast } from '@/lib/store';
 import { auth } from '@/lib/api';
 import { API_URL } from '@/lib/constants';
+import { PhoneAuthModal } from '@/components/auth/PhoneAuthModal';
+import type { User } from '@/types';
 
 const schema = z
   .object({
@@ -37,6 +40,10 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const setUser = useAuthStore((s) => s.setUser);
+  const setInitialized = useAuthStore((s) => s.setInitialized);
+  const [registeredUser, setRegisteredUser] = useState<User | null>(null);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
 
   const {
     register,
@@ -46,13 +53,14 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await auth.register({
+      const res = await auth.register({
         email: values.email,
         username: values.username,
         password: values.password,
       });
-      toast.success('¡Cuenta creada! Verificá tu email para continuar.');
-      router.push('/login');
+      setUser(res.user);
+      setInitialized(true);
+      setRegisteredUser(res.user);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -60,6 +68,74 @@ export default function RegisterPage() {
       toast.error(msg);
     }
   };
+
+  const handlePhoneVerified = async (idToken: string) => {
+    const res = await auth.phoneLink(idToken);
+    toast.success(`Celular ${res.phone} verificado`);
+    if (registeredUser) setUser({ ...registeredUser, phone: res.phone, phoneVerified: res.phoneVerified });
+    router.replace('/dashboard');
+  };
+
+  // Step 2 — post-registration phone prompt
+  if (registeredUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-12">
+        <PhoneAuthModal
+          open={phoneModalOpen}
+          onClose={() => setPhoneModalOpen(false)}
+          onVerified={handlePhoneVerified}
+          mode="link"
+        />
+
+        <Card className="w-full max-w-md">
+          <CardBody className="space-y-6 p-8">
+            <div className="text-center">
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-tradealo-primary-light text-tradealo-primary mb-4">
+                <ShieldCheck size={28} />
+              </span>
+              <h1 className="font-heading text-xl font-bold text-tradealo-text">
+                ¡Cuenta creada!
+              </h1>
+              <p className="text-sm text-tradealo-text-muted mt-2">
+                ¿Querés verificar tu celular ahora?<br />
+                Es necesario para alcanzar el nivel <strong>Silver</strong>.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-tradealo-border bg-gray-50 p-4 text-sm text-tradealo-text-muted space-y-1.5">
+              <p className="flex items-center gap-2 text-tradealo-text font-medium">
+                <Smartphone size={15} className="text-tradealo-primary" />
+                ¿Por qué verificar mi celular?
+              </p>
+              <ul className="space-y-1 pl-5 list-disc">
+                <li>Mayor seguridad en tu cuenta</li>
+                <li>Requisito para el nivel Silver de verificación</li>
+                <li>Podés hacerlo más tarde desde KYC</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                fullWidth
+                size="lg"
+                leftIcon={<Smartphone size={16} />}
+                onClick={() => setPhoneModalOpen(true)}
+              >
+                Verificar celular ahora
+              </Button>
+              <button
+                onClick={() => router.replace('/dashboard')}
+                className="flex items-center justify-center gap-1.5 w-full py-2.5 text-sm text-tradealo-text-muted hover:text-tradealo-text transition-colors"
+              >
+                Ahora no
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-12">
@@ -78,7 +154,7 @@ export default function RegisterPage() {
               Crear cuenta
             </h1>
             <p className="text-sm text-tradealo-text-muted mt-1">
-              Publicar tu primera publicación
+              Publicá tu primera publicación
             </p>
           </div>
 
