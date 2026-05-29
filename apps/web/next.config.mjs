@@ -1,3 +1,12 @@
+// Build-time diagnostic — remove after Firebase issue is resolved
+console.log('[next.config] NEXT_PUBLIC vars at build time:', {
+  FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'PRESENT' : 'MISSING',
+  FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'PRESENT' : 'MISSING',
+  FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'PRESENT' : 'MISSING',
+  FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? 'PRESENT' : 'MISSING',
+  ALL_NEXT_PUBLIC: Object.keys(process.env).filter((k) => k.startsWith('NEXT_PUBLIC_')),
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
