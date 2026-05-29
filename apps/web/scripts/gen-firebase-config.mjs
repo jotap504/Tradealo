@@ -14,11 +14,11 @@ const config = {
 const outDir = resolve(__dirname, '..', 'lib');
 mkdirSync(outDir, { recursive: true });
 const outPath = resolve(outDir, 'firebase-config.generated.json');
-writeFileSync(outPath, JSON.stringify(config, null, 2));
 
-console.log(
-  '[gen-firebase-config] wrote',
-  outPath,
-  '— apiKey:',
-  config.apiKey ? `${config.apiKey.slice(0, 8)}...` : 'MISSING',
-);
+if (!config.apiKey) {
+  console.log('[gen-firebase-config] SKIP — no NEXT_PUBLIC_FIREBASE_API_KEY in env, leaving existing file untouched at', outPath);
+  process.exit(0);
+}
+
+writeFileSync(outPath, JSON.stringify(config, null, 2));
+console.log('[gen-firebase-config] WROTE', outPath, '— apiKey:', `${config.apiKey.slice(0, 8)}...`);
