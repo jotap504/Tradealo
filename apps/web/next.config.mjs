@@ -1,6 +1,20 @@
+// Capture at module evaluation time — before Next.js @next/env mutates process.env
+const firebaseEnv = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    FIREBASE_API_KEY: firebaseEnv.apiKey,
+    FIREBASE_AUTH_DOMAIN: firebaseEnv.authDomain,
+    FIREBASE_PROJECT_ID: firebaseEnv.projectId,
+    FIREBASE_APP_ID: firebaseEnv.appId,
+  },
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },
@@ -14,17 +28,6 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'localhost:3001', '*.trocalia.ar'],
     },
-  },
-  webpack(config, { webpack }) {
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        'process.env.NEXT_PUBLIC_FIREBASE_API_KEY': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
-        'process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
-        'process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
-        'process.env.NEXT_PUBLIC_FIREBASE_APP_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
-      })
-    );
-    return config;
   },
   async headers() {
     return [
