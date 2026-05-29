@@ -33,8 +33,20 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const firebaseConfig = JSON.stringify({
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  });
+
   return (
     <html lang="es-AR" className={`${rubik.variable} ${nunito.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: `window.__FIREBASE_CONFIG__=${firebaseConfig}` }}
+        />
+      </head>
       <body className="bg-tradealo-bg text-tradealo-text font-sans antialiased min-h-screen">
         <AppProviders>
           {children}
