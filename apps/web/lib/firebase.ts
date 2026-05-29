@@ -3,9 +3,6 @@ import { getAuth, type Auth } from 'firebase/auth';
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
-// eslint-disable-next-line no-console
-console.log('[Firebase] apiKey present:', !!apiKey, '| first6:', apiKey?.slice(0, 6) ?? 'MISSING');
-
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
 
