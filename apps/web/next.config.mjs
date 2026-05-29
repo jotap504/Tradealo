@@ -1,20 +1,26 @@
-// Capture at module evaluation time — before Next.js @next/env mutates process.env
-const firebaseEnv = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// process.env still has the Vercel vars when next.config.mjs is evaluated
+// but Next.js mutates process.env later. Persist values to a JSON file
+// that gets statically imported by the layout.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '',
 };
+const outDir = resolve(__dirname, 'lib');
+mkdirSync(outDir, { recursive: true });
+writeFileSync(resolve(outDir, 'firebase-config.generated.json'), JSON.stringify(firebaseConfig, null, 2));
+// eslint-disable-next-line no-console
+console.log('[next.config] wrote firebase-config.generated.json — apiKey:', firebaseConfig.apiKey ? 'PRESENT' : 'MISSING');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  env: {
-    FIREBASE_API_KEY: firebaseEnv.apiKey,
-    FIREBASE_AUTH_DOMAIN: firebaseEnv.authDomain,
-    FIREBASE_PROJECT_ID: firebaseEnv.projectId,
-    FIREBASE_APP_ID: firebaseEnv.appId,
-  },
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },

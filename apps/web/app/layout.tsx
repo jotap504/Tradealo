@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Rubik, Nunito_Sans } from 'next/font/google';
 import { AppProviders } from '@/components/providers/AppProviders';
+import firebaseConfigJson from '@/lib/firebase-config.generated.json';
 import './globals.css';
 
 const rubik = Rubik({
@@ -33,12 +34,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const firebaseConfig = JSON.stringify({
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  });
+  const firebaseConfig = JSON.stringify(firebaseConfigJson);
 
   return (
     <html lang="es-AR" className={`${rubik.variable} ${nunito.variable}`}>
