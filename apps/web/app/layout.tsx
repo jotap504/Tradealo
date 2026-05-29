@@ -35,7 +35,6 @@ export const metadata: Metadata = {
 };
 
 function readFirebaseConfig() {
-  // 1. Try runtime process.env first (works when env vars survive to render time)
   const fromEnv = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -44,31 +43,57 @@ function readFirebaseConfig() {
   };
   if (fromEnv.apiKey) return fromEnv;
 
-  // 2. Fallback: read the file written by the prebuild script.
-  // Using readFileSync at render time bypasses webpack's JSON-import cache.
-  try {
-    const path = resolve(process.cwd(), 'apps/web/lib/firebase-config.generated.json');
-    return JSON.parse(readFileSync(path, 'utf-8'));
-  } catch {
+  const candidatePaths = [
+    resolve(process.cwd(), 'apps/web/lib/firebase-config.generated.json'),
+    resolve(process.cwd(), 'lib/firebase-config.generated.json'),
+    resolve(process.cwd(), '.next/server/apps/web/lib/firebase-config.generated.json'),
+  ];
+  for (const path of candidatePaths) {
     try {
-      const path = resolve(process.cwd(), 'lib/firebase-config.generated.json');
       return JSON.parse(readFileSync(path, 'utf-8'));
     } catch {
-      return { apiKey: '', authDomain: '', projectId: '', appId: '' };
+      // try next
     }
   }
+  return { apiKey: '', authDomain: '', projectId: '', appId: '' };
+}
+
+function readDiagnostic() {
+  const nextPublicKeys = Object.keys(process.env).filter((k) => k.startsWith('NEXT_PUBLIC_'));
+  const cwd = process.cwd();
+  let fileFound: string | null = null;
+  for (const p of [
+    resolve(cwd, 'apps/web/lib/firebase-config.generated.json'),
+    resolve(cwd, 'lib/firebase-config.generated.json'),
+  ]) {
+    try {
+      readFileSync(p, 'utf-8');
+      fileFound = p;
+      break;
+    } catch {
+      // continue
+    }
+  }
+  return {
+    builtAt: '2026-05-29T_BUILD_MARKER_78e7968_DEBUG_',
+    cwd,
+    apiKeyEnvLen: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length ?? 0,
+    nextPublicKeys,
+    fileFound,
+  };
 }
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const firebaseConfig = JSON.stringify(readFirebaseConfig());
+  const diagnostic = JSON.stringify(readDiagnostic());
 
   return (
     <html lang="es-AR" className={`${rubik.variable} ${nunito.variable}`}>
       <head>
         <script
-          dangerouslySetInnerHTML={{ __html: `window.__FIREBASE_CONFIG__=${firebaseConfig}` }}
+          dangerouslySetInnerHTML={{ __html: `window.__FIREBASE_CONFIG__=${firebaseConfig};window.__FIREBASE_DIAGNOSTIC__=${diagnostic}` }}
         />
       </head>
       <body className="bg-tradealo-bg text-tradealo-text font-sans antialiased min-h-screen">
