@@ -2,7 +2,6 @@ import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
 
@@ -16,5 +15,8 @@ if (apiKey) {
   firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
   firebaseAuth = getAuth(firebaseApp);
 }
+
+// eslint-disable-next-line no-console
+console.log('[Firebase] init:', { apiKey: apiKey ? apiKey.slice(0, 8) + '...' : 'MISSING', firebaseAuth: !!firebaseAuth });
 
 export { firebaseAuth };
