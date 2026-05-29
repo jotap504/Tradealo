@@ -13,7 +13,7 @@ const config = {
 
 const outDir = resolve(__dirname, '..', 'lib');
 mkdirSync(outDir, { recursive: true });
-const outPath = resolve(outDir, 'firebase-config.generated.json');
+const outPath = resolve(outDir, 'firebase-config.runtime.json');
 
 if (!config.apiKey) {
   console.log('[gen-firebase-config] SKIP — no NEXT_PUBLIC_FIREBASE_API_KEY in env, leaving existing file untouched at', outPath);

@@ -19,7 +19,7 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000', 'localhost:3001', '*.trocalia.ar'],
     },
     outputFileTracingIncludes: {
-      '/**/*': ['./lib/firebase-config.generated.json'],
+      '/**/*': ['./lib/firebase-config.runtime.json'],
     },
   },
   async headers() {

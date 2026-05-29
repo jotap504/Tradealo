@@ -44,9 +44,9 @@ function readFirebaseConfig() {
   if (fromEnv.apiKey) return fromEnv;
 
   const candidatePaths = [
-    resolve(process.cwd(), 'apps/web/lib/firebase-config.generated.json'),
-    resolve(process.cwd(), 'lib/firebase-config.generated.json'),
-    resolve(process.cwd(), '.next/server/apps/web/lib/firebase-config.generated.json'),
+    resolve(process.cwd(), 'apps/web/lib/firebase-config.runtime.json'),
+    resolve(process.cwd(), 'lib/firebase-config.runtime.json'),
+    resolve(process.cwd(), '.next/server/apps/web/lib/firebase-config.runtime.json'),
   ];
   for (const path of candidatePaths) {
     try {
@@ -64,8 +64,8 @@ function readDiagnostic() {
   let fileFound: string | null = null;
   let fileContent: string | null = null;
   for (const p of [
-    resolve(cwd, 'apps/web/lib/firebase-config.generated.json'),
-    resolve(cwd, 'lib/firebase-config.generated.json'),
+    resolve(cwd, 'apps/web/lib/firebase-config.runtime.json'),
+    resolve(cwd, 'lib/firebase-config.runtime.json'),
   ]) {
     try {
       const c = readFileSync(p, 'utf-8');
@@ -77,7 +77,7 @@ function readDiagnostic() {
     }
   }
   return {
-    builtAt: 'COMMIT_8b2732a_REV2',
+    builtAt: 'COMMIT_runtime_path_REV3',
     cwd,
     apiKeyEnvLen: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length ?? 0,
     nextPublicKeys,
