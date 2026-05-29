@@ -156,6 +156,7 @@ export default function KycPage() {
   const queryClient = useQueryClient();
   const setUser = useAuthStore((s) => s.setUser);
   const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
   const [bcraLoading, setBcraLoading] = useState(false);
   const [goldLoading, setGoldLoading] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
@@ -164,6 +165,7 @@ export default function KycPage() {
   const { data: status, isLoading } = useQuery({
     queryKey: ['kyc-status'],
     queryFn: () => kyc.getKycStatus(),
+    enabled: initialized && !!user,
     staleTime: 15_000,
     refetchInterval: (query) => {
       const d = query.state.data;
@@ -176,6 +178,7 @@ export default function KycPage() {
   const { data: tiers } = useQuery({
     queryKey: ['kyc-tiers'],
     queryFn: () => kyc.getTierProgress(),
+    enabled: initialized && !!user,
     staleTime: 30_000,
     refetchInterval: (query) => {
       const d = query.state.data;
@@ -187,8 +190,8 @@ export default function KycPage() {
   const { data: bcraResult, refetch: refetchBcra } = useQuery({
     queryKey: ['kyc-bcra-result'],
     queryFn: () => kyc.getBcraResult(),
+    enabled: initialized && !!user,
     staleTime: 30_000,
-    // Poll while bcra_consent is pending (waiting for async BCRA check to complete)
     refetchInterval: (query) => {
       if (query.state.data) return false;
       return status?.bcraConsent === false ? 5_000 : false;
