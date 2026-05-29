@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Rubik, Nunito_Sans } from 'next/font/google';
 import { AppProviders } from '@/components/providers/AppProviders';
-import firebaseConfigJson from '@/lib/firebase-config.generated.json';
 import './globals.css';
+
+export const dynamic = 'force-dynamic';
 
 const rubik = Rubik({
   subsets: ['latin'],
@@ -31,10 +34,35 @@ export const metadata: Metadata = {
   },
 };
 
+function readFirebaseConfig() {
+  // 1. Try runtime process.env first (works when env vars survive to render time)
+  const fromEnv = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  };
+  if (fromEnv.apiKey) return fromEnv;
+
+  // 2. Fallback: read the file written by the prebuild script.
+  // Using readFileSync at render time bypasses webpack's JSON-import cache.
+  try {
+    const path = resolve(process.cwd(), 'apps/web/lib/firebase-config.generated.json');
+    return JSON.parse(readFileSync(path, 'utf-8'));
+  } catch {
+    try {
+      const path = resolve(process.cwd(), 'lib/firebase-config.generated.json');
+      return JSON.parse(readFileSync(path, 'utf-8'));
+    } catch {
+      return { apiKey: '', authDomain: '', projectId: '', appId: '' };
+    }
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const firebaseConfig = JSON.stringify(firebaseConfigJson);
+  const firebaseConfig = JSON.stringify(readFirebaseConfig());
 
   return (
     <html lang="es-AR" className={`${rubik.variable} ${nunito.variable}`}>
