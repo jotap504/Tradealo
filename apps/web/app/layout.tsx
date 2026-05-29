@@ -62,24 +62,27 @@ function readDiagnostic() {
   const nextPublicKeys = Object.keys(process.env).filter((k) => k.startsWith('NEXT_PUBLIC_'));
   const cwd = process.cwd();
   let fileFound: string | null = null;
+  let fileContent: string | null = null;
   for (const p of [
     resolve(cwd, 'apps/web/lib/firebase-config.generated.json'),
     resolve(cwd, 'lib/firebase-config.generated.json'),
   ]) {
     try {
-      readFileSync(p, 'utf-8');
+      const c = readFileSync(p, 'utf-8');
       fileFound = p;
+      fileContent = c.slice(0, 120);
       break;
     } catch {
       // continue
     }
   }
   return {
-    builtAt: '2026-05-29T_BUILD_MARKER_78e7968_DEBUG_',
+    builtAt: 'COMMIT_8b2732a_REV2',
     cwd,
     apiKeyEnvLen: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length ?? 0,
     nextPublicKeys,
     fileFound,
+    fileContentPreview: fileContent,
   };
 }
 
