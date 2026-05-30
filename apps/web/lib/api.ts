@@ -682,6 +682,7 @@ export interface UpdateShopProfileDto {
   locationText?: string;
   metaTitle?: string;
   metaDescription?: string;
+  autoPublishViaAgent?: boolean;
 }
 
 export const shop = {
@@ -744,6 +745,28 @@ export const shopChatbot = {
     ),
 };
 
+export interface ApiTokenSummary {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  lastUsedAt: string | null;
+  createdAt: string;
+  revokedAt: string | null;
+}
+
+export interface CreatedApiToken extends ApiTokenSummary {
+  /** Plaintext token, only returned once at creation. */
+  token: string;
+}
+
+export const apiTokens = {
+  list: () => get<ApiTokenSummary[]>('/me/api-tokens'),
+  create: (name: string, scopes: string[] = []) =>
+    post<CreatedApiToken>('/me/api-tokens', { name, scopes }),
+  revoke: (id: string) => del<{ ok: true }>(`/me/api-tokens/${id}`),
+};
+
 export default {
   auth,
   listings,
@@ -765,4 +788,5 @@ export default {
   shop,
   shopSubscription,
   shopChatbot,
+  apiTokens,
 };

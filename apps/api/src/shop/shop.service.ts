@@ -268,6 +268,8 @@ export class ShopService {
       heroConfig?: Record<string, unknown>;
       footerTemplate?: string;
       footerConfig?: Record<string, unknown>;
+      primaryColor?: string;
+      autoPublishViaAgent?: boolean;
     },
   ) {
     await this.ensureShopExists(userId);

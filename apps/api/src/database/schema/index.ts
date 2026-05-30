@@ -18,3 +18,4 @@ export * from './disputes.schema';
 export * from './shop.schema';
 export * from './shop-subscription.schema';
 export * from './shop-analytics.schema';
+export * from './api-tokens.schema';

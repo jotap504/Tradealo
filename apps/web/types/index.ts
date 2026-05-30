@@ -425,6 +425,7 @@ export interface Shop {
   footerTemplate?: string | null;
   footerConfig?: Record<string, unknown> | null;
   primaryColor?: string | null;
+  autoPublishViaAgent?: boolean;
   announcementText: string | null;
   announcementExpiresAt: string | null;
   isPublished: boolean;

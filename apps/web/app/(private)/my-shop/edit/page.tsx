@@ -105,6 +105,7 @@ export default function EditShopPage() {
     twitter: '',
     website: '',
   });
+  const [autoPublishViaAgent, setAutoPublishViaAgent] = useState(false);
 
   useEffect(() => {
     shopApi.getMyShop().then((s: Shop) => {
@@ -127,6 +128,7 @@ export default function EditShopPage() {
         website: sl.website ?? '',
       });
       setBannerUrl(s.bannerUrl ?? null);
+      setAutoPublishViaAgent(s.autoPublishViaAgent ?? false);
       setLoading(false);
     }).catch(() => {
       router.push('/my-shop');
@@ -193,6 +195,7 @@ export default function EditShopPage() {
           twitter: form.twitter || undefined,
           website: form.website || undefined,
         },
+        autoPublishViaAgent,
       });
       setSuccess('¡Cambios guardados!');
     } catch (err) {
@@ -398,6 +401,35 @@ export default function EditShopPage() {
               onChange={(e) => setField('metaDescription', e.target.value)}
             />
           </Field>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-semibold text-gray-800 border-b pb-2">Integración con agentes IA</h2>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoPublishViaAgent}
+              onChange={(e) => setAutoPublishViaAgent(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800">
+                Autopublicar listings que cree un agente IA
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Si está activo, los listings que cargue tu agente vía MCP se publican
+                directo en el catálogo público. Si no, quedan como borrador para que los
+                revises en{' '}
+                <Link href="/my-shop/listings" className="text-teal-600 hover:underline">
+                  /my-shop/listings
+                </Link>{' '}
+                antes de publicarlos. Gestioná tus tokens en{' '}
+                <Link href="/my-shop/integrations" className="text-teal-600 hover:underline">
+                  Agentes IA (MCP)
+                </Link>.
+              </p>
+            </div>
+          </label>
         </section>
 
         <button

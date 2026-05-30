@@ -25,6 +25,8 @@ import { SupportModule } from './support/support.module';
 import { ShopModule } from './shop/shop.module';
 import { ShopSubscriptionModule } from './shop-subscription/shop-subscription.module';
 import { ShopChatbotModule } from './shop-chatbot/shop-chatbot.module';
+import { ApiTokensModule } from './api-tokens/api-tokens.module';
+import { McpShopModule } from './mcp-shop/mcp-shop.module';
 import { AiModule } from './ai/ai.module';
 // import { SearchModule } from './search/search.module'
 // import { ModerationModule } from './moderation/moderation.module'
@@ -61,6 +63,8 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     ShopModule,
     ShopSubscriptionModule,
     ShopChatbotModule,
+    ApiTokensModule,
+    McpShopModule,
     AiModule,
   ],
   providers: [

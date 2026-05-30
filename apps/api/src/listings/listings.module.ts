@@ -12,6 +12,6 @@ import { OrdersModule } from '../orders/orders.module';
   imports: [WalletModule, MessagingModule, NotificationsModule, OrdersModule],
   controllers: [ListingsController, ListingImagesController],
   providers: [ListingsService, ListingImagesService],
-  exports: [ListingsService],
+  exports: [ListingsService, ListingImagesService],
 })
 export class ListingsModule {}

@@ -59,6 +59,9 @@ export const sellerShops = pgTable(
     }),
     isPublished: boolean('is_published').notNull().default(false),
     isActive: boolean('is_active').notNull().default(true),
+    autoPublishViaAgent: boolean('auto_publish_via_agent')
+      .notNull()
+      .default(false),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
