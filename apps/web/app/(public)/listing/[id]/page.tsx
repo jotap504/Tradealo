@@ -13,6 +13,10 @@ import { ListingQuestions } from '@/components/listing/ListingQuestions';
 import { ShareButton } from '@/components/listing/ShareButton';
 import { FavoriteButton } from '@/components/listing/FavoriteButton';
 import { ReportButton } from '@/components/listing/ReportButton';
+import {
+  listingProductSchema,
+  pruneUndefined,
+} from '@/lib/structured-data';
 
 async function getSellerShopSlug(username: string): Promise<string | null> {
   try {
@@ -84,8 +88,14 @@ export default async function ListingDetailPage({
       ? 'Reacondicionado'
       : 'Usado';
 
+  const productJsonLd = pruneUndefined(listingProductSchema(listing));
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left column 60% */}
         <div className="flex-1 min-w-0 space-y-6">

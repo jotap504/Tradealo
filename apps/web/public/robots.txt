@@ -1,0 +1,42 @@
+# Trocalia — robots.txt
+# Allow all major search and AI/LLM crawlers. Block private routes.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /messages
+Disallow: /notifications
+Disallow: /profile
+Disallow: /profile/edit
+Disallow: /wallet
+Disallow: /kyc
+Disallow: /support
+Disallow: /my-shop
+Disallow: /my-shop/
+
+# Explicit AI crawler permissions (some respect named UAs over wildcard)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+Sitemap: https://trocalia.com.ar/sitemap.xml

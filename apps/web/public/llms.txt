@@ -1,0 +1,39 @@
+# Trocalia
+
+> Trocalia es un marketplace argentino de compra-venta e intercambio entre vecinos. Conecta a personas que quieren vender productos usados, nuevos o intercambiar con otras de su zona, principalmente en Argentina.
+
+## Información clave
+
+- Dominio: trocalia.com.ar
+- Moneda principal: ARS (también acepta USD para algunos productos)
+- Idioma: español (es-AR)
+- País: Argentina
+
+## Recursos para agentes IA
+
+- [Catálogo de productos (JSON-LD)](https://tradealo.onrender.com/api/v1/feed/products.json): feed paginado de todos los listings activos en formato Schema.org `ItemList`.
+- [Catálogo Google Merchant XML](https://tradealo.onrender.com/api/v1/feed/products.xml): mismo catálogo en formato compatible con Google Merchant / Universal Cart.
+- [Lista de tiendas activas](https://tradealo.onrender.com/api/v1/feed/shops.json): vendedores con suscripción premium ("Mi Tienda").
+- [MCP server público read-only](https://tradealo.onrender.com/api/v1/mcp/public): expone tools `search_listings`, `get_listing`, `list_categories`, `get_shop`. No requiere autenticación. Rate limit 600 req/h por IP.
+
+## API pública (REST)
+
+- `GET /api/v1/listings` — búsqueda de listings con filtros (q, categoryId, condition, minPrice, maxPrice, city, province, currency, saleType, sort). Paginación por cursor.
+- `GET /api/v1/listings/:id` — detalle de un listing.
+- `GET /api/v1/categories/tree` — árbol jerárquico de categorías.
+- `GET /api/v1/shops/by-username/:username` — datos de una tienda específica.
+- `GET /api/v1/search` — búsqueda general.
+
+## Páginas del sitio relevantes para indexación
+
+- `/listings` — catálogo público completo con filtros.
+- `/listing/:id` — detalle de cada producto.
+- `/shop/:username` — página de cada tienda premium.
+
+## Para vendedores que usan agentes IA
+
+Los vendedores con suscripción "Mi Tienda" activa pueden conectar agentes IA (Claude, ChatGPT) vía un MCP server autenticado en `POST /api/v1/mcp/shop`. Requiere un API token largo plazo (formato `trc_*`) generado desde `/my-shop/integrations`.
+
+## Términos
+
+Los datos del catálogo están disponibles para indexación y descubrimiento por agentes IA. La compra/venta efectiva sucede entre las personas en Trocalia.

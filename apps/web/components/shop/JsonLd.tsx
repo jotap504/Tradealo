@@ -22,19 +22,38 @@ function buildSameAs(social: PublicShop['socialLinks']): string[] {
 function shopSchema(shop: PublicShop) {
   const image = shop.ogImageUrl ?? shop.bannerUrl ?? shop.logoUrl ?? undefined;
   const sameAs = buildSameAs(shop.socialLinks);
+  const shopUrl = `${APP_URL}/shop/${shop.username ?? shop.slug}`;
+
+  const itemListElements = (shop.pinnedListings ?? [])
+    .filter((p) => p.listing)
+    .slice(0, 10)
+    .map((p, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      url: `${shopUrl}/listing/${p.listing!.id}`,
+      name: p.listing!.title,
+    }));
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Store',
     name: shop.shopName ?? shop.username,
     description: shop.metaDescription ?? shop.tagline ?? shop.about?.slice(0, 160) ?? undefined,
-    url: `${APP_URL}/shop/${shop.username ?? shop.slug}`,
+    url: shopUrl,
     image,
     telephone: shop.whatsappBusiness ?? undefined,
     address: shop.locationText
       ? { '@type': 'PostalAddress', addressLocality: shop.locationText, addressCountry: 'AR' }
       : undefined,
+    parentOrganization: { '@type': 'Organization', name: 'Trocalia', url: APP_URL },
     ...(sameAs.length > 0 && { sameAs }),
+    ...(itemListElements.length > 0 && {
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: `Productos destacados de ${shop.shopName ?? shop.username}`,
+        itemListElement: itemListElements,
+      },
+    }),
   };
 }
 
