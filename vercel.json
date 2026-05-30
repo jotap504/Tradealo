@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node apps/web/scripts/gen-firebase-config.mjs && npx pnpm@10 --filter web run build",
+  "buildCommand": "npx pnpm@10 --filter web run build",
   "outputDirectory": "apps/web/.next",
   "installCommand": "npx pnpm@10 install --frozen-lockfile",
   "framework": "nextjs",

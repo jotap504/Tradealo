@@ -4,8 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "dev": "node scripts/gen-firebase-config.mjs && next dev",
-    "prebuild": "node scripts/gen-firebase-config.mjs",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

@@ -1,7 +1,3 @@
-// Firebase config is written by apps/web/scripts/gen-firebase-config.mjs
-// BEFORE next build runs (see vercel.json buildCommand). This avoids the
-// race condition where webpack reads the JSON before next.config.mjs writes.
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -17,9 +13,6 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'localhost:3001', '*.trocalia.ar'],
-    },
-    outputFileTracingIncludes: {
-      '/**/*': ['./lib/firebase-config.runtime.json'],
     },
   },
   async headers() {
