@@ -12,7 +12,9 @@ export function MessageBell() {
   const { data } = useQuery({
     queryKey: ['messages-unread-count'],
     queryFn: () => conversations.unreadCount(),
-    refetchInterval: 30_000,
+    refetchInterval: 90_000,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
     enabled: !!user,
   });
 

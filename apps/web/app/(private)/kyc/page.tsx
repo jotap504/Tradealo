@@ -166,12 +166,13 @@ export default function KycPage() {
     queryKey: ['kyc-status'],
     queryFn: () => kyc.getKycStatus(),
     enabled: initialized && !!user,
-    staleTime: 15_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => {
       const d = query.state.data;
       if (!d) return false;
       const allDone = d.phoneCamera && d.selfie && d.bcraConsent && d.phoneVerified;
-      return allDone ? false : 15_000;
+      return allDone ? false : 30_000;
     },
   });
 
@@ -179,23 +180,25 @@ export default function KycPage() {
     queryKey: ['kyc-tiers'],
     queryFn: () => kyc.getTierProgress(),
     enabled: initialized && !!user,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => {
       const d = query.state.data;
       if (!d) return false;
-      return d.silver.granted && d.gold.granted ? false : 30_000;
+      return d.silver.granted && d.gold.granted ? false : 60_000;
     },
   });
 
+  // BCRA: solo se fetchea DESPUÉS de que el usuario dio consentimiento.
+  // Una vez dado, polleamos cada 8s brevemente mientras el backend hace
+  // el fetch async al BCRA, y paramos en cuanto llega el resultado.
   const { data: bcraResult, refetch: refetchBcra } = useQuery({
     queryKey: ['kyc-bcra-result'],
     queryFn: () => kyc.getBcraResult(),
-    enabled: initialized && !!user,
-    staleTime: 30_000,
-    refetchInterval: (query) => {
-      if (query.state.data) return false;
-      return status?.bcraConsent === false ? 5_000 : false;
-    },
+    enabled: initialized && !!user && status?.bcraConsent === true,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) => (query.state.data ? false : 8_000),
   });
 
   const { data: debugInfo, refetch: refetchDebug, isFetching: debugFetching } = useQuery({
