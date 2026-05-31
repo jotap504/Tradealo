@@ -130,6 +130,17 @@ export class ShopController {
     return this.shopService.updateShopProfile(user.sub, dto);
   }
 
+  @Patch('me/agent-purchase')
+  setAgentPurchasable(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { enabled: boolean },
+  ) {
+    return this.shopService.setAgentPurchasableForAllListings(
+      user.sub,
+      Boolean(body.enabled),
+    );
+  }
+
   @Post('me/logo')
   uploadLogo(@CurrentUser() user: JwtPayload, @Body() dto: UploadImageDto) {
     return this.shopService.uploadLogo(user.sub, dto.data, dto.mimetype);

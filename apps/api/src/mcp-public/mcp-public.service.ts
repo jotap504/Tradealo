@@ -162,6 +162,7 @@ export class McpPublicService {
       images: (listing.images ?? []).map((i) => i.url),
       url: this.listingUrl(listing.id),
       seller: listing.seller,
+      agentPurchasable: listing.agentPurchasable,
     };
   }
 

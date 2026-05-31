@@ -77,6 +77,7 @@ export const listings = pgTable(
     saleType: text('sale_type').notNull().default('contact'),
     stock: integer('stock'),
     desiredPrice: integer('desired_price'),
+    agentPurchasable: boolean('agent_purchasable').notNull().default(false),
 
     location: geometryPoint('location'),
     locationText: varchar('location_text', { length: 200 }),

@@ -722,6 +722,11 @@ export const shop = {
     patch<{ ok: true }>('/shops/me/announcement', dto),
   publish: () => post<{ ok: true }>('/shops/me/publish'),
   unpublish: () => post<{ ok: true }>('/shops/me/unpublish'),
+  setAgentPurchasable: (enabled: boolean) =>
+    patch<{ ok: true; updated: number; enabled: boolean }>(
+      '/shops/me/agent-purchase',
+      { enabled },
+    ),
   getAnalytics: (days?: number) =>
     get<ShopAnalytics>('/shops/me/analytics', { params: { days } }),
 };

@@ -301,6 +301,25 @@ export class ShopService {
     return updated;
   }
 
+  /**
+   * Bulk-enables (or disables) agent_purchasable on every active listing owned
+   * by `userId`. Used by the /my-shop/edit "Permitir compra por agentes IA"
+   * toggle. Returns the count of updated rows.
+   */
+  async setAgentPurchasableForAllListings(userId: string, enabled: boolean) {
+    const result = await this.db
+      .update(schema.listings)
+      .set({ agentPurchasable: enabled, updatedAt: new Date() })
+      .where(
+        and(
+          eq(schema.listings.userId, userId),
+          eq(schema.listings.status, 'active'),
+        ),
+      )
+      .returning({ id: schema.listings.id });
+    return { ok: true, updated: result.length, enabled };
+  }
+
   // ─── Logo / Banner upload ─────────────────────────────────────────────────────
 
   async uploadLogo(userId: string, data: string, mimetype: string) {

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Header,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Header, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CatalogFeedService } from './catalog-feed.service';
 import { Public } from '../common/decorators/public.decorator';
@@ -30,7 +24,10 @@ export class CatalogFeedController {
     const xml = this.service.productsToGoogleMerchantXml(items);
     res
       .header('Content-Type', 'application/xml; charset=utf-8')
-      .header('Cache-Control', 'public, max-age=600, stale-while-revalidate=3600')
+      .header(
+        'Cache-Control',
+        'public, max-age=600, stale-while-revalidate=3600',
+      )
       .send(xml);
   }
 

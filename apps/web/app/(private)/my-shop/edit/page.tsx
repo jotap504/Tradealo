@@ -106,6 +106,7 @@ export default function EditShopPage() {
     website: '',
   });
   const [autoPublishViaAgent, setAutoPublishViaAgent] = useState(false);
+  const [agentPurchasable, setAgentPurchasable] = useState(false);
 
   useEffect(() => {
     shopApi.getMyShop().then((s: Shop) => {
@@ -427,6 +428,41 @@ export default function EditShopPage() {
                 <Link href="/my-shop/integrations" className="text-teal-600 hover:underline">
                   Agentes IA (MCP)
                 </Link>.
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer pt-2 border-t">
+            <input
+              type="checkbox"
+              checked={agentPurchasable}
+              onChange={async (e) => {
+                const next = e.target.checked;
+                setAgentPurchasable(next);
+                try {
+                  const res = await shopApi.setAgentPurchasable(next);
+                  setSuccess(
+                    next
+                      ? `Compra agéntica habilitada en ${res.updated} listings`
+                      : `Compra agéntica deshabilitada en ${res.updated} listings`,
+                  );
+                } catch {
+                  setAgentPurchasable(!next);
+                  setGenericError('No se pudo actualizar. Probá de nuevo.');
+                }
+              }}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800">
+                Permitir que agentes IA compren mis listings
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Si está activo, agentes IA externos (Google Agentic Cart, etc.) pueden
+                iniciar compras de cualquiera de tus listings activos vía{' '}
+                <code className="font-mono">/api/v1/agent-cart</code>. El comprador completa
+                el pago en MercadoPago como siempre. Esta opción se aplica a todos tus
+                listings activos al mismo tiempo.
               </p>
             </div>
           </label>

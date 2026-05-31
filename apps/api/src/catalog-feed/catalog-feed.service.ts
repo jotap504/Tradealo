@@ -44,6 +44,7 @@ export interface FeedProduct {
   province: string | null;
   publishedAt: Date | null;
   updatedAt: Date | null;
+  agentPurchasable: boolean;
 }
 
 @Injectable()
@@ -76,6 +77,7 @@ export class CatalogFeedService {
         publishedAt: listingsTable.publishedAt,
         updatedAt: listingsTable.updatedAt,
         createdAt: listingsTable.createdAt,
+        agentPurchasable: listingsTable.agentPurchasable,
         categoryName: schema.categories.name,
       })
       .from(listingsTable)
@@ -92,7 +94,9 @@ export class CatalogFeedService {
 
     const ids = slice.map((r) => r.id);
     const imagesById =
-      ids.length > 0 ? await this.fetchPrimaryImages(ids) : new Map<string, string>();
+      ids.length > 0
+        ? await this.fetchPrimaryImages(ids)
+        : new Map<string, string>();
 
     const items: FeedProduct[] = slice.map((r) => ({
       id: r.id,
@@ -108,6 +112,7 @@ export class CatalogFeedService {
       province: r.province,
       publishedAt: r.publishedAt,
       updatedAt: r.updatedAt,
+      agentPurchasable: r.agentPurchasable,
     }));
 
     const lastCreatedAt = slice[slice.length - 1]?.createdAt ?? null;
@@ -182,6 +187,13 @@ export class CatalogFeedService {
               CONDITION_SCHEMA[p.condition] ??
               'https://schema.org/UsedCondition',
             areaServed: { '@type': 'Country', name: 'Argentina' },
+            additionalProperty: [
+              {
+                '@type': 'PropertyValue',
+                name: 'agentPayment',
+                value: p.agentPurchasable ? 'yes' : 'no',
+              },
+            ],
           },
         },
       })),
@@ -203,6 +215,7 @@ export class CatalogFeedService {
       <g:price>${Number(p.price).toFixed(2)} ${escapeXml(p.currency)}</g:price>
       ${p.category ? `<g:product_type>${escapeXml(p.category)}</g:product_type>` : ''}
       ${p.city ? `<g:item_group_id>${escapeXml(p.city)}</g:item_group_id>` : ''}
+      <g:agent_payment>${p.agentPurchasable ? 'yes' : 'no'}</g:agent_payment>
     </item>`;
       })
       .join('\n');
@@ -220,7 +233,9 @@ ${itemsXml}
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  private async fetchPrimaryImages(listingIds: string[]): Promise<Map<string, string>> {
+  private async fetchPrimaryImages(
+    listingIds: string[],
+  ): Promise<Map<string, string>> {
     if (listingIds.length === 0) return new Map();
     const rows = await this.db
       .select({
