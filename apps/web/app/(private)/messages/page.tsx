@@ -22,16 +22,16 @@ export default function MessagesPage() {
   const list = data?.data ?? [];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="mx-auto max-w-3xl w-full px-3 sm:px-6 py-8 overflow-x-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 mb-6">
         <button
           onClick={() => router.push('/dashboard')}
-          className="p-2 rounded-lg hover:bg-gray-100 text-tradealo-text-muted"
+          className="p-2 rounded-lg hover:bg-gray-100 text-tradealo-text-muted shrink-0"
           aria-label="Volver"
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="font-heading text-2xl font-bold text-tradealo-text">
+        <h1 className="font-heading text-xl sm:text-2xl font-bold text-tradealo-text truncate">
           Mensajes
         </h1>
       </div>
@@ -80,20 +80,22 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
         }
       }}
       className={cn(
-        'flex items-center gap-4 p-4 rounded-xl border border-tradealo-border bg-white hover:bg-gray-50 transition-colors',
+        'flex items-center gap-2 sm:gap-4 p-2.5 sm:p-4 rounded-xl border border-tradealo-border bg-white hover:bg-gray-50 transition-colors min-w-0 overflow-hidden',
         c.unreadCount > 0 && 'border-tradealo-primary/30 bg-teal-50/40',
       )}
     >
-      <Avatar
-        src={c.otherParticipant.avatarUrl ?? undefined}
-        username={c.otherParticipant.username ?? c.otherParticipant.email ?? '?'}
-        size="md"
-      />
+      <div className="shrink-0">
+        <Avatar
+          src={c.otherParticipant.avatarUrl ?? undefined}
+          username={c.otherParticipant.username ?? c.otherParticipant.email ?? '?'}
+          size="sm"
+        />
+      </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 min-w-0">
           <p
             className={cn(
-              'text-sm truncate',
+              'text-sm truncate min-w-0',
               c.unreadCount > 0 ? 'font-semibold text-tradealo-text' : 'font-medium text-tradealo-text',
             )}
           >
@@ -117,13 +119,13 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
           {c.lastMessageText ?? 'Sin mensajes todavía'}
         </p>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {c.unreadCount > 0 && (
           <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-tradealo-primary text-white text-[10px] font-bold flex items-center justify-center">
             {c.unreadCount > 9 ? '9+' : c.unreadCount}
           </span>
         )}
-        <ChevronRight size={16} className="text-tradealo-text-muted" />
+        <ChevronRight size={14} className="text-tradealo-text-muted" />
       </div>
     </Link>
   );
