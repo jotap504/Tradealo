@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   IsArray,
@@ -73,8 +74,11 @@ export class CartApiController {
 
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
-  async webhook(@Body() body: CartWebhookDto) {
-    await this.service.handleWebhook(body);
+  async webhook(
+    @Body() body: CartWebhookDto,
+    @Query('cart') cartId?: string,
+  ) {
+    await this.service.handleWebhook(body, cartId);
     return { ok: true };
   }
 }

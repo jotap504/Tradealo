@@ -772,6 +772,23 @@ export const apiTokens = {
   revoke: (id: string) => del<{ ok: true }>(`/me/api-tokens/${id}`),
 };
 
+export interface PaymentCredentialSummary {
+  hasCredential: boolean;
+  provider?: string;
+  mpUserId?: string | null;
+  tokenKind?: string;
+  lastValidatedAt?: string | null;
+  createdAt?: string | null;
+  tokenPreview?: string | null;
+}
+
+export const paymentCredentials = {
+  get: () => get<PaymentCredentialSummary>('/me/payment-credentials'),
+  upsert: (accessToken: string) =>
+    post<PaymentCredentialSummary>('/me/payment-credentials', { accessToken }),
+  remove: () => del<{ ok: true }>('/me/payment-credentials'),
+};
+
 export default {
   auth,
   listings,
@@ -794,4 +811,5 @@ export default {
   shopSubscription,
   shopChatbot,
   apiTokens,
+  paymentCredentials,
 };

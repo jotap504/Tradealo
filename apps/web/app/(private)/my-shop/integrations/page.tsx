@@ -9,8 +9,16 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react';
-import { apiTokens, type ApiTokenSummary, type CreatedApiToken } from '@/lib/api';
+import {
+  apiTokens,
+  paymentCredentials,
+  type ApiTokenSummary,
+  type CreatedApiToken,
+  type PaymentCredentialSummary,
+} from '@/lib/api';
 import { API_URL } from '@/lib/constants';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -36,9 +44,50 @@ export default function IntegrationsPage() {
   const [justCreated, setJustCreated] = useState<CreatedApiToken | null>(null);
   const [copied, setCopied] = useState<'token' | 'config' | null>(null);
 
+  const [mpCreds, setMpCreds] = useState<PaymentCredentialSummary | null>(null);
+  const [mpToken, setMpToken] = useState('');
+  const [savingMp, setSavingMp] = useState(false);
+  const [deletingMp, setDeletingMp] = useState(false);
+
   useEffect(() => {
     apiTokens.list().then(setTokens).catch(() => setTokens([]));
+    paymentCredentials.get().then(setMpCreds).catch(() => setMpCreds({ hasCredential: false }));
   }, []);
+
+  const handleSaveMpToken = async () => {
+    if (!mpToken.trim()) {
+      toast.error('Pegá tu Access Token de MercadoPago');
+      return;
+    }
+    setSavingMp(true);
+    try {
+      const result = await paymentCredentials.upsert(mpToken.trim());
+      setMpCreds(result);
+      setMpToken('');
+      toast.success('Cuenta de MercadoPago conectada');
+    } catch (err) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'No se pudo validar el token con MercadoPago';
+      toast.error(msg);
+    } finally {
+      setSavingMp(false);
+    }
+  };
+
+  const handleDeleteMp = async () => {
+    if (!confirm('¿Desconectar tu cuenta de MercadoPago? Los listings agéntico-comprables dejarán de funcionar.')) return;
+    setDeletingMp(true);
+    try {
+      await paymentCredentials.remove();
+      setMpCreds({ hasCredential: false });
+      toast.success('Cuenta de MercadoPago desconectada');
+    } catch {
+      toast.error('No se pudo desconectar');
+    } finally {
+      setDeletingMp(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!newName.trim()) {
@@ -191,6 +240,80 @@ export default function IntegrationsPage() {
           </CardBody>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CreditCard size={14} className="text-tradealo-primary" />
+            <p className="font-heading font-semibold text-sm">
+              Cuenta MercadoPago para cobros
+            </p>
+          </div>
+        </CardHeader>
+        <CardBody className="space-y-3">
+          {mpCreds?.hasCredential ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 border border-green-200">
+                <Check size={16} className="text-green-600 mt-0.5 shrink-0" />
+                <div className="flex-1 text-sm">
+                  <p className="font-medium text-green-900">
+                    Cuenta conectada
+                  </p>
+                  <p className="text-xs text-green-700 mt-0.5">
+                    {mpCreds.mpUserId && (
+                      <>Usuario MP: <span className="font-mono">{mpCreds.mpUserId}</span> · </>
+                    )}
+                    Token: <span className="font-mono">{mpCreds.tokenPreview}</span>
+                  </p>
+                  {mpCreds.lastValidatedAt && (
+                    <p className="text-xs text-green-700">
+                      Validado: {new Date(mpCreds.lastValidatedAt).toLocaleString('es-AR')}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                loading={deletingMp}
+                onClick={handleDeleteMp}
+                leftIcon={<Trash2 size={14} />}
+              >
+                Desconectar MercadoPago
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-tradealo-text-muted">
+                Pegá tu <strong>Access Token de Producción</strong> de MercadoPago. Los
+                pagos por compras agénticas caen directo en TU cuenta de MP. Tu token se
+                guarda <strong>encriptado AES-256</strong> en nuestra DB y nunca se loggea.
+              </p>
+              <a
+                href="https://www.mercadopago.com.ar/developers/panel/app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-tradealo-primary hover:underline inline-flex items-center gap-1"
+              >
+                Abrir MP Developer Panel
+                <ExternalLink size={11} />
+              </a>
+              <Input
+                label="Access Token"
+                placeholder="APP_USR-..."
+                value={mpToken}
+                onChange={(e) => setMpToken(e.target.value)}
+                type="password"
+                autoComplete="off"
+                disabled={savingMp}
+              />
+              <Button onClick={handleSaveMpToken} loading={savingMp}>
+                Conectar MercadoPago
+              </Button>
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader>

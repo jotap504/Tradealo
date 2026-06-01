@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -16,6 +17,7 @@ import {
   listings,
   shopSubscriptions,
 } from '../database/schema';
+import { SellerPaymentsService } from '../seller-payments/seller-payments.service';
 
 type DB = NodePgDatabase<typeof schema>;
 
@@ -34,16 +36,21 @@ export interface CreateCartInput {
 @Injectable()
 export class CartApiService {
   private readonly logger = new Logger(CartApiService.name);
-  private readonly preference: Preference;
-  private readonly payment: Payment;
   private readonly backUrl: string;
+  /**
+   * Platform-side MP client used only for webhook lookups (Payment.get),
+   * which must succeed regardless of which seller owned the cart.
+   */
+  private readonly platformPayment: Payment;
 
-  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {
-    const client = new MercadoPagoConfig({
+  constructor(
+    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
+    private readonly sellerPayments: SellerPaymentsService,
+  ) {
+    const platformClient = new MercadoPagoConfig({
       accessToken: process.env.MP_ACCESS_TOKEN ?? '',
     });
-    this.preference = new Preference(client);
-    this.payment = new Payment(client);
+    this.platformPayment = new Payment(platformClient);
     this.backUrl = process.env.APP_URL ?? 'https://trocalia.com.ar';
   }
 
@@ -99,6 +106,16 @@ export class CartApiService {
     }
 
     const sellerIds = Array.from(new Set(rows.map((r) => r.userId)));
+
+    // V1 (manual MP token mode): single-seller cart only. Multi-seller carts
+    // require OAuth marketplace_fee splits and are deferred.
+    if (sellerIds.length > 1) {
+      throw new BadRequestException(
+        'For now agent carts must contain items from a single seller. Multi-seller checkout coming in the OAuth marketplace flow.',
+      );
+    }
+    const sellerId = sellerIds[0];
+
     const activeSubs = await this.db
       .select({ userId: shopSubscriptions.userId })
       .from(shopSubscriptions)
@@ -113,6 +130,14 @@ export class CartApiService {
     if (sellersWithoutSub.length > 0) {
       throw new BadRequestException(
         'Some sellers do not have an active Shop subscription required for agent purchases',
+      );
+    }
+
+    // Look up seller MP credentials — they must have connected their MP account
+    const sellerToken = await this.sellerPayments.getDecryptedToken(sellerId);
+    if (!sellerToken) {
+      throw new ForbiddenException(
+        'Seller has not connected their MercadoPago account. Ask them to add it in /my-shop/integrations.',
       );
     }
 
@@ -171,7 +196,12 @@ export class CartApiService {
         })),
       );
 
-      const pref = await this.preference.create({
+      // Use the seller's own MP credentials to create the Preference. The
+      // payment will land in the seller's MP account (not Trocalia's).
+      const sellerClient = new MercadoPagoConfig({ accessToken: sellerToken });
+      const sellerPreference = new Preference(sellerClient);
+
+      const pref = await sellerPreference.create({
         body: {
           items: enriched.map((e) => ({
             id: e.listingId,
@@ -188,7 +218,7 @@ export class CartApiService {
             pending: `${this.backUrl}/agent-cart/pending?cart=${cart.id}`,
           },
           auto_return: 'approved',
-          notification_url: `${this.backUrl}/api/v1/agent-cart/webhook`,
+          notification_url: `${this.backUrl}/api/v1/agent-cart/webhook?cart=${cart.id}`,
         },
       });
 
@@ -244,19 +274,41 @@ export class CartApiService {
     };
   }
 
-  async handleWebhook(body: { type?: string; data?: { id?: string | number } }) {
+  async handleWebhook(
+    body: { type?: string; data?: { id?: string | number } },
+    cartId?: string,
+  ) {
     if (body.type !== 'payment' || !body.data?.id) return;
+    if (!cartId) {
+      this.logger.warn(
+        'Agent cart webhook arrived without `cart` query param — cannot resolve seller credentials',
+      );
+      return;
+    }
+
+    // Resolve the seller from the cart items so we know which MP token to use
+    const [item] = await this.db
+      .select({ sellerId: agentCartItems.sellerId })
+      .from(agentCartItems)
+      .where(eq(agentCartItems.cartId, cartId))
+      .limit(1);
+    if (!item) {
+      this.logger.warn(`Webhook for unknown cart ${cartId}`);
+      return;
+    }
+
+    const sellerToken = await this.sellerPayments.getDecryptedToken(item.sellerId);
+    const lookupPayment = sellerToken
+      ? new Payment(new MercadoPagoConfig({ accessToken: sellerToken }))
+      : this.platformPayment;
+
     let paymentInfo;
     try {
-      paymentInfo = await this.payment.get({ id: String(body.data.id) });
+      paymentInfo = await lookupPayment.get({ id: String(body.data.id) });
     } catch (err) {
       this.logger.warn(`Failed to fetch MP payment ${body.data.id}`, err);
       return;
     }
-    const extRef = (paymentInfo as { external_reference?: string })
-      .external_reference;
-    if (!extRef?.startsWith('agent_cart_')) return;
-    const cartId = extRef.replace('agent_cart_', '');
 
     const status = paymentInfo.status;
     const newStatus: 'paid' | 'failed' | 'cancelled' | 'pending_payment' =
