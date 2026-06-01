@@ -24,7 +24,10 @@ const nextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Content-Security-Policy', value: 'frame-ancestors *;' },
+          // List schemes explicitly: `*` alone does NOT cover null/opaque
+          // origins (data:, file:, srcdoc, sandboxed iframes), and Chromium
+          // requires the scheme to be added explicitly per CSP 3.
+          { key: 'Content-Security-Policy', value: 'frame-ancestors * https: http: data:;' },
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload',
