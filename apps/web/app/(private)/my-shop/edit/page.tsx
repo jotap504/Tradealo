@@ -459,10 +459,11 @@ export default function EditShopPage() {
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Si está activo, agentes IA externos (Google Agentic Cart, etc.) pueden
-                iniciar compras de cualquiera de tus listings activos vía{' '}
-                <code className="font-mono">/api/v1/agent-cart</code>. El comprador completa
-                el pago en MercadoPago como siempre. Esta opción se aplica a todos tus
-                listings activos al mismo tiempo.
+                iniciar compras de cualquiera de tus listings activos. El comprador
+                completa el pago en el método que tengas configurado en{' '}
+                <Link href="/my-shop/payments" className="text-teal-600 hover:underline">
+                  Métodos de pago
+                </Link>. Esta opción se aplica a todos tus listings activos al mismo tiempo.
               </p>
             </div>
           </label>

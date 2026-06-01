@@ -19,6 +19,7 @@ import {
   Globe,
   EyeOff,
   Plug,
+  Wallet,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -45,6 +46,7 @@ const MANAGE_LINKS = [
   { href: '/my-shop/pinned', label: 'Destacados', description: 'Fijá hasta 6 productos', icon: Pin, color: 'bg-orange-50 text-orange-600' },
   { href: '/my-shop/categories', label: 'Categorías', description: 'Orden de categorías', icon: LayoutGrid, color: 'bg-purple-50 text-purple-600' },
   { href: '/my-shop/analytics', label: 'Estadísticas', description: 'Visitas y clics (30 días)', icon: BarChart2, color: 'bg-green-50 text-green-600' },
+  { href: '/my-shop/payments', label: 'Métodos de pago', description: 'Cómo cobrás las ventas (MercadoPago, CBU…)', icon: Wallet, color: 'bg-emerald-50 text-emerald-600' },
   { href: '/my-shop/integrations', label: 'Agentes IA (MCP)', description: 'Conectá Claude/ChatGPT para que cargue productos', icon: Plug, color: 'bg-cyan-50 text-cyan-600' },
   { href: '/my-shop/subscription', label: 'Suscripción', description: 'Plan y facturación', icon: CreditCard, color: 'bg-rose-50 text-rose-600' },
 ];
