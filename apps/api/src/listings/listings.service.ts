@@ -1163,4 +1163,192 @@ export class ListingsService {
       .set({ viewsCount: sql`${schema.listings.viewsCount} + 1` })
       .where(eq(schema.listings.id, listingId));
   }
+
+  // ─── Bulk operations (Mi Tienda) ─────────────────────────────────────────
+
+  async bulkUpdateStatus(
+    userId: string,
+    ids: string[],
+    target: 'paused' | 'active',
+  ) {
+    if (ids.length === 0) return { updated: 0, skipped: 0, target };
+    type ListingStatus = NonNullable<
+      (typeof schema.listings.$inferInsert)['status']
+    >;
+    const allowedFromStatuses: ListingStatus[] =
+      target === 'paused' ? ['active'] : ['paused'];
+
+    const result = await this.db
+      .update(schema.listings)
+      .set({
+        status: target,
+        publishedAt: target === 'active' ? new Date() : undefined,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.listings.userId, userId),
+          inArray(schema.listings.id, ids),
+          inArray(schema.listings.status, allowedFromStatuses),
+          isNull(schema.listings.deletedAt),
+        ),
+      )
+      .returning({ id: schema.listings.id });
+
+    return {
+      updated: result.length,
+      skipped: ids.length - result.length,
+      target,
+    };
+  }
+
+  async bulkAdjustPrice(
+    userId: string,
+    ids: string[],
+    mode: 'percent' | 'absolute',
+    value: number,
+  ) {
+    if (ids.length === 0) return { updated: 0, items: [] };
+    if (!Number.isFinite(value)) {
+      throw new BadRequestException('value must be a finite number');
+    }
+    if (mode === 'percent' && (value <= -100 || value > 1000)) {
+      throw new BadRequestException('percent must be > -100 and <= 1000');
+    }
+    if (mode === 'absolute' && value < 1) {
+      throw new BadRequestException('absolute price must be >= 1');
+    }
+
+    const current = await this.db
+      .select({
+        id: schema.listings.id,
+        title: schema.listings.title,
+        price: schema.listings.price,
+        currency: schema.listings.currency,
+      })
+      .from(schema.listings)
+      .where(
+        and(
+          eq(schema.listings.userId, userId),
+          inArray(schema.listings.id, ids),
+          isNull(schema.listings.deletedAt),
+        ),
+      );
+
+    const updates: Array<{
+      id: string;
+      title: string;
+      oldPrice: number;
+      newPrice: number;
+      currency: string;
+    }> = [];
+
+    for (const row of current) {
+      const oldPrice = Number(row.price);
+      let newPrice =
+        mode === 'percent' ? oldPrice * (1 + value / 100) : value;
+      newPrice = Math.max(1, Math.round(newPrice * 100) / 100);
+      updates.push({
+        id: row.id,
+        title: row.title,
+        oldPrice,
+        newPrice,
+        currency: row.currency,
+      });
+    }
+
+    await this.db.transaction(async (tx) => {
+      for (const u of updates) {
+        await tx
+          .update(schema.listings)
+          .set({ price: String(u.newPrice), updatedAt: new Date() })
+          .where(eq(schema.listings.id, u.id));
+      }
+    });
+
+    return { updated: updates.length, items: updates };
+  }
+
+  async exportCsvForUser(userId: string): Promise<string> {
+    const rows = await this.db
+      .select({
+        id: schema.listings.id,
+        title: schema.listings.title,
+        price: schema.listings.price,
+        currency: schema.listings.currency,
+        status: schema.listings.status,
+        condition: schema.listings.condition,
+        saleType: schema.listings.saleType,
+        stock: schema.listings.stock,
+        agentPurchasable: schema.listings.agentPurchasable,
+        city: schema.listings.city,
+        province: schema.listings.province,
+        createdAt: schema.listings.createdAt,
+        publishedAt: schema.listings.publishedAt,
+        expiresAt: schema.listings.expiresAt,
+        categoryName: schema.categories.name,
+      })
+      .from(schema.listings)
+      .leftJoin(
+        schema.categories,
+        eq(schema.listings.categoryId, schema.categories.id),
+      )
+      .where(
+        and(
+          eq(schema.listings.userId, userId),
+          isNull(schema.listings.deletedAt),
+        ),
+      )
+      .orderBy(desc(schema.listings.createdAt));
+
+    const header = [
+      'id',
+      'title',
+      'price',
+      'currency',
+      'status',
+      'condition',
+      'sale_type',
+      'stock',
+      'agent_purchasable',
+      'category',
+      'city',
+      'province',
+      'created_at',
+      'published_at',
+      'expires_at',
+    ].join(',');
+
+    const escape = (v: string | number | boolean | Date | null | undefined) => {
+      if (v == null) return '';
+      const s = v instanceof Date ? v.toISOString() : String(v);
+      const needsQuoting = /[",\n\r]/.test(s);
+      const escaped = s.replace(/"/g, '""');
+      return needsQuoting ? `"${escaped}"` : escaped;
+    };
+
+    const lines = rows.map((r) =>
+      [
+        r.id,
+        r.title,
+        r.price,
+        r.currency,
+        r.status,
+        r.condition,
+        r.saleType,
+        r.stock ?? '',
+        r.agentPurchasable,
+        r.categoryName ?? '',
+        r.city ?? '',
+        r.province ?? '',
+        r.createdAt,
+        r.publishedAt,
+        r.expiresAt,
+      ]
+        .map(escape)
+        .join(','),
+    );
+
+    return [header, ...lines].join('\n');
+  }
 }

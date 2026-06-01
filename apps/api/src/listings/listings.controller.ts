@@ -10,8 +10,15 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Res,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsUUID,
+} from 'class-validator';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListListingsDto } from './dto/list-listings.dto';
@@ -25,6 +32,17 @@ import {
   type JwtPayload,
 } from '../common/decorators/current-user.decorator';
 import { RateLimit } from '../common/decorators/rate-limit.decorator';
+
+class BulkStatusDto {
+  @IsArray() @IsUUID('4', { each: true }) listingIds!: string[];
+  @IsEnum(['paused', 'active']) target!: 'paused' | 'active';
+}
+
+class BulkPriceDto {
+  @IsArray() @IsUUID('4', { each: true }) listingIds!: string[];
+  @IsEnum(['percent', 'absolute']) mode!: 'percent' | 'absolute';
+  @IsNumber() value!: number;
+}
 
 @Controller('listings')
 export class ListingsController {
@@ -87,6 +105,48 @@ export class ListingsController {
       offset !== undefined ? parseInt(offset, 10) : undefined,
       categoryId,
     );
+  }
+
+  // ─── Bulk operations ────────────────────────────────────────────────────
+
+  @Patch('bulk-status')
+  @RateLimit({ ttl: 60, limit: 20, keyBy: 'user' })
+  bulkStatus(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BulkStatusDto,
+  ) {
+    return this.listingsService.bulkUpdateStatus(
+      user.sub,
+      dto.listingIds,
+      dto.target,
+    );
+  }
+
+  @Patch('bulk-price')
+  @RateLimit({ ttl: 60, limit: 20, keyBy: 'user' })
+  bulkPrice(@CurrentUser() user: JwtPayload, @Body() dto: BulkPriceDto) {
+    return this.listingsService.bulkAdjustPrice(
+      user.sub,
+      dto.listingIds,
+      dto.mode,
+      dto.value,
+    );
+  }
+
+  @Get('export.csv')
+  @RateLimit({ ttl: 60, limit: 6, keyBy: 'user' })
+  async exportCsv(
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const csv = await this.listingsService.exportCsvForUser(user.sub);
+    const filename = `trocalia-listings-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+    res
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="${filename}"`)
+      .send(csv);
   }
 
   @Post(':id/publish')

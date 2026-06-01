@@ -257,6 +257,21 @@ export const listings = {
   deleteListing: (id: string) => del<{ ok: true }>(`/listings/${id}`),
   getMyListings: (params: { cursor?: string; offset?: number; status?: string; search?: string; saleType?: string; categoryId?: string; limit?: number } = {}) =>
     get<PaginatedResponse<Listing> & { nextCursor?: string; hasMore?: boolean; total?: number }>('/listings/me', { params }),
+  bulkUpdateStatus: (listingIds: string[], target: 'paused' | 'active') =>
+    patch<{ updated: number; skipped: number; target: 'paused' | 'active' }>(
+      '/listings/bulk-status',
+      { listingIds, target },
+    ),
+  bulkAdjustPrice: (
+    listingIds: string[],
+    mode: 'percent' | 'absolute',
+    value: number,
+  ) =>
+    patch<{
+      updated: number;
+      items: { id: string; title: string; oldPrice: number; newPrice: number; currency: string }[];
+    }>('/listings/bulk-price', { listingIds, mode, value }),
+  exportCsvUrl: '/listings/export.csv',
   publishListing: (id: string, payload: { type: string; durationDays: number }) =>
     post<Listing>(`/listings/${id}/publish`, payload),
   renewListing: (id: string, durationDays: number) =>
