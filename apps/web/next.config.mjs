@@ -32,7 +32,9 @@ const nextConfig = {
         ],
       },
       {
-        source: '/(.*)',
+        // Negative lookahead excludes /embed/* so the iframe-friendly
+        // headers above don't get overridden with X-Frame-Options: DENY.
+        source: '/((?!embed/).*)',
         headers: [
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
