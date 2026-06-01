@@ -20,11 +20,14 @@ import {
   EyeOff,
   Plug,
   Wallet,
+  ListChecks,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ShopQRCard } from '@/components/shop/ShopQRCard';
+import { EmbedSnippetCard } from '@/components/shop/EmbedSnippetCard';
 import { toast } from '@/lib/store';
 import type { Shop, ShopSubscription } from '@/types';
 
@@ -42,6 +45,7 @@ const MANAGE_LINKS = [
   { href: '/my-shop/announcement', label: 'Anuncio / Campaña', description: 'Banner de promoción con fecha de vencimiento', icon: Megaphone, color: 'bg-yellow-50 text-yellow-600' },
   { href: '/my-shop/footer', label: 'Footer / Pie de página', description: 'Elegí el estilo y datos de contacto del footer', icon: Layout, color: 'bg-slate-50 text-slate-600' },
   { href: '/my-shop/edit', label: 'Editar perfil', description: 'Nombre, logo, banner, redes', icon: Pencil, color: 'bg-teal-50 text-teal-600' },
+  { href: '/my-shop/listings', label: 'Mis listings', description: 'Bulk pause, ajustar precios, exportar CSV', icon: ListChecks, color: 'bg-purple-50 text-purple-600' },
   { href: '/my-shop/gallery', label: 'Galería', description: 'Fotos de tu local/productos', icon: ImageIcon, color: 'bg-blue-50 text-blue-600' },
   { href: '/my-shop/pinned', label: 'Destacados', description: 'Fijá hasta 6 productos', icon: Pin, color: 'bg-orange-50 text-orange-600' },
   { href: '/my-shop/categories', label: 'Categorías', description: 'Orden de categorías', icon: LayoutGrid, color: 'bg-purple-50 text-purple-600' },
@@ -215,6 +219,14 @@ export default function MyShopPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Promotion cards — QR + embed widget for published shops */}
+      {hasActiveSub && shopData?.isPublished && shopUrl && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ShopQRCard username={shopUrl} shopName={shopData?.shopName} />
+          <EmbedSnippetCard username={shopUrl} />
+        </div>
+      )}
 
       {/* Management links */}
       {hasActiveSub ? (
