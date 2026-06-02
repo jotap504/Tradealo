@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { listings } from '@/lib/api';
 import { useAuthStore, toast } from '@/lib/store';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import type { ListingQuestion } from '@/types';
+
+const PREVIEW_COUNT = 3;
 
 interface Props {
   listingId: string;
@@ -23,13 +25,20 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
   const [sending, setSending] = useState(false);
   const [answeringId, setAnsweringId] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
-  const [expanded, setExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const { data: questions = [], isLoading } = useQuery({
     queryKey: ['listing-questions', listingId],
     queryFn: () => listings.getQuestions(listingId),
     staleTime: 30_000,
   });
+
+  const visibleQuestions = useMemo<ListingQuestion[]>(() => {
+    if (showAll || questions.length <= PREVIEW_COUNT) return questions;
+    return questions.slice(0, PREVIEW_COUNT);
+  }, [questions, showAll]);
+
+  const hiddenCount = questions.length - PREVIEW_COUNT;
 
   const handleAsk = async () => {
     if (!question.trim() || question.trim().length < 10) {
@@ -70,31 +79,31 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
 
   return (
     <div className="border-t border-tradealo-border pt-6 mt-6">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-left w-full"
-      >
+      <div className="flex items-center gap-2">
         <MessageCircle size={18} className="text-tradealo-primary" />
         <h2 className="font-heading font-semibold text-lg flex-1">
           Preguntas y respuestas
+          {questions.length > 0 && (
+            <span className="ml-2 text-sm text-tradealo-text-muted font-normal">
+              ({questions.length})
+            </span>
+          )}
         </h2>
-        {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-      </button>
+      </div>
 
-      {expanded && (
-        <div className="mt-4 space-y-4">
-          {isLoading ? (
-            <p className="text-sm text-tradealo-text-muted">Cargando preguntas…</p>
-          ) : questions.length === 0 ? (
-            <div className="bg-gray-50 rounded-xl p-6 text-center">
-              <p className="text-sm text-tradealo-text-muted">
-                Todavía no hay preguntas. Sé el primero en preguntar.
-              </p>
-            </div>
-          ) : (
+      <div className="mt-4 space-y-4">
+        {isLoading ? (
+          <p className="text-sm text-tradealo-text-muted">Cargando preguntas…</p>
+        ) : questions.length === 0 ? (
+          <div className="bg-gray-50 rounded-xl p-6 text-center">
+            <p className="text-sm text-tradealo-text-muted">
+              Todavía no hay preguntas. Sé el primero en preguntar.
+            </p>
+          </div>
+        ) : (
+          <>
             <div className="space-y-3">
-              {questions.map((q: ListingQuestion) => (
+              {visibleQuestions.map((q) => (
                 <div
                   key={q.id}
                   className="bg-white rounded-xl border border-tradealo-border p-4 space-y-2"
@@ -155,26 +164,36 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                 </div>
               ))}
             </div>
-          )}
 
-          {!isOwner && (
-            <div className="space-y-2 pt-2">
-              <Textarea
-                placeholder="Hacé tu pregunta sobre este producto…"
-                rows={3}
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                showCount
-                minLength={10}
-                maxLength={500}
-              />
-              <Button onClick={handleAsk} loading={sending}>
-                Preguntar
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="text-sm font-medium text-tradealo-primary hover:underline"
+              >
+                {showAll ? 'Ver menos' : `Ver todas las preguntas (${hiddenCount} más)`}
+              </button>
+            )}
+          </>
+        )}
+
+        {!isOwner && (
+          <div className="space-y-2 pt-2">
+            <Textarea
+              placeholder="Hacé tu pregunta sobre este producto…"
+              rows={3}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              showCount
+              minLength={10}
+              maxLength={500}
+            />
+            <Button onClick={handleAsk} loading={sending}>
+              Preguntar
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
