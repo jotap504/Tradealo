@@ -2,16 +2,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
 import { shop as shopApi } from '@/lib/api';
 import type { Shop, ShopTheme } from '@/types';
-
-const BannerGenerator = dynamic(
-  () => import('@/components/shop/BannerGenerator'),
-  { ssr: false },
-);
 
 const THEMES: { value: ShopTheme; label: string; preview: string }[] = [
   { value: 'minimalista', label: 'Minimalista', preview: '#14b8a6' },
@@ -81,9 +75,14 @@ export default function EditShopPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState('');
 
+  // Logo state
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   // Banner state
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
-  const [showBannerGen, setShowBannerGen] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [bannerError, setBannerError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +127,7 @@ export default function EditShopPage() {
         twitter: sl.twitter ?? '',
         website: sl.website ?? '',
       });
+      setLogoUrl(s.logoUrl ?? null);
       setBannerUrl(s.bannerUrl ?? null);
       setAutoPublishViaAgent(s.autoPublishViaAgent ?? false);
       setLoading(false);
@@ -135,6 +135,38 @@ export default function EditShopPage() {
       router.push('/my-shop');
     });
   }, [router]);
+
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('La imagen debe pesar menos de 2 MB.');
+      e.target.value = '';
+      return;
+    }
+    setLogoUploading(true);
+    setLogoError('');
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.replace(/^data:[^;]+;base64,/, '');
+        const mimetype = file.type || 'image/jpeg';
+        const result = await shopApi.uploadLogo(base64, mimetype);
+        setLogoUrl(result.logoUrl);
+        setLogoUploading(false);
+      };
+      reader.onerror = () => {
+        setLogoError('No se pudo leer el archivo.');
+        setLogoUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setLogoError('No se pudo subir el logo. Intentá de nuevo.');
+      setLogoUploading(false);
+    }
+    e.target.value = '';
+  };
 
   const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,6 +265,51 @@ export default function EditShopPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Logo section */}
+        <section className="space-y-4">
+          <h2 className="font-semibold text-gray-800 border-b pb-2">Logo</h2>
+
+          <div className="flex items-start gap-4">
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt="Logo actual"
+                width={96}
+                height={96}
+                className="rounded-2xl border border-gray-200 object-cover"
+              />
+            ) : (
+              <div
+                className="w-24 h-24 rounded-2xl border border-gray-200 bg-gray-100 flex items-center justify-center text-3xl font-bold text-gray-400"
+                aria-label="Sin logo"
+              >
+                {(form.shopName?.[0] ?? '?').toUpperCase()}
+              </div>
+            )}
+
+            <div className="flex-1 space-y-2">
+              <button
+                type="button"
+                disabled={logoUploading}
+                onClick={() => logoInputRef.current?.click()}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:border-teal-400 hover:text-teal-600 transition-colors disabled:opacity-50"
+              >
+                {logoUploading ? 'Subiendo…' : logoUrl ? '🖼️ Cambiar logo' : '🖼️ Subir logo'}
+              </button>
+              <p className="text-xs text-gray-400">Cuadrado, máx 2 MB. Recomendado 512×512.</p>
+              {logoError && <p className="text-xs text-red-600">{logoError}</p>}
+            </div>
+          </div>
+
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoFileChange}
+          />
+        </section>
+
         {/* Banner section */}
         <section className="space-y-4">
           <h2 className="font-semibold text-gray-800 border-b pb-2">Banner</h2>
@@ -253,8 +330,8 @@ export default function EditShopPage() {
             <p className="text-xs text-red-600">{bannerError}</p>
           )}
 
-          {/* Upload options */}
-          <div className="flex gap-3 flex-wrap">
+          {/* Upload */}
+          <div>
             <button
               type="button"
               disabled={bannerUploading}
@@ -262,17 +339,6 @@ export default function EditShopPage() {
               className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:border-teal-400 hover:text-teal-600 transition-colors disabled:opacity-50"
             >
               {bannerUploading ? 'Subiendo…' : '📁 Subir imagen'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowBannerGen((v) => !v)}
-              className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                showBannerGen
-                  ? 'border-teal-500 bg-teal-50 text-teal-700'
-                  : 'border-gray-200 text-gray-700 hover:border-teal-400 hover:text-teal-600'
-              }`}
-            >
-              ✨ Generar automático
             </button>
           </div>
 
@@ -284,18 +350,6 @@ export default function EditShopPage() {
             className="hidden"
             onChange={handleBannerFileChange}
           />
-
-          {/* Banner generator */}
-          {showBannerGen && (
-            <BannerGenerator
-              shopName={form.shopName}
-              tagline={form.tagline}
-              onSuccess={(url) => {
-                setBannerUrl(url);
-                setShowBannerGen(false);
-              }}
-            />
-          )}
         </section>
 
         <section className="space-y-4">

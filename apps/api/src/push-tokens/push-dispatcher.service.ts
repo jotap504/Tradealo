@@ -43,10 +43,18 @@ export class PushDispatcherService {
     await Promise.all(
       rows.map(async ({ token }) => {
         try {
+          // Data-only message: the Android shell renders the notification in
+          // onMessageReceived. Avoids the "notification + data" dual-display
+          // some OEMs (Xiaomi/Huawei/Samsung) exhibit when both fields are
+          // present, which surfaces two notifications per push.
+          const data: Record<string, string> = {
+            title: payload.title,
+            body: payload.body,
+            ...(payload.data ?? {}),
+          };
           await admin.messaging().send({
             token,
-            notification: { title: payload.title, body: payload.body },
-            data: payload.data,
+            data,
             android: { priority: 'high' },
           });
           delivered++;
