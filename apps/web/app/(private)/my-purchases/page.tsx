@@ -64,14 +64,14 @@ export default function MyPurchasesPage() {
         </p>
       </div>
 
-      <div className="-mx-3 sm:mx-0 px-3 sm:px-0 flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-2 pb-1">
         {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              'px-4 h-9 rounded-full text-sm font-medium whitespace-nowrap shrink-0 transition-colors',
+              'px-3 sm:px-4 h-8 sm:h-9 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors',
               tab === t
                 ? 'bg-tradealo-primary text-white'
                 : 'bg-white border border-tradealo-border text-tradealo-text hover:bg-gray-50',

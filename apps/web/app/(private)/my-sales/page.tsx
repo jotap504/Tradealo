@@ -53,7 +53,7 @@ export default function MySalesPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-4xl w-full px-3 sm:px-6 py-8 space-y-6 overflow-x-hidden">
       <div>
         <h1 className="font-heading text-2xl font-bold text-tradealo-text">
           Mis ventas
@@ -63,14 +63,14 @@ export default function MySalesPage() {
         </p>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-2 pb-1">
         {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              'px-4 h-9 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
+              'px-3 sm:px-4 h-8 sm:h-9 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors',
               tab === t
                 ? 'bg-tradealo-primary text-white'
                 : 'bg-white border border-tradealo-border text-tradealo-text hover:bg-gray-50',
@@ -124,10 +124,10 @@ function SaleRow({ order, openDispute }: { order: SaleOrder; openDispute?: Admin
   const [showDetail, setShowDetail] = useState(false);
 
   return (
-    <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4">
+    <li className="bg-white rounded-2xl border border-tradealo-border p-3 sm:p-4 flex gap-3 sm:gap-4 min-w-0 overflow-hidden">
       <Link
         href={`/listing/${order.listing.id}`}
-        className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center"
+        className="shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center"
       >
         {order.listing.primaryImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -142,13 +142,13 @@ function SaleRow({ order, openDispute }: { order: SaleOrder; openDispute?: Admin
       </Link>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2 min-w-0">
           <Link href={`/listing/${order.listing.id}`} className="min-w-0 flex-1">
             <h3 className="font-medium text-tradealo-text text-sm sm:text-base truncate hover:text-tradealo-primary">
               {order.listing.title}
             </h3>
           </Link>
-          <Badge variant={badge.variant} size="sm">
+          <Badge variant={badge.variant} size="sm" className="shrink-0">
             {badge.label}
           </Badge>
         </div>
