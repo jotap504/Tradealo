@@ -296,6 +296,11 @@ export const listings = {
     post<ListingQuestion>(`/listings/${id}/questions`, { question }),
   answerQuestion: (id: string, questionId: string, answer: string) =>
     post<ListingQuestion>(`/listings/${id}/questions/${questionId}/answer`, { answer }),
+  publishQuestion: (
+    id: string,
+    payload: { buyerUserId: string; question: string; answer: string },
+  ) =>
+    post<ListingQuestion>(`/listings/${id}/questions/publish`, payload),
 };
 
 export const categories = {

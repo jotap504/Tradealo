@@ -1150,6 +1150,44 @@ export class ListingsService {
       .orderBy(desc(schema.listingQuestions.createdAt));
   }
 
+  /** Publishes a curated Q&A from a private chat thread. Used by the seller
+   *  on /messages/:id to expose useful buyer questions on the listing page. */
+  async publishChatAsQuestion(
+    listingId: string,
+    sellerUserId: string,
+    buyerUserId: string,
+    question: string,
+    answer: string,
+  ) {
+    const listing = await this.db
+      .select({ userId: schema.listings.userId })
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .then((rows) => rows[0]);
+
+    if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (listing.userId !== sellerUserId)
+      throw new ForbiddenException('NOT_LISTING_OWNER');
+
+    const trimmedQ = question.trim();
+    const trimmedA = answer.trim();
+    if (trimmedQ.length < 5)
+      throw new BadRequestException('QUESTION_TOO_SHORT');
+    if (trimmedA.length < 2) throw new BadRequestException('ANSWER_TOO_SHORT');
+
+    const [qa] = await this.db
+      .insert(schema.listingQuestions)
+      .values({
+        listingId,
+        userId: buyerUserId,
+        question: trimmedQ,
+        answer: trimmedA,
+        answeredAt: new Date(),
+      })
+      .returning();
+    return qa;
+  }
+
   private async recordView(
     listingId: string,
     viewerUserId?: string,

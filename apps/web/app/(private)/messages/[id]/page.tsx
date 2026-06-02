@@ -4,8 +4,8 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, Loader2, Send } from 'lucide-react';
-import { conversations } from '@/lib/api';
+import { ArrowLeft, ExternalLink, Loader2, Pin, Send } from 'lucide-react';
+import { conversations, listings } from '@/lib/api';
 import { useAuthStore, toast } from '@/lib/store';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -38,6 +38,8 @@ export default function ConversationPage({
 
   const messages = useMemo(() => msgData?.data ?? [], [msgData]);
   const otherParticipant = convListData?.otherParticipant;
+  const isSellerView =
+    !!currentUser && !!convListData && currentUser.id === convListData.sellerId;
 
   const sendMutation = useMutation({
     mutationFn: (text: string) =>
@@ -131,13 +133,19 @@ export default function ConversationPage({
               No hay mensajes todavía. Escribí algo para empezar.
             </div>
           ) : (
-            messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                isOwn={msg.senderId === currentUser?.id}
-              />
-            ))
+            messages.map((msg) => {
+              const isOwn = msg.senderId === currentUser?.id;
+              return (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  isOwn={isOwn}
+                  canPublish={isSellerView && !isOwn && !!convListData}
+                  listingId={convListData?.listingId}
+                  buyerUserId={convListData?.buyerId}
+                />
+              );
+            })
           )}
           <div ref={bottomRef} />
         </div>
@@ -179,12 +187,50 @@ export default function ConversationPage({
 function MessageBubble({
   message: m,
   isOwn,
+  canPublish = false,
+  listingId,
+  buyerUserId,
 }: {
   message: Message;
   isOwn: boolean;
+  canPublish?: boolean;
+  listingId?: string;
+  buyerUserId?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState(m.content);
+  const [answer, setAnswer] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handlePublish = async () => {
+    if (!listingId || !buyerUserId) return;
+    if (question.trim().length < 5) {
+      toast.error('La pregunta debe tener al menos 5 caracteres');
+      return;
+    }
+    if (answer.trim().length < 2) {
+      toast.error('Escribí una respuesta');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await listings.publishQuestion(listingId, {
+        buyerUserId,
+        question: question.trim(),
+        answer: answer.trim(),
+      });
+      toast.success('Publicada en la página de la publicación');
+      setOpen(false);
+      setAnswer('');
+    } catch {
+      toast.error('No se pudo publicar. Intentá de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
       <div
         className={cn(
           'max-w-[75%] rounded-2xl px-4 py-2.5',
@@ -207,6 +253,73 @@ function MessageBubble({
           })}
         </p>
       </div>
+
+      {canPublish && !open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-1 inline-flex items-center gap-1 text-[11px] text-tradealo-primary hover:underline"
+        >
+          <Pin size={11} />
+          Publicar como pregunta
+        </button>
+      )}
+
+      {canPublish && open && (
+        <div className="mt-2 w-full max-w-[90%] rounded-xl border border-tradealo-border bg-white p-3 space-y-2">
+          <div className="text-[11px] font-medium text-tradealo-text-muted">
+            Esta pregunta y tu respuesta van a verse en la página de la
+            publicación, sin mostrar la identidad del comprador.
+          </div>
+          <div>
+            <label className="text-[11px] font-medium text-tradealo-text-muted">
+              Pregunta
+            </label>
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              rows={2}
+              maxLength={500}
+              className="mt-1 w-full resize-none rounded-lg border border-tradealo-border px-2 py-1.5 text-sm focus:outline-none focus:border-tradealo-primary"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-medium text-tradealo-text-muted">
+              Tu respuesta
+            </label>
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              placeholder="Escribí la respuesta que verán los próximos compradores…"
+              className="mt-1 w-full resize-none rounded-lg border border-tradealo-border px-2 py-1.5 text-sm focus:outline-none focus:border-tradealo-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              loading={submitting}
+              disabled={!question.trim() || !answer.trim()}
+            >
+              Publicar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setOpen(false);
+                setAnswer('');
+                setQuestion(m.content);
+              }}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

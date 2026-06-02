@@ -242,4 +242,20 @@ export class ListingsController {
   getQuestions(@Param('id') id: string) {
     return this.listingsService.getQuestions(id);
   }
+
+  @Post(':id/questions/publish')
+  @HttpCode(HttpStatus.CREATED)
+  publishChatAsQuestion(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: { buyerUserId: string; question: string; answer: string },
+  ) {
+    return this.listingsService.publishChatAsQuestion(
+      id,
+      user.sub,
+      dto.buyerUserId,
+      dto.question,
+      dto.answer,
+    );
+  }
 }
