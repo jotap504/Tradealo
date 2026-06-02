@@ -57,7 +57,9 @@ const createListingShape = {
   photosBase64: z
     .array(
       z.object({
-        data: z.string().describe('Base64-encoded image bytes (no data: prefix)'),
+        data: z
+          .string()
+          .describe('Base64-encoded image bytes (no data: prefix)'),
         mime: z.enum(['image/jpeg', 'image/png', 'image/webp']),
       }),
     )
@@ -115,9 +117,9 @@ export class McpShopService {
       'create_listing',
       {
         description:
-          "Publishes a new product listing for the authenticated seller. " +
+          'Publishes a new product listing for the authenticated seller. ' +
           "If the shop's auto_publish_via_agent toggle is OFF, the listing is created " +
-          "as a DRAFT — you MUST tell the user it is awaiting their review at /my-shop/listings. " +
+          'as a DRAFT — you MUST tell the user it is awaiting their review at /my-shop/listings. ' +
           'Photos are uploaded and attached automatically.',
         // MCP SDK 1.x ships its own zod-compat shim that doesn't unify cleanly with
         // an external zod v3 schema in TS. Runtime is fine — cast for the type check.

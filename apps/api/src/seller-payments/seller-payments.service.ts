@@ -65,7 +65,9 @@ export class SellerPaymentsService {
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
       this.logger.error('MP token validation failed', err);
-      throw new BadRequestException('Could not validate token with MercadoPago');
+      throw new BadRequestException(
+        'Could not validate token with MercadoPago',
+      );
     }
 
     const encrypted = encryptSecret(rawToken);
@@ -114,7 +116,8 @@ export class SellerPaymentsService {
       .delete(sellerPaymentCredentials)
       .where(eq(sellerPaymentCredentials.userId, userId))
       .returning();
-    if (result.length === 0) throw new NotFoundException('No credentials found');
+    if (result.length === 0)
+      throw new NotFoundException('No credentials found');
     return { ok: true };
   }
 

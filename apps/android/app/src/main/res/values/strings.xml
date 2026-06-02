@@ -7,4 +7,12 @@
     <string name="download_started">Iniciando descarga...</string>
     <string name="download_completed">Descarga completa</string>
     <string name="download_failed">Error en la descarga</string>
+
+    <!-- Backend base URL (no trailing slash). Update when deploying. -->
+    <string name="api_base_url">https://tradealo.onrender.com/api/v1</string>
+
+    <!-- WEB OAuth Client ID (NOT the Android one). Used as `serverClientId` so the
+         Google ID token is issued with this audience, matching backend GOOGLE_CLIENT_ID.
+         Get it from Firebase Console → Project settings → general → "Web SDK config". -->
+    <string name="google_web_client_id">72299809477-76hcqerm34bv52mu0rvoodsarqgd8q5u.apps.googleusercontent.com</string>
 </resources>

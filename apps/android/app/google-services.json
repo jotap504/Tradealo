@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "72299809477",
+    "project_id": "tradealo-15255",
+    "storage_bucket": "tradealo-15255.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:72299809477:android:c87ef5b40c87782ee17eac",
+        "android_client_info": {
+          "package_name": "com.tradealo.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "72299809477-76hcqerm34bv52mu0rvoodsarqgd8q5u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUzlvo0aAiG4e1rf0q69kAUN8m7dHWOIc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "72299809477-1o9dti1nheaobh1d529kc0bvu61n98oc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

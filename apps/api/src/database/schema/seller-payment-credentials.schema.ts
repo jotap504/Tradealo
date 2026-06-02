@@ -33,7 +33,9 @@ export const sellerPaymentCredentials = pgTable(
     refreshTokenCiphertext: bytea('refresh_token_ciphertext'),
     refreshTokenIv: bytea('refresh_token_iv'),
     refreshTokenAuthTag: bytea('refresh_token_auth_tag'),
-    tokenKind: varchar('token_kind', { length: 20 }).notNull().default('manual'),
+    tokenKind: varchar('token_kind', { length: 20 })
+      .notNull()
+      .default('manual'),
     scope: varchar('scope', { length: 200 }),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
     lastValidatedAt: timestamp('last_validated_at', { withTimezone: true }),

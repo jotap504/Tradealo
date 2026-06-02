@@ -74,10 +74,7 @@ export class CartApiController {
 
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
-  async webhook(
-    @Body() body: CartWebhookDto,
-    @Query('cart') cartId?: string,
-  ) {
+  async webhook(@Body() body: CartWebhookDto, @Query('cart') cartId?: string) {
     await this.service.handleWebhook(body, cartId);
     return { ok: true };
   }

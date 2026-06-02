@@ -35,7 +35,8 @@ export class ApiTokensService {
       throw new BadRequestException('Token name required (max 80 chars)');
     }
 
-    const raw = TOKEN_PREFIX + randomBytes(TOKEN_RAW_BYTES).toString('base64url');
+    const raw =
+      TOKEN_PREFIX + randomBytes(TOKEN_RAW_BYTES).toString('base64url');
     const prefix = raw.slice(0, 12);
     const hash = await bcrypt.hash(raw, 10);
 

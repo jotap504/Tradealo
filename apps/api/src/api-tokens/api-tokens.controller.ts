@@ -31,10 +31,7 @@ export class ApiTokensController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: CreateTokenDto,
-  ) {
+  async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTokenDto) {
     await this.ensureActiveShopSubscription(user.sub);
     return this.service.create(user.sub, dto.name, dto.scopes ?? []);
   }

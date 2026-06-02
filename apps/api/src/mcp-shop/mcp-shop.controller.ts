@@ -1,11 +1,4 @@
-import {
-  All,
-  Controller,
-  Logger,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { All, Controller, Logger, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { McpShopService } from './mcp-shop.service';

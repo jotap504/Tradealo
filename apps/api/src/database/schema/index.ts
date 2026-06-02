@@ -21,3 +21,4 @@ export * from './shop-analytics.schema';
 export * from './api-tokens.schema';
 export * from './agent-carts.schema';
 export * from './seller-payment-credentials.schema';
+export * from './push-tokens.schema';

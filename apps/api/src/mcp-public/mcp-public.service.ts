@@ -7,7 +7,10 @@ import { ShopService } from '../shop/shop.service';
 import type { ListListingsDto } from '../listings/dto/list-listings.dto';
 
 const searchListingsShape = {
-  query: z.string().optional().describe('Free-text search term (matches title and description)'),
+  query: z
+    .string()
+    .optional()
+    .describe('Free-text search term (matches title and description)'),
   category: z.string().optional().describe('Category UUID or slug'),
   condition: z.enum(['new', 'used', 'refurbished']).optional(),
   minPrice: z.number().nonnegative().optional(),
@@ -130,7 +133,8 @@ export class McpPublicService {
       sort: args.sort,
     } as ListListingsDto;
 
-    const { data, nextCursor, hasMore } = await this.listingsService.findAll(dto);
+    const { data, nextCursor, hasMore } =
+      await this.listingsService.findAll(dto);
     return {
       total: data.length,
       hasMore,
@@ -199,7 +203,10 @@ export class McpPublicService {
   }
 
   private listingUrl(id: string): string {
-    const base = (process.env.APP_URL ?? 'https://trocalia.com.ar').replace(/\/$/, '');
+    const base = (process.env.APP_URL ?? 'https://trocalia.com.ar').replace(
+      /\/$/,
+      '',
+    );
     return `${base}/listing/${id}`;
   }
 }

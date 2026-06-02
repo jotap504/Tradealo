@@ -20,6 +20,7 @@ import type { RegisterDto } from './dto/register.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { GoogleProfile } from './strategies/google.strategy';
 import { FirebaseService } from './firebase.service';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 
 type DB = NodePgDatabase<typeof schema>;
 
@@ -473,6 +474,43 @@ export class AuthService {
         phoneVerified: false,
       },
     };
+  }
+
+  async loginWithGoogleIdToken(
+    idToken: string,
+  ): Promise<TokenPair & { user: UserSummary }> {
+    const webClientId = process.env.GOOGLE_CLIENT_ID;
+    const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+    const audience = [webClientId, androidClientId].filter(
+      (v): v is string => !!v,
+    );
+    if (audience.length === 0) {
+      throw new UnauthorizedException('GOOGLE_CLIENT_ID_NOT_CONFIGURED');
+    }
+
+    const client = new OAuth2Client();
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('INVALID_GOOGLE_ID_TOKEN');
+    }
+
+    if (!payload?.sub || !payload.email) {
+      throw new UnauthorizedException('GOOGLE_ID_TOKEN_MISSING_FIELDS');
+    }
+    if (payload.email_verified === false) {
+      throw new UnauthorizedException('GOOGLE_EMAIL_NOT_VERIFIED');
+    }
+
+    const profile: GoogleProfile = {
+      googleId: payload.sub,
+      email: payload.email,
+      displayName: payload.name ?? payload.email.split('@')[0],
+      avatarUrl: payload.picture,
+    };
+    return this.findOrCreateGoogleUser(profile);
   }
 
   async linkPhone(

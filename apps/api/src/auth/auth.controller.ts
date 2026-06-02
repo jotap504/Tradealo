@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Get,
@@ -85,6 +86,17 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleAuth() {
     // Passport redirects to Google — nothing to do here
+  }
+
+  @Public()
+  @Post('google/id-token')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ ttl: 60, limit: 10, keyBy: 'ip' })
+  async googleIdToken(@Body() body: { idToken?: string }) {
+    if (!body.idToken || typeof body.idToken !== 'string') {
+      throw new BadRequestException('idToken is required');
+    }
+    return this.authService.loginWithGoogleIdToken(body.idToken);
   }
 
   @Public()

@@ -4,7 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTokensService, VerifiedToken } from '../../api-tokens/api-tokens.service';
+import {
+  ApiTokensService,
+  VerifiedToken,
+} from '../../api-tokens/api-tokens.service';
 
 /**
  * Authenticates requests via `Authorization: Bearer trc_*`. Attaches the

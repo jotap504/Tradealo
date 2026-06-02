@@ -76,13 +76,13 @@ describe('AdminService', () => {
   describe('listUsers()', () => {
     it('returns paginated user list', async () => {
       mockDb.select.mockReturnValueOnce(qb([mockUser]))
-      const result = await service.listUsers(10, 0)
-      expect(result).toHaveLength(1)
+      const result = await service.listUsers({ limit: 10 })
+      expect(result.data).toHaveLength(1)
     })
 
     it('caps limit at 100', async () => {
       mockDb.select.mockReturnValueOnce(qb([]))
-      await service.listUsers(500, 0)
+      await service.listUsers({ limit: 500 })
       // limit is capped internally — just verify no error
       expect(mockDb.select).toHaveBeenCalledTimes(1)
     })

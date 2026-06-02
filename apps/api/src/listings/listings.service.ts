@@ -1245,8 +1245,7 @@ export class ListingsService {
 
     for (const row of current) {
       const oldPrice = Number(row.price);
-      let newPrice =
-        mode === 'percent' ? oldPrice * (1 + value / 100) : value;
+      let newPrice = mode === 'percent' ? oldPrice * (1 + value / 100) : value;
       newPrice = Math.max(1, Math.round(newPrice * 100) / 100);
       updates.push({
         id: row.id,

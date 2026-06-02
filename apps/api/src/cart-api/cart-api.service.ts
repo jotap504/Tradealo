@@ -297,7 +297,9 @@ export class CartApiService {
       return;
     }
 
-    const sellerToken = await this.sellerPayments.getDecryptedToken(item.sellerId);
+    const sellerToken = await this.sellerPayments.getDecryptedToken(
+      item.sellerId,
+    );
     const lookupPayment = sellerToken
       ? new Payment(new MercadoPagoConfig({ accessToken: sellerToken }))
       : this.platformPayment;
@@ -333,10 +335,7 @@ export class CartApiService {
     this.logger.log(`Agent cart ${cartId} updated to ${newStatus}`);
   }
 
-  private formatCart(
-    cart: typeof agentCarts.$inferSelect,
-    initPoint?: string,
-  ) {
+  private formatCart(cart: typeof agentCarts.$inferSelect, initPoint?: string) {
     return {
       orderId: cart.id,
       status: cart.status,

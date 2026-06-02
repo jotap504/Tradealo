@@ -13,12 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import {
-  IsArray,
-  IsEnum,
-  IsNumber,
-  IsUUID,
-} from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsUUID } from 'class-validator';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListListingsDto } from './dto/list-listings.dto';
@@ -111,10 +106,7 @@ export class ListingsController {
 
   @Patch('bulk-status')
   @RateLimit({ ttl: 60, limit: 20, keyBy: 'user' })
-  bulkStatus(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: BulkStatusDto,
-  ) {
+  bulkStatus(@CurrentUser() user: JwtPayload, @Body() dto: BulkStatusDto) {
     return this.listingsService.bulkUpdateStatus(
       user.sub,
       dto.listingIds,
@@ -135,10 +127,7 @@ export class ListingsController {
 
   @Get('export.csv')
   @RateLimit({ ttl: 60, limit: 6, keyBy: 'user' })
-  async exportCsv(
-    @CurrentUser() user: JwtPayload,
-    @Res() res: Response,
-  ) {
+  async exportCsv(@CurrentUser() user: JwtPayload, @Res() res: Response) {
     const csv = await this.listingsService.exportCsvForUser(user.sub);
     const filename = `trocalia-listings-${new Date()
       .toISOString()
