@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
@@ -33,14 +33,46 @@ export class PushTokensService {
       throw new BadRequestException('platform must be android, ios, or web');
     }
 
+    const now = new Date();
+    const newToken = input.token.trim();
+
+    // Prune any prior tokens registered by the same device for this user.
+    // FCM rotates tokens on reinstall/clear-data; without this, the user
+    // ends up receiving N copies of every push (one per stale token).
+    if (input.deviceId) {
+      await this.db
+        .delete(pushTokens)
+        .where(
+          and(
+            eq(pushTokens.userId, userId),
+            eq(pushTokens.deviceId, input.deviceId),
+            ne(pushTokens.token, newToken),
+          ),
+        );
+
+      // Legacy rows from older client builds that never sent a deviceId.
+      // Safe to drop now that this device is identifying itself — keeps
+      // multi-device users intact (their other devices will re-register
+      // with their own deviceId on next login).
+      await this.db
+        .delete(pushTokens)
+        .where(
+          and(
+            eq(pushTokens.userId, userId),
+            eq(pushTokens.platform, input.platform),
+            isNull(pushTokens.deviceId),
+            ne(pushTokens.token, newToken),
+          ),
+        );
+    }
+
     // Same device can re-login as a different user. The token is the unique
     // key, so we upsert: re-assign userId and bump lastSeen.
-    const now = new Date();
     const [row] = await this.db
       .insert(pushTokens)
       .values({
         userId,
-        token: input.token.trim(),
+        token: newToken,
         platform: input.platform,
         deviceId: input.deviceId,
         appVersion: input.appVersion,

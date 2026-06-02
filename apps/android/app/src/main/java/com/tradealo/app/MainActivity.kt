@@ -477,6 +477,16 @@ class MainActivity : AppCompatActivity() {
         googleSignInClient?.signOut()
     }
 
+    /** Stable per-install device id so the backend can dedupe push tokens
+     *  across FCM token rotations. Generated lazily on first call. */
+    private fun deviceId(): String {
+        val prefs = getSharedPreferences("tradealo_app", Context.MODE_PRIVATE)
+        prefs.getString("device_id", null)?.let { return it }
+        val fresh = java.util.UUID.randomUUID().toString()
+        prefs.edit().putString("device_id", fresh).apply()
+        return fresh
+    }
+
     // ─── FCM token → backend ──────────────────────────────────────────────────
     private fun registerPushTokenWithBackend(accessToken: String) {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
@@ -490,6 +500,7 @@ class MainActivity : AppCompatActivity() {
                     val body = JSONObject()
                         .put("token", fcmToken)
                         .put("platform", "android")
+                        .put("deviceId", deviceId())
                         .put("appVersion", BuildConfig.VERSION_NAME)
                         .toString()
                         .toRequestBody("application/json".toMediaType())
