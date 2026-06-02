@@ -109,8 +109,15 @@ export class MessagingService {
       .set(updateFields)
       .where(eq(schema.conversations.id, conversationId));
 
-    // In-app notification for recipient
     const preview = content.length > 80 ? content.slice(0, 80) + '…' : content;
+    const notifData = {
+      conversationId,
+      listingId: conv.listingId,
+      senderId,
+      url: `/messages/${conversationId}`,
+    };
+
+    // In-app notification for the recipient (badge / notification center)
     await this.notificationsService
       .send({
         userId: recipientId,
@@ -118,7 +125,19 @@ export class MessagingService {
         type: 'message',
         title: 'Nuevo mensaje',
         body: preview,
-        data: { conversationId, listingId: conv.listingId, senderId },
+        data: notifData,
+      })
+      .catch(() => {});
+
+    // Native push to all registered devices of the recipient
+    await this.notificationsService
+      .send({
+        userId: recipientId,
+        channel: 'push',
+        type: 'message',
+        title: 'Nuevo mensaje',
+        body: preview,
+        data: notifData,
       })
       .catch(() => {});
 

@@ -4,6 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Resend } from 'resend';
 import { DRIZZLE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
+import { PushDispatcherService } from '../push-tokens/push-dispatcher.service';
 
 type DB = NodePgDatabase<typeof schema>;
 
@@ -21,18 +22,17 @@ export interface SendNotificationParams {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private readonly resend: Resend | null;
-  private readonly oneSignalAppId: string;
-  private readonly oneSignalKey: string;
   private readonly fromEmail: string;
 
-  constructor(@Inject(DRIZZLE_TOKEN) private readonly db: DB) {
+  constructor(
+    @Inject(DRIZZLE_TOKEN) private readonly db: DB,
+    private readonly pushDispatcher: PushDispatcherService,
+  ) {
     this.resend = process.env.RESEND_API_KEY
       ? new Resend(process.env.RESEND_API_KEY)
       : null;
     if (!this.resend)
       this.logger.warn('RESEND_API_KEY not set — email notifications disabled');
-    this.oneSignalAppId = process.env.ONESIGNAL_APP_ID ?? '';
-    this.oneSignalKey = process.env.ONESIGNAL_API_KEY ?? '';
     this.fromEmail = process.env.MAIL_FROM ?? 'noreply@trocalia.ar';
   }
 
@@ -189,24 +189,19 @@ export class NotificationsService {
     body: string,
     data?: Record<string, unknown>,
   ): Promise<void> {
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${this.oneSignalKey}`,
-      },
-      body: JSON.stringify({
-        app_id: this.oneSignalAppId,
-        include_external_user_ids: [userId],
-        headings: { en: title },
-        contents: { en: body },
-        data: data ?? {},
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OneSignal error: ${response.status}`);
+    // FCM data payload must be a flat string-string map.
+    const flatData: Record<string, string> = {};
+    if (data) {
+      for (const [k, v] of Object.entries(data)) {
+        if (v == null) continue;
+        flatData[k] = typeof v === 'string' ? v : JSON.stringify(v);
+      }
     }
+    await this.pushDispatcher.sendToUser(userId, {
+      title,
+      body,
+      data: Object.keys(flatData).length > 0 ? flatData : undefined,
+    });
   }
 
   private async getUserEmail(userId: string): Promise<string> {
