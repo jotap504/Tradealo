@@ -494,7 +494,9 @@ export class AuthService {
       const ticket = await client.verifyIdToken({ idToken, audience });
       payload = ticket.getPayload();
     } catch (err: any) {
-      throw new UnauthorizedException(`INVALID_GOOGLE_ID_TOKEN: ${err.message}`);
+      throw new UnauthorizedException(
+        `INVALID_GOOGLE_ID_TOKEN: ${err.message}`,
+      );
     }
 
     if (!payload?.sub || !payload.email) {

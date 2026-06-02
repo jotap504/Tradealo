@@ -63,6 +63,12 @@ apiClient.interceptors.response.use(
       if (typeof window !== 'undefined' && unwrapped) {
         if (unwrapped.accessToken) {
           localStorage.setItem('accessToken', unwrapped.accessToken);
+          // Notify the Android shell so it can register the FCM push token
+          // against this session. No-op outside the native WebView.
+          const bridge = (window as unknown as {
+            AndroidBridge?: { reportReady?: (t: string) => void };
+          }).AndroidBridge;
+          try { bridge?.reportReady?.(unwrapped.accessToken); } catch {}
         }
         if (unwrapped.refreshToken) {
           localStorage.setItem('refreshToken', unwrapped.refreshToken);
