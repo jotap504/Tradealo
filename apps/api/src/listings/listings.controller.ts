@@ -239,23 +239,26 @@ export class ListingsController {
 
   @Public()
   @Get(':id/questions')
-  getQuestions(@Param('id') id: string) {
-    return this.listingsService.getQuestions(id);
+  getQuestions(
+    @Param('id') id: string,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.listingsService.getQuestions(id, user?.sub);
   }
 
-  @Post(':id/questions/publish')
-  @HttpCode(HttpStatus.CREATED)
-  publishChatAsQuestion(
+  @Patch(':id/questions/:questionId/privacy')
+  @HttpCode(HttpStatus.OK)
+  setQuestionPrivacy(
     @Param('id') id: string,
+    @Param('questionId') questionId: string,
     @CurrentUser() user: JwtPayload,
-    @Body() dto: { buyerUserId: string; question: string; answer: string },
+    @Body() dto: { isPrivate: boolean },
   ) {
-    return this.listingsService.publishChatAsQuestion(
+    return this.listingsService.setQuestionPrivacy(
       id,
+      questionId,
       user.sub,
-      dto.buyerUserId,
-      dto.question,
-      dto.answer,
+      dto.isPrivate,
     );
   }
 }

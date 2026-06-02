@@ -6,19 +6,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Phone, Send, ShoppingCart, Hammer, TrendingUp, User } from 'lucide-react';
+import { Phone, ShoppingCart, Hammer, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input, Textarea } from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import { Card, CardBody } from '@/components/ui/Card';
-import { useAuthStore, toast } from '@/lib/store';
+import { toast } from '@/lib/store';
 import { listings } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import type { Listing, Bid } from '@/types';
-
-const contactSchema = z.object({
-  message: z.string().min(10, 'Contanos un poco más (mínimo 10 caracteres)'),
-});
-type ContactValues = z.infer<typeof contactSchema>;
 
 interface Props {
   listing: Listing;
@@ -29,15 +24,7 @@ interface Props {
 
 export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props) {
   const router = useRouter();
-  const currentUser = useAuthStore((s) => s.user);
-  const [contactSubmitting, setContactSubmitting] = useState(false);
   const [currentStock, setCurrentStock] = useState(listing.stock);
-
-  const {
-    register: registerContact,
-    handleSubmit: handleContactSubmit,
-    formState: { errors: contactErrors },
-  } = useForm<ContactValues>({ resolver: zodResolver(contactSchema) });
 
   const { data: bids = [], refetch: refetchBids } = useQuery({
     queryKey: ['bids', listing.id],
@@ -78,19 +65,6 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
     },
   });
 
-  const onContact = async (values: ContactValues) => {
-    setContactSubmitting(true);
-    try {
-      const result = await listings.contactSeller(listing.id, values);
-      toast.success('Mensaje enviado');
-      router.push(`/messages/${result.conversationId}`);
-    } catch {
-      toast.error('No pudimos enviar tu consulta. Probá más tarde.');
-    } finally {
-      setContactSubmitting(false);
-    }
-  };
-
   // Use per-listing contactInfo when available, fall back to profile-level phone/showPhone
   const listingPhone = listing.contactInfo?.phone ?? phone;
   const listingShowPhone = listing.contactInfo?.phone ? (listing.contactInfo?.showWhatsApp ?? true) : showPhone;
@@ -117,24 +91,10 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
             </a>
           )}
 
-          <form onSubmit={handleContactSubmit(onContact)} className="space-y-3">
-            <p className="text-sm font-medium text-tradealo-text">Consultar al vendedor</p>
-            {currentUser && (
-              <div className="flex items-center gap-2 text-xs text-tradealo-text-muted bg-tradealo-bg rounded-lg px-3 py-2">
-                <User size={14} />
-                <span>{currentUser.username ?? currentUser.email}</span>
-              </div>
-            )}
-            <Textarea
-              placeholder="Hola, me interesa, ¿sigue disponible?"
-              rows={3}
-              {...registerContact('message')}
-              error={contactErrors.message?.message}
-            />
-            <Button type="submit" fullWidth loading={contactSubmitting} leftIcon={<Send size={16} />}>
-              Enviar consulta
-            </Button>
-          </form>
+          <p className="text-xs text-tradealo-text-muted">
+            ¿Tenés dudas? Hacé tu pregunta en la sección{' '}
+            <strong>Preguntas y respuestas</strong> más abajo.
+          </p>
 
           <div className="border-t border-tradealo-border pt-3">
             <div className="flex items-center justify-between mb-2">
@@ -246,24 +206,10 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
           </a>
         )}
 
-        <form onSubmit={handleContactSubmit(onContact)} className="space-y-3">
-          <p className="text-sm font-medium text-tradealo-text">Enviar consulta</p>
-          {currentUser && (
-            <div className="flex items-center gap-2 text-xs text-tradealo-text-muted bg-tradealo-bg rounded-lg px-3 py-2">
-              <User size={14} />
-              <span>{currentUser.username ?? currentUser.email}</span>
-            </div>
-          )}
-          <Textarea
-            placeholder="Hola, me interesa, ¿sigue disponible? ¿Aceptás trueque?"
-            rows={4}
-            {...registerContact('message')}
-            error={contactErrors.message?.message}
-          />
-          <Button type="submit" fullWidth loading={contactSubmitting} leftIcon={<Send size={16} />}>
-            Enviar consulta
-          </Button>
-        </form>
+        <p className="text-xs text-tradealo-text-muted">
+          ¿Querés saber más? Hacé tu consulta en la sección{' '}
+          <strong>Preguntas y respuestas</strong> más abajo.
+        </p>
       </CardBody>
     </Card>
   );

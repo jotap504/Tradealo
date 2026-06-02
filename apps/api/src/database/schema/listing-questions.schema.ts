@@ -1,4 +1,11 @@
-import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  boolean,
+  index,
+} from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
 import { listings } from './listings.schema';
 
@@ -15,6 +22,7 @@ export const listingQuestions = pgTable(
     question: text('question').notNull(),
     answer: text('answer'),
     answeredAt: timestamp('answered_at', { withTimezone: true }),
+    isPrivate: boolean('is_private').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -1086,7 +1086,7 @@ export class ListingsService {
 
   async askQuestion(listingId: string, userId: string, question: string) {
     const listing = await this.db
-      .select({ userId: schema.listings.userId })
+      .select({ userId: schema.listings.userId, title: schema.listings.title })
       .from(schema.listings)
       .where(eq(schema.listings.id, listingId))
       .then((rows) => rows[0]);
@@ -1100,12 +1100,29 @@ export class ListingsService {
       .values({ listingId, userId, question })
       .returning();
 
+    const previewBody = question.substring(0, 200);
+    const notifData = {
+      listingId,
+      questionId: qa.id,
+      url: `/listing/${listingId}`,
+    };
+
     await this.notificationsService.send({
       userId: listing.userId,
       channel: 'in_app',
       type: 'listing_question',
       title: 'Nueva pregunta en tu publicación',
-      body: question.substring(0, 200),
+      body: previewBody,
+      data: notifData,
+    });
+
+    await this.notificationsService.send({
+      userId: listing.userId,
+      channel: 'push',
+      type: 'listing_question',
+      title: `Pregunta en "${listing.title}"`,
+      body: previewBody,
+      data: notifData,
     });
 
     return qa;
@@ -1142,49 +1159,74 @@ export class ListingsService {
     return qa;
   }
 
-  async getQuestions(listingId: string) {
-    return this.db
-      .select()
-      .from(schema.listingQuestions)
-      .where(eq(schema.listingQuestions.listingId, listingId))
-      .orderBy(desc(schema.listingQuestions.createdAt));
-  }
-
-  /** Publishes a curated Q&A from a private chat thread. Used by the seller
-   *  on /messages/:id to expose useful buyer questions on the listing page. */
-  async publishChatAsQuestion(
-    listingId: string,
-    sellerUserId: string,
-    buyerUserId: string,
-    question: string,
-    answer: string,
-  ) {
-    const listing = await this.db
+  async getQuestions(listingId: string, requesterUserId?: string) {
+    const [listing] = await this.db
       .select({ userId: schema.listings.userId })
       .from(schema.listings)
       .where(eq(schema.listings.id, listingId))
-      .then((rows) => rows[0]);
+      .limit(1);
+    if (!listing) return [];
+
+    const isSeller =
+      !!requesterUserId && requesterUserId === listing.userId;
+
+    const rows = await this.db
+      .select({
+        id: schema.listingQuestions.id,
+        listingId: schema.listingQuestions.listingId,
+        userId: schema.listingQuestions.userId,
+        question: schema.listingQuestions.question,
+        answer: schema.listingQuestions.answer,
+        answeredAt: schema.listingQuestions.answeredAt,
+        isPrivate: schema.listingQuestions.isPrivate,
+        createdAt: schema.listingQuestions.createdAt,
+        askerUsername: schema.userProfiles.username,
+      })
+      .from(schema.listingQuestions)
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.listingQuestions.userId),
+      )
+      .where(eq(schema.listingQuestions.listingId, listingId))
+      .orderBy(desc(schema.listingQuestions.createdAt));
+
+    // Non-seller viewers (and the asker themselves) should not see questions
+    // the seller marked as private — except the asker still sees their own.
+    return rows.filter((q) => {
+      if (!q.isPrivate) return true;
+      if (isSeller) return true;
+      return q.userId === requesterUserId;
+    });
+  }
+
+  async setQuestionPrivacy(
+    listingId: string,
+    questionId: string,
+    sellerUserId: string,
+    isPrivate: boolean,
+  ) {
+    const [listing] = await this.db
+      .select({ userId: schema.listings.userId })
+      .from(schema.listings)
+      .where(eq(schema.listings.id, listingId))
+      .limit(1);
 
     if (!listing) throw new NotFoundException('LISTING_NOT_FOUND');
     if (listing.userId !== sellerUserId)
       throw new ForbiddenException('NOT_LISTING_OWNER');
 
-    const trimmedQ = question.trim();
-    const trimmedA = answer.trim();
-    if (trimmedQ.length < 5)
-      throw new BadRequestException('QUESTION_TOO_SHORT');
-    if (trimmedA.length < 2) throw new BadRequestException('ANSWER_TOO_SHORT');
-
     const [qa] = await this.db
-      .insert(schema.listingQuestions)
-      .values({
-        listingId,
-        userId: buyerUserId,
-        question: trimmedQ,
-        answer: trimmedA,
-        answeredAt: new Date(),
-      })
+      .update(schema.listingQuestions)
+      .set({ isPrivate })
+      .where(
+        and(
+          eq(schema.listingQuestions.id, questionId),
+          eq(schema.listingQuestions.listingId, listingId),
+        ),
+      )
       .returning();
+
+    if (!qa) throw new NotFoundException('QUESTION_NOT_FOUND');
     return qa;
   }
 

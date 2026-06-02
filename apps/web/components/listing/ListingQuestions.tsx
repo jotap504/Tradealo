@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageCircle } from 'lucide-react';
+import { Eye, EyeOff, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { listings } from '@/lib/api';
@@ -108,11 +108,29 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                   key={q.id}
                   className="bg-white rounded-xl border border-tradealo-border p-4 space-y-2"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-tradealo-text">{q.question}</p>
-                    <p className="text-[10px] text-tradealo-text-muted mt-0.5">
-                      <RelativeTime iso={q.createdAt} />
-                    </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-tradealo-text break-words">{q.question}</p>
+                      <p className="text-[10px] text-tradealo-text-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-medium text-tradealo-text-muted">
+                          {q.askerUsername ? `@${q.askerUsername}` : 'Anónimo'}
+                        </span>
+                        <span aria-hidden>·</span>
+                        <RelativeTime iso={q.createdAt} />
+                        {q.isPrivate && (
+                          <span className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-100 text-[10px] text-tradealo-text-muted">
+                            <EyeOff size={10} /> Privada
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    {isOwner && (
+                      <PrivacyToggle
+                        listingId={listingId}
+                        questionId={q.id}
+                        isPrivate={q.isPrivate}
+                      />
+                    )}
                   </div>
                   {q.answer ? (
                     <div className="ml-4 pl-3 border-l-2 border-tradealo-primary bg-tradealo-primary-light/30 rounded-r-lg p-3">
@@ -195,5 +213,42 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+function PrivacyToggle({
+  listingId,
+  questionId,
+  isPrivate,
+}: {
+  listingId: string;
+  questionId: string;
+  isPrivate: boolean;
+}) {
+  const qc = useQueryClient();
+  const [pending, setPending] = useState(false);
+
+  const handleToggle = async () => {
+    setPending(true);
+    try {
+      await listings.setQuestionPrivacy(listingId, questionId, !isPrivate);
+      qc.invalidateQueries({ queryKey: ['listing-questions', listingId] });
+    } catch {
+      toast.error('No se pudo cambiar la visibilidad');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleToggle}
+      disabled={pending}
+      title={isPrivate ? 'Hacer visible públicamente' : 'Ocultar esta pregunta del público'}
+      className="shrink-0 p-1 rounded hover:bg-gray-100 text-tradealo-text-muted disabled:opacity-50"
+    >
+      {isPrivate ? <EyeOff size={14} /> : <Eye size={14} />}
+    </button>
   );
 }

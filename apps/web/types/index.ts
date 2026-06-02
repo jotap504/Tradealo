@@ -323,7 +323,9 @@ export interface ListingQuestion {
   question: string;
   answer: string | null;
   answeredAt: string | null;
+  isPrivate: boolean;
   createdAt: string;
+  askerUsername?: string | null;
 }
 
 export interface SystemConfig {
