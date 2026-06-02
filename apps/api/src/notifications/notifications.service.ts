@@ -87,6 +87,9 @@ export class NotificationsService {
       .where(
         and(
           eq(schema.notifications.userId, userId),
+          // Push rows are kept as delivery audit but must not appear in the
+          // bell — the in_app row is the user-facing record.
+          eq(schema.notifications.channel, 'in_app'),
           isNull(schema.notifications.readAt),
         ),
       );
@@ -94,7 +97,10 @@ export class NotificationsService {
   }
 
   async findForUser(userId: string, unreadOnly = false) {
-    const conditions = [eq(schema.notifications.userId, userId)];
+    const conditions = [
+      eq(schema.notifications.userId, userId),
+      eq(schema.notifications.channel, 'in_app'),
+    ];
     if (unreadOnly) conditions.push(isNull(schema.notifications.readAt));
 
     const rows = await this.db
