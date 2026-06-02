@@ -439,9 +439,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun injectTokensAndReload(payload: JSONObject) {
-        val accessToken = payload.optString("accessToken")
-        val refreshToken = payload.optString("refreshToken")
-        val user = payload.optJSONObject("user")?.toString() ?: "null"
+        val dataObj = payload.optJSONObject("data") ?: payload
+        val accessToken = dataObj.optString("accessToken")
+        val refreshToken = dataObj.optString("refreshToken")
+        val user = dataObj.optJSONObject("user")?.toString() ?: "null"
         if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
             Toast.makeText(this, "Respuesta inválida del servidor.", Toast.LENGTH_LONG).show()
             return
@@ -452,6 +453,7 @@ class MainActivity : AppCompatActivity() {
                 localStorage.setItem('accessToken', ${jsString(accessToken)});
                 localStorage.setItem('refreshToken', ${jsString(refreshToken)});
                 localStorage.setItem('user', ${jsString(user)});
+                localStorage.setItem('authUser', ${jsString(user)});
               } catch (e) {}
               window.location.href = '/dashboard';
             })();
