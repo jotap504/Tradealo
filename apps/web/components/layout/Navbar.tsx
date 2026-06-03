@@ -177,6 +177,11 @@ export function Navbar() {
                       label="Mis publicaciones"
                     />
                     <DropdownLink
+                      href="/my-shop/questions"
+                      icon={<MessageCircle size={15} />}
+                      label="Preguntas por responder"
+                    />
+                    <DropdownLink
                       href="/my-sales"
                       icon={<TrendingUp size={15} />}
                       label="Mis ventas"
@@ -299,6 +304,12 @@ export function Navbar() {
                     className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
                   >
                     Mis publicaciones
+                  </Link>
+                  <Link
+                    href="/my-shop/questions"
+                    className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  >
+                    Preguntas por responder
                   </Link>
                   <Link
                     href="/my-sales"
