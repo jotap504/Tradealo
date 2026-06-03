@@ -134,16 +134,18 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                   </div>
 
                   {q.answer && (
-                    <div className="mt-2 pt-2 border-t border-dashed border-tradealo-border">
-                      <p className="text-sm text-tradealo-text whitespace-pre-wrap break-words">
-                        <span className="text-tradealo-primary font-semibold mr-1">↳</span>
-                        {q.answer}
-                      </p>
-                      {q.answeredAt && (
-                        <p className="text-[10px] text-tradealo-text-muted mt-0.5 pl-4">
-                          Respondido <RelativeTime iso={q.answeredAt} />
+                    <div className="mt-2 flex gap-2">
+                      <span className="text-tradealo-primary font-semibold leading-tight">↳</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-tradealo-text whitespace-pre-wrap break-words">
+                          {q.answer}
                         </p>
-                      )}
+                        {q.answeredAt && (
+                          <p className="text-[10px] text-tradealo-text-muted mt-0.5">
+                            Respondido <RelativeTime iso={q.answeredAt} />
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
 
