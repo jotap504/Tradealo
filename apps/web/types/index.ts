@@ -328,6 +328,17 @@ export interface ListingQuestion {
   askerUsername?: string | null;
 }
 
+export interface PendingQuestion {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  question: string;
+  isPrivate: boolean;
+  createdAt: string;
+  askerUserId: string;
+  askerUsername: string | null;
+}
+
 export interface SystemConfig {
   key: string;
   value: string;

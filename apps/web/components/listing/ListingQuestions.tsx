@@ -106,7 +106,7 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
               {visibleQuestions.map((q) => (
                 <div
                   key={q.id}
-                  className="bg-white rounded-xl border border-tradealo-border p-4 space-y-2"
+                  className="bg-white rounded-xl border border-tradealo-border p-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -132,26 +132,33 @@ export function ListingQuestions({ listingId, sellerId }: Props) {
                       />
                     )}
                   </div>
-                  {q.answer ? (
-                    <div className="ml-4 pl-3 border-l-2 border-tradealo-primary bg-tradealo-primary-light/30 rounded-r-lg p-3">
-                      <p className="text-sm text-tradealo-text">{q.answer}</p>
+
+                  {q.answer && (
+                    <div className="mt-2 pt-2 border-t border-dashed border-tradealo-border">
+                      <p className="text-sm text-tradealo-text whitespace-pre-wrap break-words">
+                        <span className="text-tradealo-primary font-semibold mr-1">↳</span>
+                        {q.answer}
+                      </p>
                       {q.answeredAt && (
-                        <p className="text-[10px] text-tradealo-text-muted mt-0.5">
+                        <p className="text-[10px] text-tradealo-text-muted mt-0.5 pl-4">
                           Respondido <RelativeTime iso={q.answeredAt} />
                         </p>
                       )}
                     </div>
-                  ) : isOwner && answeringId !== q.id ? (
+                  )}
+
+                  {!q.answer && isOwner && answeringId !== q.id && (
                     <button
                       type="button"
                       onClick={() => setAnsweringId(q.id)}
-                      className="text-xs text-tradealo-primary font-medium hover:underline"
+                      className="mt-2 text-xs text-tradealo-primary font-medium hover:underline"
                     >
                       Responder
                     </button>
-                  ) : null}
+                  )}
+
                   {answeringId === q.id && (
-                    <div className="space-y-2">
+                    <div className="mt-2 space-y-2">
                       <Textarea
                         placeholder="Escribí tu respuesta…"
                         rows={3}

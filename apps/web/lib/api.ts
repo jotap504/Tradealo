@@ -16,6 +16,7 @@ import type {
   Message,
   Bid,
   ListingQuestion,
+  PendingQuestion,
   LiveChatMessage,
   PaginatedResponse,
   SystemConfig,
@@ -298,6 +299,8 @@ export const listings = {
     post<ListingQuestion>(`/listings/${id}/questions/${questionId}/answer`, { answer }),
   setQuestionPrivacy: (id: string, questionId: string, isPrivate: boolean) =>
     patch<ListingQuestion>(`/listings/${id}/questions/${questionId}/privacy`, { isPrivate }),
+  getPendingQuestions: () =>
+    get<PendingQuestion[]>('/listings/me/pending-questions'),
 };
 
 export const categories = {

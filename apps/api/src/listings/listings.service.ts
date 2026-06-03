@@ -1167,8 +1167,7 @@ export class ListingsService {
       .limit(1);
     if (!listing) return [];
 
-    const isSeller =
-      !!requesterUserId && requesterUserId === listing.userId;
+    const isSeller = !!requesterUserId && requesterUserId === listing.userId;
 
     const rows = await this.db
       .select({
@@ -1197,6 +1196,39 @@ export class ListingsService {
       if (isSeller) return true;
       return q.userId === requesterUserId;
     });
+  }
+
+  /** All unanswered questions across every listing owned by `sellerUserId`,
+   *  joined with the listing title and the asker username so the inbox can
+   *  render without a second roundtrip. */
+  async getPendingQuestionsForSeller(sellerUserId: string) {
+    return this.db
+      .select({
+        id: schema.listingQuestions.id,
+        listingId: schema.listingQuestions.listingId,
+        listingTitle: schema.listings.title,
+        question: schema.listingQuestions.question,
+        isPrivate: schema.listingQuestions.isPrivate,
+        createdAt: schema.listingQuestions.createdAt,
+        askerUserId: schema.listingQuestions.userId,
+        askerUsername: schema.userProfiles.username,
+      })
+      .from(schema.listingQuestions)
+      .innerJoin(
+        schema.listings,
+        eq(schema.listings.id, schema.listingQuestions.listingId),
+      )
+      .leftJoin(
+        schema.userProfiles,
+        eq(schema.userProfiles.userId, schema.listingQuestions.userId),
+      )
+      .where(
+        and(
+          eq(schema.listings.userId, sellerUserId),
+          isNull(schema.listingQuestions.answer),
+        ),
+      )
+      .orderBy(desc(schema.listingQuestions.createdAt));
   }
 
   async setQuestionPrivacy(

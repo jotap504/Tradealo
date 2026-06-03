@@ -21,6 +21,7 @@ import {
   Plug,
   Wallet,
   ListChecks,
+  MessageCircle,
 } from 'lucide-react';
 import { shop as shopApi, shopSubscription as subApi } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -46,6 +47,7 @@ const MANAGE_LINKS = [
   { href: '/my-shop/footer', label: 'Footer / Pie de página', description: 'Elegí el estilo y datos de contacto del footer', icon: Layout, color: 'bg-slate-50 text-slate-600' },
   { href: '/my-shop/edit', label: 'Editar perfil', description: 'Nombre, logo, banner, redes', icon: Pencil, color: 'bg-teal-50 text-teal-600' },
   { href: '/my-shop/listings', label: 'Mis listings', description: 'Bulk pause, ajustar precios, exportar CSV', icon: ListChecks, color: 'bg-purple-50 text-purple-600' },
+  { href: '/my-shop/questions', label: 'Preguntas por responder', description: 'Todas las preguntas pendientes en tus publicaciones', icon: MessageCircle, color: 'bg-amber-50 text-amber-600' },
   { href: '/my-shop/gallery', label: 'Galería', description: 'Fotos de tu local/productos', icon: ImageIcon, color: 'bg-blue-50 text-blue-600' },
   { href: '/my-shop/pinned', label: 'Destacados', description: 'Fijá hasta 6 productos', icon: Pin, color: 'bg-orange-50 text-orange-600' },
   { href: '/my-shop/categories', label: 'Categorías', description: 'Orden de categorías', icon: LayoutGrid, color: 'bg-purple-50 text-purple-600' },

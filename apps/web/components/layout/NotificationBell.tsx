@@ -86,7 +86,8 @@ export function NotificationBell() {
               </div>
             ) : (
               list.data.slice(0, 5).map((n) => {
-                const href = (n as { data?: { href?: string } }).data?.href;
+                const data = (n as { data?: { href?: string; url?: string } }).data;
+                const href = data?.url ?? data?.href;
                 return (
                 <div
                   key={n.id}

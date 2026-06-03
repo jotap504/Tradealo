@@ -237,12 +237,14 @@ export class ListingsController {
     );
   }
 
+  @Get('me/pending-questions')
+  getPendingQuestions(@CurrentUser() user: JwtPayload) {
+    return this.listingsService.getPendingQuestionsForSeller(user.sub);
+  }
+
   @Public()
   @Get(':id/questions')
-  getQuestions(
-    @Param('id') id: string,
-    @CurrentUser() user?: JwtPayload,
-  ) {
+  getQuestions(@Param('id') id: string, @CurrentUser() user?: JwtPayload) {
     return this.listingsService.getQuestions(id, user?.sub);
   }
 

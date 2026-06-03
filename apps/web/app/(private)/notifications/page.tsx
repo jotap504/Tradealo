@@ -90,7 +90,8 @@ export default function NotificationsPage() {
       ) : (
         <ul className="space-y-3">
           {items.map((notif) => {
-            const href = (notif as { data?: { href?: string } }).data?.href;
+            const data = (notif as { data?: { href?: string; url?: string } }).data;
+            const href = data?.url ?? data?.href;
             return (
             <li
               key={notif.id}
