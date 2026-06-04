@@ -177,15 +177,16 @@ export class ListingsService {
       conditions.push(lte(schema.listings.price, String(dto.maxPrice)));
     if (dto.q) {
       const q = dto.q.trim();
-      // Match by substring (ILIKE) OR trigram similarity so typos like
-      // "Sansumg" still surface "Samsung". Title threshold is higher because
-      // it is short and high-signal; descriptions are noisier.
+      // word_similarity finds the best matching word inside the column, so a
+      // typo against one word ("Homda") still matches a multi-word title
+      // ("Honda CB 250") — plain similarity() over the whole title would be
+      // diluted by the surrounding text.
       conditions.push(
         sql`(
           ${schema.listings.title} ILIKE ${`%${q}%`}
           OR ${schema.listings.description} ILIKE ${`%${q}%`}
-          OR similarity(${schema.listings.title}, ${q}) > 0.2
-          OR similarity(${schema.listings.description}, ${q}) > 0.15
+          OR word_similarity(${q}, ${schema.listings.title}) > 0.4
+          OR word_similarity(${q}, ${schema.listings.description}) > 0.35
         )`,
       );
     }
@@ -265,11 +266,13 @@ export class ListingsService {
     }
 
     // When q is present on the default (premium) sort, rank by trigram
-    // relevance after the premium tier. Title weighs more than description.
+    // relevance after the premium tier. word_similarity is preferred so a
+    // matching word inside a longer title still scores high. Title weighs
+    // more than description.
     const relevanceExpr = dto.q
       ? sql`GREATEST(
-          similarity(${schema.listings.title}, ${dto.q.trim()}),
-          similarity(${schema.listings.description}, ${dto.q.trim()}) * 0.6
+          word_similarity(${dto.q.trim()}, ${schema.listings.title}),
+          word_similarity(${dto.q.trim()}, ${schema.listings.description}) * 0.6
         )`
       : null;
 
