@@ -68,6 +68,9 @@ export const listings = pgTable(
     description: text('description').notNull(),
     aiGenerated: boolean('ai_generated').notNull().default(false),
 
+    sourceProvider: varchar('source_provider', { length: 20 }),
+    sourceProductId: varchar('source_product_id', { length: 60 }),
+
     price: decimal('price', { precision: 12, scale: 2 }).notNull(),
     currency: currencyEnum('currency').notNull().default('ARS'),
     priceNegotiable: boolean('price_negotiable').notNull().default(false),

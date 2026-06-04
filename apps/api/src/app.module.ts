@@ -33,6 +33,7 @@ import { CartApiModule } from './cart-api/cart-api.module';
 import { SellerPaymentsModule } from './seller-payments/seller-payments.module';
 import { PushTokensModule } from './push-tokens/push-tokens.module';
 import { AiModule } from './ai/ai.module';
+import { MercadolibreModule } from './mercadolibre/mercadolibre.module';
 // import { SearchModule } from './search/search.module'
 // import { ModerationModule } from './moderation/moderation.module'
 // import { JobsModule } from './jobs/jobs.module'
@@ -76,6 +77,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     SellerPaymentsModule,
     PushTokensModule,
     AiModule,
+    MercadolibreModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

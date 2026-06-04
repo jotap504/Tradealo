@@ -415,6 +415,12 @@ function ListingRow({
                 {SALE_TYPE_LABELS[listing.saleType] ?? listing.saleType}
               </Badge>
             )}
+            {listing.aiGenerated &&
+              listing.sourceProvider === 'mercadolibre' && (
+                <Badge variant="default" size="sm">
+                  Importado IA · ML
+                </Badge>
+              )}
           </div>
           <PriceDisplay
             amount={listing.price}

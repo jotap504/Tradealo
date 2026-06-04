@@ -22,6 +22,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { toast } from '@/lib/store';
+import { MercadoLibreCard } from '@/components/shop/MercadoLibreCard';
 
 function formatRelative(iso: string | null): string {
   if (!iso) return 'Nunca';
@@ -125,11 +126,25 @@ export default function IntegrationsPage() {
             <Plug size={20} />
           </div>
           <div>
-            <h1 className="font-heading text-xl font-bold text-tradealo-text">Agentes IA (MCP)</h1>
+            <h1 className="font-heading text-xl font-bold text-tradealo-text">Integraciones</h1>
             <p className="text-sm text-tradealo-text-muted">
-              Conectá Claude o ChatGPT a tu tienda para que cargue productos por vos.
+              Conectá tu tienda con MercadoLibre o agentes IA.
             </p>
           </div>
+        </div>
+      </div>
+
+      <MercadoLibreCard />
+
+      <div className="flex items-center gap-3 pt-4">
+        <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600">
+          <Plug size={20} />
+        </div>
+        <div>
+          <h2 className="font-heading text-lg font-bold text-tradealo-text">Agentes IA (MCP)</h2>
+          <p className="text-sm text-tradealo-text-muted">
+            Conectá Claude o ChatGPT a tu tienda para que cargue productos por vos.
+          </p>
         </div>
       </div>
 

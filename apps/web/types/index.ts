@@ -75,6 +75,9 @@ export interface Listing {
   stock?: number;
   desiredPrice?: number;
   paymentInfo?: PaymentInfo;
+  aiGenerated?: boolean;
+  sourceProvider?: string | null;
+  sourceProductId?: string | null;
 }
 
 export interface Bid {

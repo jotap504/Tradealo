@@ -129,6 +129,94 @@ export class ListingsService {
     return listing;
   }
 
+  /**
+   * Creates a listing in draft state from an external import (MercadoLibre, ...).
+   * Skips wallet charging because the active Mi Tienda subscription covers
+   * unlimited standard publications.
+   */
+  async createDraftFromImport(
+    userId: string,
+    dto: CreateListingDto,
+    importMeta: { provider: string; externalProductId: string },
+  ): Promise<Listing> {
+    const [subscription] = await this.db
+      .select({ status: schema.shopSubscriptions.status })
+      .from(schema.shopSubscriptions)
+      .where(eq(schema.shopSubscriptions.userId, userId))
+      .limit(1);
+    if (!subscription || subscription.status !== 'active') {
+      throw new ForbiddenException('MI_TIENDA_REQUIRED');
+    }
+
+    const [category] = await this.db
+      .select({
+        id: schema.categories.id,
+        isCollectible: schema.categories.isCollectible,
+      })
+      .from(schema.categories)
+      .where(eq(schema.categories.id, dto.categoryId))
+      .limit(1);
+    if (!category) throw new NotFoundException('CATEGORY_NOT_FOUND');
+
+    const durationDays =
+      dto.durationDays ??
+      (await this.configService.getNumber('listing.duration.default', 30));
+
+    const riskScore = this.computeRiskScore(dto);
+    const moderationStatus = this.resolveModerationStatus(riskScore);
+
+    let city = dto.city;
+    let province = dto.province;
+    if (!city || !province) {
+      const [profile] = await this.db
+        .select({
+          city: schema.userProfiles.city,
+          province: schema.userProfiles.province,
+        })
+        .from(schema.userProfiles)
+        .where(eq(schema.userProfiles.userId, userId))
+        .limit(1);
+      city = city ?? profile?.city ?? undefined;
+      province = province ?? profile?.province ?? undefined;
+    }
+
+    const [listing] = await this.db
+      .insert(schema.listings)
+      .values({
+        userId,
+        categoryId: dto.categoryId,
+        type: 'standard',
+        isCollectible: category.isCollectible,
+        title: dto.title,
+        description: dto.description,
+        aiGenerated: true,
+        sourceProvider: importMeta.provider,
+        sourceProductId: importMeta.externalProductId,
+        price: String(dto.price),
+        currency: dto.currency,
+        priceNegotiable: dto.priceNegotiable ?? false,
+        condition: dto.condition,
+        locationText: dto.locationText,
+        city,
+        province,
+        paymentMethods: dto.paymentMethods ?? [],
+        shippingOptions: dto.shippingOptions ?? [],
+        shippingDescription: dto.shippingDescription,
+        durationDays,
+        creditsSpent: 0,
+        wasFreeQuota: false,
+        moderationStatus,
+        riskScore,
+        status: 'draft',
+        saleType: dto.saleType ?? 'contact',
+        stock: dto.stock,
+        contactInfo: dto.contactInfo ?? {},
+      })
+      .returning();
+
+    return listing;
+  }
+
   private async resolveCategoryId(
     categoryId: string,
   ): Promise<string | undefined> {

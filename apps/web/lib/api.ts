@@ -815,6 +815,65 @@ export const paymentCredentials = {
   remove: () => del<{ ok: true }>('/me/payment-credentials'),
 };
 
+export interface MlConnection {
+  connected: boolean;
+  nickname?: string | null;
+  siteId?: string | null;
+  externalUserId?: string | null;
+  lastValidatedAt?: string | null;
+  expiresAt?: string | null;
+}
+
+export interface MlItemRow {
+  id: string;
+  title: string;
+  price: number;
+  currency: string;
+  condition: string;
+  thumbnail: string | null;
+  alreadyImported: boolean;
+}
+
+export interface MlImportJob {
+  id: string;
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  totalItems: number;
+  succeeded: number;
+  failed: number;
+  skippedDuplicate: number;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  errorMessage: string | null;
+}
+
+export interface MlImportJobItem {
+  id: string;
+  externalProductId: string;
+  status: 'pending' | 'created' | 'skipped' | 'failed';
+  listingId: string | null;
+  errorMessage: string | null;
+}
+
+export const mercadolibre = {
+  getConnection: () => get<MlConnection>('/mercadolibre/connection'),
+  getAuthorizeUrl: () => get<{ url: string }>('/mercadolibre/connect'),
+  disconnect: () => del<void>('/mercadolibre/connection'),
+  listItems: (scrollId?: string) =>
+    get<{ scrollId: string | null; items: MlItemRow[] }>(
+      `/mercadolibre/items${scrollId ? `?scrollId=${encodeURIComponent(scrollId)}` : ''}`,
+    ),
+  startImport: (itemIds: string[] | 'all') =>
+    post<{ jobId: string; totalItems: number }>('/mercadolibre/imports', {
+      itemIds,
+    }),
+  listJobs: () => get<{ data: MlImportJob[] }>('/mercadolibre/imports'),
+  getJob: (id: string) =>
+    get<{ job: MlImportJob; items: MlImportJobItem[] }>(
+      `/mercadolibre/imports/${id}`,
+    ),
+};
+
 export default {
   auth,
   listings,
@@ -838,4 +897,5 @@ export default {
   shopChatbot,
   apiTokens,
   paymentCredentials,
+  mercadolibre,
 };
