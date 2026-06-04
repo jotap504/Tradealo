@@ -175,13 +175,20 @@ export class ListingsService {
       conditions.push(gte(schema.listings.price, String(dto.minPrice)));
     if (dto.maxPrice !== undefined)
       conditions.push(lte(schema.listings.price, String(dto.maxPrice)));
-    if (dto.q)
+    if (dto.q) {
+      const q = dto.q.trim();
+      // Match by substring (ILIKE) OR trigram similarity so typos like
+      // "Sansumg" still surface "Samsung". Title threshold is higher because
+      // it is short and high-signal; descriptions are noisier.
       conditions.push(
-        or(
-          ilike(schema.listings.title, `%${dto.q}%`),
-          ilike(schema.listings.description, `%${dto.q}%`),
-        )!,
+        sql`(
+          ${schema.listings.title} ILIKE ${`%${q}%`}
+          OR ${schema.listings.description} ILIKE ${`%${q}%`}
+          OR similarity(${schema.listings.title}, ${q}) > 0.2
+          OR similarity(${schema.listings.description}, ${q}) > 0.15
+        )`,
       );
+    }
     if (dto.city) conditions.push(ilike(schema.listings.city, `%${dto.city}%`));
     if (dto.currency)
       conditions.push(
@@ -257,16 +264,32 @@ export class ListingsService {
       }
     }
 
+    // When q is present on the default (premium) sort, rank by trigram
+    // relevance after the premium tier. Title weighs more than description.
+    const relevanceExpr = dto.q
+      ? sql`GREATEST(
+          similarity(${schema.listings.title}, ${dto.q.trim()}),
+          similarity(${schema.listings.description}, ${dto.q.trim()}) * 0.6
+        )`
+      : null;
+
     const orderBy =
       dto.sort === 'price_asc'
         ? [asc(schema.listings.price), desc(schema.listings.createdAt)]
         : dto.sort === 'price_desc'
           ? [desc(schema.listings.price), desc(schema.listings.createdAt)]
-          : [
-              asc(typeRankExpr),
-              desc(schema.listings.createdAt),
-              desc(schema.listings.id),
-            ];
+          : relevanceExpr
+            ? [
+                asc(typeRankExpr),
+                desc(relevanceExpr),
+                desc(schema.listings.createdAt),
+                desc(schema.listings.id),
+              ]
+            : [
+                asc(typeRankExpr),
+                desc(schema.listings.createdAt),
+                desc(schema.listings.id),
+              ];
 
     let rows: (typeof schema.listings.$inferSelect)[];
     if (dto.sort === 'reputation') {
