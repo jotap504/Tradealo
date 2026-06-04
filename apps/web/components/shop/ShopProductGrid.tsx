@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
+import Fuse from 'fuse.js';
 import ProductCard, { productCardVariants } from '@/components/shop/ProductCard';
 import type { PublicShop } from '@/types';
 
@@ -73,11 +74,25 @@ export default function ShopProductGrid({
     return ordered;
   }, [listings, categoryOrder]);
 
-  const processed = useMemo(() => {
-    const q = query.trim().toLowerCase();
+  const fuse = useMemo(
+    () =>
+      new Fuse(listings, {
+        keys: ['title'],
+        threshold: 0.4,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+      }),
+    [listings],
+  );
 
-    const filtered = listings.filter((l) => {
-      if (q && !l.title.toLowerCase().includes(q)) return false;
+  const processed = useMemo(() => {
+    const q = query.trim();
+
+    const base = q
+      ? fuse.search(q).map((r) => r.item)
+      : listings;
+
+    const filtered = base.filter((l) => {
       if (
         categoryFilter !== 'all' &&
         (l.categoryName ?? 'Otros') !== categoryFilter
@@ -92,6 +107,10 @@ export default function ShopProductGrid({
       return true;
     });
 
+    // When the user is searching with the default sort, keep Fuse's
+    // relevance order so the closest typo match shows first.
+    if (q && sort === 'newest') return filtered;
+
     const sorted = [...filtered].sort((a, b) => {
       if (sort === 'newest' || sort === 'oldest') {
         const ta = new Date(a.createdAt).getTime();
@@ -104,7 +123,7 @@ export default function ShopProductGrid({
     });
 
     return sorted;
-  }, [listings, query, categoryFilter, featuredOnly, conditionFilter, sort]);
+  }, [listings, query, categoryFilter, featuredOnly, conditionFilter, sort, fuse]);
 
   const filtersActive =
     !!query.trim() ||
