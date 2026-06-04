@@ -460,6 +460,8 @@ export interface PublicShop extends Shop {
     condition: string;
     primaryImageUrl: string | null;
     categoryName: string | null;
+    createdAt: string;
+    isFeatured: boolean;
   }[];
 }
 

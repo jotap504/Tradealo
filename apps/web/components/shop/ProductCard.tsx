@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
+import { FavoriteButton } from '@/components/listing/FavoriteButton';
 
 interface ListingItem {
   id: string;
@@ -95,6 +96,11 @@ export default function ProductCard({ listing, index, shopUsername }: ProductCar
           >
             {conditionLabel(listing.condition)}
           </span>
+
+          {/* Favorite heart */}
+          <div className="absolute top-2 right-2 z-10">
+            <FavoriteButton listingId={listing.id} size={16} />
+          </div>
 
           {/* Hover overlay — "Ver producto" button */}
           <div

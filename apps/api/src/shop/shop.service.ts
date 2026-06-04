@@ -178,6 +178,7 @@ export class ShopService {
           currency: schema.listings.currency,
           condition: schema.listings.condition,
           categoryName: schema.categories.name,
+          createdAt: schema.listings.createdAt,
         })
         .from(schema.listings)
         .leftJoin(
@@ -211,12 +212,13 @@ export class ShopService {
         : [];
 
     const imageMap = new Map(firstImages.map((i) => [i.listingId, i.url]));
+    const pinnedListingIds = new Set(pinnedRows.map((p) => p.listingId));
     const withImage = (l: (typeof allListings)[number]) => ({
       ...l,
       primaryImageUrl: imageMap.get(l.id) ?? null,
+      isFeatured: pinnedListingIds.has(l.id),
     });
 
-    const pinnedListingIds = new Set(pinnedRows.map((p) => p.listingId));
     const pinnedListingsData = pinnedRows
       .map((p) => {
         const listing = allListings.find((l) => l.id === p.listingId);
@@ -234,9 +236,7 @@ export class ShopService {
       username: sellerRows[0]?.username ?? slugOrUsername,
       galleryImages: gallery,
       pinnedListings: pinnedListingsData,
-      allListings: allListings
-        .filter((l) => !pinnedListingIds.has(l.id))
-        .map(withImage),
+      allListings: allListings.map(withImage),
       categoryOrder: shop.categoryOrder ?? [],
     };
   }
