@@ -2,7 +2,7 @@ export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? 'https://trocalia.com.ar';
+  process.env.NEXT_PUBLIC_APP_URL ?? 'https://tradealo-web.vercel.app';
 
 export const PROVINCIAS = [
   'Buenos Aires',
