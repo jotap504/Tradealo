@@ -280,6 +280,9 @@ export default function MyListingsPage() {
                 setDeletingId(l.id);
                 setConfirmOpen(true);
               }}
+              onPublished={() =>
+                queryClient.invalidateQueries({ queryKey: ['my-listings'] })
+              }
             />
           ))}
         </div>
@@ -374,10 +377,35 @@ export default function MyListingsPage() {
 function ListingRow({
   listing,
   onDelete,
+  onPublished,
 }: {
   listing: Listing;
   onDelete: () => void;
+  onPublished?: () => void;
 }) {
+  const [publishing, setPublishing] = useState(false);
+
+  const handlePublish = async () => {
+    if (publishing) return;
+    if (!confirm('¿Publicar este borrador? Quedará visible para todos.')) return;
+    setPublishing(true);
+    try {
+      await listings.publishListing(listing.id, {
+        type: listing.type ?? 'standard',
+        durationDays: 30,
+      });
+      toast.success('Publicación activada');
+      onPublished?.();
+    } catch (err) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'No se pudo publicar';
+      toast.error(msg);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const cover = listing.images?.[0]?.url;
   const badge = STATUS_BADGES[listing.status] ?? {
     label: listing.status,
@@ -433,6 +461,15 @@ function ListingRow({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          {listing.status === 'draft' && (
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              loading={publishing}
+            >
+              Publicar
+            </Button>
+          )}
           <Link href={`/my-listings/${listing.id}/edit`}>
             <Button
               variant="secondary"
