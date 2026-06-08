@@ -74,7 +74,7 @@ export class MercadolibreController {
   ) {
     if (!code || !state) {
       return res.redirect(
-        `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error`,
+        `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error&reason=missing_params`,
       );
     }
     try {
@@ -88,9 +88,12 @@ export class MercadolibreController {
       return res.redirect(
         `${APP_REDIRECT_BASE}/my-shop/integrations?ml=connected`,
       );
-    } catch {
+    } catch (err) {
+      const msg = encodeURIComponent(
+        (err as Error).message?.slice(0, 120) ?? 'unknown',
+      );
       return res.redirect(
-        `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error`,
+        `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error&reason=${msg}`,
       );
     }
   }

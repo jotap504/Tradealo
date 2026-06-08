@@ -32,8 +32,14 @@ export function MercadoLibreCard() {
       toast.error(
         'Solo cuentas de MercadoLibre Argentina (MLA) están soportadas.',
       );
-    else if (flag === 'error')
-      toast.error('No se pudo completar la conexión con MercadoLibre.');
+    else if (flag === 'error') {
+      const reason = sp.get('reason');
+      toast.error(
+        reason
+          ? `No se pudo conectar: ${decodeURIComponent(reason)}`
+          : 'No se pudo completar la conexión con MercadoLibre.',
+      );
+    }
     const url = new URL(window.location.href);
     url.searchParams.delete('ml');
     router.replace(url.pathname + url.search, { scroll: false });
