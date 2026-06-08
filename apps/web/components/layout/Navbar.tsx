@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -15,7 +16,6 @@ import {
   ShieldCheck,
   LogOut,
   Search,
-  Repeat,
   MessageCircle,
   Heart,
   LifeBuoy,
@@ -78,9 +78,14 @@ export function Navbar() {
           className="flex items-center gap-2 shrink-0 group"
           aria-label="Tradealo inicio"
         >
-          <span className="w-8 h-8 rounded-lg bg-tradealo-primary flex items-center justify-center text-white shadow-sm group-hover:bg-tradealo-primary-hover transition-colors">
-            <Repeat size={16} strokeWidth={2.5} />
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Tradealo"
+            width={36}
+            height={36}
+            priority
+            className="rounded-full"
+          />
           <span className="font-heading font-bold text-lg text-tradealo-primary tracking-tight">
             Tradealo
           </span>

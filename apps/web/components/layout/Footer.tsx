@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Repeat, Mail, Globe, Share2 } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Globe, Share2 } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -7,9 +8,13 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 grid gap-10 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="w-9 h-9 rounded-lg bg-tradealo-primary flex items-center justify-center text-white">
-              <Repeat size={18} strokeWidth={2.5} />
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Tradealo"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
             <span className="font-heading font-bold text-xl text-white">
               Tradealo
             </span>
