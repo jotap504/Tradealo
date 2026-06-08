@@ -114,7 +114,7 @@ export default function MyShopPage() {
   const shopUrl = shopData?.slug ?? shopData?.username;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 shrink-0">
@@ -224,7 +224,7 @@ export default function MyShopPage() {
 
       {/* Promotion cards — QR + embed widget for published shops */}
       {hasActiveSub && shopData?.isPublished && shopUrl && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
           <ShopQRCard username={shopUrl} shopName={shopData?.shopName} />
           <EmbedSnippetCard username={shopUrl} />
         </div>
@@ -234,7 +234,7 @@ export default function MyShopPage() {
       {hasActiveSub ? (
         <div>
           <h2 className="font-heading font-semibold text-base text-tradealo-text mb-3">Gestionar tienda</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {MANAGE_LINKS.map(({ href, label, description, icon: Icon, color }) => (
               <Link key={href} href={href} className="group">
                 <Card hover>
