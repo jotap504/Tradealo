@@ -89,10 +89,27 @@ export class MercadolibreController {
         `${APP_REDIRECT_BASE}/my-shop/integrations?ml=connected`,
       );
     } catch (err) {
-      const fullMsg = (err as Error).message ?? 'unknown';
+      const e = err as Error & {
+        code?: string;
+        detail?: string;
+        constraint?: string;
+        column?: string;
+        table?: string;
+        cause?: { message?: string; code?: string; detail?: string; constraint?: string; column?: string };
+      };
+      const pg = e.cause ?? e;
+      const summary = [
+        pg.code && `code=${pg.code}`,
+        pg.constraint && `constraint=${pg.constraint}`,
+        pg.column && `column=${pg.column}`,
+        pg.detail && `detail=${pg.detail}`,
+        !pg.code && !pg.detail && e.message,
+      ]
+        .filter(Boolean)
+        .join(' | ');
       // eslint-disable-next-line no-console
-      console.error('[ML callback error]', fullMsg);
-      const msg = encodeURIComponent(fullMsg.slice(0, 500));
+      console.error('[ML callback error]', summary, e.stack);
+      const msg = encodeURIComponent((summary || 'unknown').slice(0, 500));
       return res.redirect(
         `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error&reason=${msg}`,
       );
@@ -182,9 +199,7 @@ export class MercadolibreController {
       itemIds = itemIds.slice(0, MAX_ITEMS_PER_JOB);
     } else if (Array.isArray(body.itemIds)) {
       if (body.itemIds.length > MAX_ITEMS_PER_JOB) {
-        throw new BadRequestException(
-          `MAX_${MAX_ITEMS_PER_JOB}_ITEMS_PER_JOB`,
-        );
+        throw new BadRequestException(`MAX_${MAX_ITEMS_PER_JOB}_ITEMS_PER_JOB`);
       }
       itemIds = body.itemIds;
     } else {
