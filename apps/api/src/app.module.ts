@@ -34,6 +34,7 @@ import { SellerPaymentsModule } from './seller-payments/seller-payments.module';
 import { PushTokensModule } from './push-tokens/push-tokens.module';
 import { AiModule } from './ai/ai.module';
 import { MercadolibreModule } from './mercadolibre/mercadolibre.module';
+import { ExcelImportModule } from './excel-import/excel-import.module';
 // import { SearchModule } from './search/search.module'
 // import { ModerationModule } from './moderation/moderation.module'
 // import { JobsModule } from './jobs/jobs.module'
@@ -78,6 +79,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     PushTokensModule,
     AiModule,
     MercadolibreModule,
+    ExcelImportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

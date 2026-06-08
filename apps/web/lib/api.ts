@@ -855,6 +855,48 @@ export interface MlImportJobItem {
   errorMessage: string | null;
 }
 
+export type ExcelTrocaliaField =
+  | 'title'
+  | 'description'
+  | 'price'
+  | 'currency'
+  | 'condition'
+  | 'categoryHint'
+  | 'imagesUrls'
+  | 'sku'
+  | 'stock'
+  | 'ignore';
+
+export interface ExcelColumnMapping {
+  index: number;
+  header: string;
+  field: ExcelTrocaliaField;
+  confidence: number;
+  reason?: string;
+}
+
+export interface ExcelPreview {
+  jobId: string;
+  headers: string[];
+  sampleRows: (string | number | null)[][];
+  totalRows: number;
+  mapping: ExcelColumnMapping[];
+}
+
+export const excelImport = {
+  preview: (filename: string, base64: string) =>
+    post<ExcelPreview>('/excel-import/preview', { filename, base64 }),
+  confirm: (jobId: string, mapping: ExcelColumnMapping[]) =>
+    post<{ jobId: string; totalItems: number }>(
+      `/excel-import/${jobId}/confirm`,
+      { mapping },
+    ),
+  getJob: (jobId: string) =>
+    get<{ job: MlImportJob; items: MlImportJobItem[] }>(
+      `/excel-import/${jobId}`,
+    ),
+};
+
 export const mercadolibre = {
   getConnection: () => get<MlConnection>('/mercadolibre/connection'),
   getAuthorizeUrl: () => get<{ url: string }>('/mercadolibre/connect'),
@@ -898,4 +940,5 @@ export default {
   apiTokens,
   paymentCredentials,
   mercadolibre,
+  excelImport,
 };

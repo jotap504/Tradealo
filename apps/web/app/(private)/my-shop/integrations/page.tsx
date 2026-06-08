@@ -136,6 +136,33 @@ export default function IntegrationsPage() {
 
       <MercadoLibreCard />
 
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 text-xl">
+            ▦
+          </div>
+          <div>
+            <h2 className="font-heading text-lg font-bold text-tradealo-text">
+              Importar desde Excel / CSV
+            </h2>
+            <p className="text-sm text-tradealo-text-muted">
+              Subí una planilla. La IA detecta las columnas y vos confirmás
+              antes de crear los borradores.
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardBody className="space-y-3">
+            <p className="text-sm text-tradealo-text">
+              Hasta 200 productos por archivo. Soporta imágenes por URL.
+            </p>
+            <Link href="/my-shop/integrations/excel">
+              <Button size="sm">Subir planilla</Button>
+            </Link>
+          </CardBody>
+        </Card>
+      </div>
+
       <div className="flex items-center gap-3 pt-4">
         <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600">
           <Plug size={20} />
