@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.animation.AlphaAnimation
-import android.widget.LinearLayout
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 
 class SplashActivity : AppCompatActivity() {
@@ -14,13 +14,12 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Find the logo container and apply a smooth native fade-in animation
-        val logoLayout = findViewById<LinearLayout>(R.id.logo_layout)
+        val splashImage = findViewById<ImageView>(R.id.splash_image)
         val fadeIn = AlphaAnimation(0.0f, 1.0f).apply {
             duration = 1200
             fillAfter = true
         }
-        logoLayout.startAnimation(fadeIn)
+        splashImage.startAnimation(fadeIn)
 
         // Wait for 2.5 seconds, then launch MainActivity
         Handler(Looper.getMainLooper()).postDelayed({
