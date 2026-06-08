@@ -39,7 +39,12 @@ export class MlAiDrafterService {
       (process.env.AI_API_URL ?? 'https://api.deepseek.com/v1') +
       '/chat/completions';
     this.apiKey = process.env.AI_API_KEY ?? '';
-    this.model = process.env.AI_MODEL ?? 'deepseek-chat';
+    // Prefer a text-specific model for drafting/copywriting; fall back to
+    // the generic AI_MODEL (which in production is currently a vision model).
+    this.model =
+      process.env.AI_TEXT_MODEL ??
+      process.env.AI_MODEL ??
+      'openai/gpt-4o-mini';
   }
 
   async draftListingCopy(
@@ -72,6 +77,8 @@ export class MlAiDrafterService {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
+        'HTTP-Referer': process.env.APP_URL ?? 'https://trocalia.com.ar',
+        'X-Title': 'Trocalia ML Import',
       },
       body: JSON.stringify({
         model: this.model,
