@@ -81,8 +81,8 @@ export function Navbar() {
           <Image
             src="/logo.png"
             alt="Tradealo"
-            width={36}
-            height={36}
+            width={48}
+            height={48}
             priority
             className="rounded-full"
           />

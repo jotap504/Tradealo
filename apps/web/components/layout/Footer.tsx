@@ -11,8 +11,8 @@ export function Footer() {
             <Image
               src="/logo.png"
               alt="Tradealo"
-              width={40}
-              height={40}
+              width={52}
+              height={52}
               className="rounded-full"
             />
             <span className="font-heading font-bold text-xl text-white">
