@@ -81,21 +81,28 @@ export class MercadolibreOauthService {
       : null;
     const expiresAt = new Date(Date.now() + token.expires_in * 1000);
 
+    // Truncate to fit varchar column lengths; ML can return verbose
+    // values that overflow (e.g. long scope list, marketplace nickname).
+    const externalUserId = String(token.user_id).slice(0, 40);
+    const externalNickname = me.nickname?.slice(0, 80) ?? null;
+    const siteId = me.site_id?.slice(0, 10) ?? null;
+    const scope = token.scope?.slice(0, 200) ?? null;
+
     await this.db
       .insert(schema.sellerMarketplaceConnections)
       .values({
         userId,
         provider: PROVIDER,
-        externalUserId: String(token.user_id),
-        externalNickname: me.nickname,
-        siteId: me.site_id,
+        externalUserId,
+        externalNickname,
+        siteId,
         accessTokenCiphertext: access.ciphertext,
         accessTokenIv: access.iv,
         accessTokenAuthTag: access.authTag,
         refreshTokenCiphertext: refresh?.ciphertext,
         refreshTokenIv: refresh?.iv,
         refreshTokenAuthTag: refresh?.authTag,
-        scope: token.scope ?? null,
+        scope,
         expiresAt,
         lastValidatedAt: new Date(),
         updatedAt: new Date(),
@@ -106,16 +113,16 @@ export class MercadolibreOauthService {
           schema.sellerMarketplaceConnections.provider,
         ],
         set: {
-          externalUserId: String(token.user_id),
-          externalNickname: me.nickname,
-          siteId: me.site_id,
+          externalUserId,
+          externalNickname,
+          siteId,
           accessTokenCiphertext: access.ciphertext,
           accessTokenIv: access.iv,
           accessTokenAuthTag: access.authTag,
           refreshTokenCiphertext: refresh?.ciphertext,
           refreshTokenIv: refresh?.iv,
           refreshTokenAuthTag: refresh?.authTag,
-          scope: token.scope ?? null,
+          scope,
           expiresAt,
           lastValidatedAt: new Date(),
           updatedAt: new Date(),
