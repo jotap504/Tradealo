@@ -89,9 +89,10 @@ export class MercadolibreController {
         `${APP_REDIRECT_BASE}/my-shop/integrations?ml=connected`,
       );
     } catch (err) {
-      const msg = encodeURIComponent(
-        (err as Error).message?.slice(0, 120) ?? 'unknown',
-      );
+      const fullMsg = (err as Error).message ?? 'unknown';
+      // eslint-disable-next-line no-console
+      console.error('[ML callback error]', fullMsg);
+      const msg = encodeURIComponent(fullMsg.slice(0, 500));
       return res.redirect(
         `${APP_REDIRECT_BASE}/my-shop/integrations?ml=error&reason=${msg}`,
       );
