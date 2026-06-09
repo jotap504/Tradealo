@@ -4,6 +4,7 @@ import { API_URL } from '@/lib/constants';
 import { PriceDisplay } from '@/components/listing/PriceDisplay';
 import { SellerCard } from '@/components/listing/SellerCard';
 import { SaleActions } from '@/components/listing/SaleActions';
+import { ListingVariantsBlock } from '@/components/listing/ListingVariantsBlock';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate } from '@/lib/utils';
 import type { Listing } from '@/types';
@@ -211,6 +212,12 @@ export default async function ListingDetailPage({
               size="lg"
             />
           </div>
+          <ListingVariantsBlock
+            listingId={listing.id}
+            categoryId={listing.category?.id}
+            basePrice={listing.price}
+            currency={listing.currency}
+          />
           <SaleActions
             listing={listing}
             showPhone={listing.showPhone}

@@ -22,6 +22,7 @@ interface FiltersState {
   minPrice: string;
   maxPrice: string;
   currency: string;
+  attrs: Record<string, string>;
 }
 
 const EMPTY: FiltersState = {
@@ -35,7 +36,19 @@ const EMPTY: FiltersState = {
   minPrice: '',
   maxPrice: '',
   currency: '',
+  attrs: {},
 };
+
+function parseAttrs(raw: string | null): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') return parsed as Record<string, string>;
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
 
 export function ListingFilters() {
   const router = useRouter();
@@ -55,12 +68,20 @@ export function ListingFilters() {
       minPrice: sp.get('minPrice') ?? '',
       maxPrice: sp.get('maxPrice') ?? '',
       currency: sp.get('currency') ?? '',
+      attrs: parseAttrs(sp.get('attrs')),
     });
   }, [sp]);
 
   const { data: cats } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categories.getCategories(),
+  });
+
+  const { data: dynamicAttrs = [] } = useQuery({
+    queryKey: ['category', state.category, 'attributes'],
+    queryFn: () => categories.getAttributes(state.category),
+    enabled: !!state.category,
+    staleTime: 5 * 60_000,
   });
 
   const apply = () => {
@@ -77,6 +98,12 @@ export function ListingFilters() {
     if (state.minPrice) params.set('minPrice', state.minPrice);
     if (state.maxPrice) params.set('maxPrice', state.maxPrice);
     if (state.currency) params.set('currency', state.currency);
+    const cleanAttrs = Object.fromEntries(
+      Object.entries(state.attrs).filter(([, v]) => v && v.length > 0),
+    );
+    if (Object.keys(cleanAttrs).length > 0) {
+      params.set('attrs', JSON.stringify(cleanAttrs));
+    }
     router.push(`/listings?${params.toString()}`);
     setOpen(false);
   };
@@ -340,6 +367,71 @@ export function ListingFilters() {
               </div>
             </div>
           </div>
+
+          {state.category && dynamicAttrs.length > 0 && (
+            <div className="p-4 lg:p-0 space-y-3">
+              <h4 className="text-xs font-semibold text-tradealo-text-muted uppercase tracking-wide">
+                Filtros de categoría
+              </h4>
+              {dynamicAttrs.map((attr) => {
+                const cur = state.attrs[attr.key] ?? '';
+                const setAttr = (val: string) =>
+                  setState({
+                    ...state,
+                    attrs: { ...state.attrs, [attr.key]: val },
+                  });
+                if (attr.type === 'select') {
+                  return (
+                    <div key={attr.key}>
+                      <label className="text-xs text-tradealo-text-muted mb-1 block">
+                        {attr.label}
+                      </label>
+                      <select
+                        value={cur}
+                        onChange={(e) => setAttr(e.target.value)}
+                        className="w-full h-10 rounded-lg border border-tradealo-border px-2 text-sm"
+                      >
+                        <option value="">Cualquiera</option>
+                        {(attr.options?.values ?? []).map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
+                if (attr.type === 'number') {
+                  return (
+                    <div key={attr.key}>
+                      <label className="text-xs text-tradealo-text-muted mb-1 block">
+                        {attr.label}
+                      </label>
+                      <Input
+                        type="number"
+                        value={cur}
+                        onChange={(e) => setAttr(e.target.value)}
+                        placeholder="—"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <div key={attr.key}>
+                    <label className="text-xs text-tradealo-text-muted mb-1 block">
+                      {attr.label}
+                    </label>
+                    <Input
+                      value={cur}
+                      onChange={(e) => setAttr(e.target.value)}
+                      placeholder="—"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div className="lg:mt-5 p-4 lg:p-0 border-t lg:border-t-0 border-tradealo-border flex gap-2 shrink-0 bg-white">
             <Button variant="secondary" onClick={reset} fullWidth>
               Limpiar
