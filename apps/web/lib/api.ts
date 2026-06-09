@@ -29,6 +29,7 @@ import type {
   ShopAnalytics,
   BcraCheckResult,
   KycPendingVerification,
+  CategoryAttribute,
 } from '@/types';
 
 export const apiClient = axios.create({
@@ -177,6 +178,14 @@ async function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const r = await apiClient.delete<T>(url, config);
   return r.data;
 }
+async function put<T>(
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig
+): Promise<T> {
+  const r = await apiClient.put<T>(url, body, config);
+  return r.data;
+}
 
 export interface LoginPayload {
   email: string;
@@ -303,9 +312,73 @@ export const listings = {
     get<PendingQuestion[]>('/listings/me/pending-questions'),
 };
 
+export interface CategoryNode extends Category {
+  depth: number;
+  pathSlugs: string[] | null;
+  children: CategoryNode[];
+}
+
+export interface CategoryDetail extends Category {
+  depth: number;
+  pathSlugs: string[] | null;
+  attributes: CategoryAttribute[];
+}
+
 export const categories = {
   getCategories: () => get<Category[]>('/categories'),
-  getCategory: (id: string) => get<Category>(`/categories/${id}`),
+  getCategory: (idOrSlug: string) =>
+    get<CategoryDetail>(`/categories/${idOrSlug}`),
+  getTree: () => get<CategoryNode[]>('/categories/tree'),
+  getAttributes: (idOrSlug: string) =>
+    get<CategoryAttribute[]>(`/categories/${idOrSlug}/attributes`),
+};
+
+export interface ListingVariant {
+  id: string;
+  listingId: string;
+  attributeValues: Record<string, string>;
+  stock: number;
+  sku: string | null;
+  price: string | null;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  isActive: boolean;
+}
+
+export interface VariantInput {
+  attributeValues: Record<string, string>;
+  stock: number;
+  sku?: string;
+  price?: number;
+  weightGrams?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  isActive?: boolean;
+}
+
+export const listingVariants = {
+  listPublic: (listingId: string) =>
+    get<ListingVariant[]>(`/listings/${listingId}/variants/public`),
+  list: (listingId: string) =>
+    get<ListingVariant[]>(`/listings/${listingId}/variants`),
+  createOne: (listingId: string, input: VariantInput) =>
+    post<ListingVariant>(`/listings/${listingId}/variants`, input),
+  replaceAll: (listingId: string, variants: VariantInput[]) =>
+    put<ListingVariant[]>(`/listings/${listingId}/variants`, { variants }),
+  update: (
+    listingId: string,
+    variantId: string,
+    input: Partial<VariantInput>,
+  ) =>
+    patch<ListingVariant>(
+      `/listings/${listingId}/variants/${variantId}`,
+      input,
+    ),
+  remove: (listingId: string, variantId: string) =>
+    del<void>(`/listings/${listingId}/variants/${variantId}`),
 };
 
 export interface FreeQuota {

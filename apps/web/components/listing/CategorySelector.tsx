@@ -1,71 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ChevronRight,
-  Package,
-  Shirt,
-  Smartphone,
-  BookOpen,
-  Sofa,
-  Bike,
-  Gem,
-  Wrench,
-  Baby,
-  Music,
-  Loader2,
-} from 'lucide-react';
-import { categories as catsApi } from '@/lib/api';
+import { ChevronRight, Loader2, Search } from 'lucide-react';
+import { categories as catsApi, type CategoryNode } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Category } from '@/types';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  package: Package,
-  shirt: Shirt,
-  smartphone: Smartphone,
-  book: BookOpen,
-  sofa: Sofa,
-  bike: Bike,
-  gem: Gem,
-  wrench: Wrench,
-  baby: Baby,
-  music: Music,
-};
-
-function pickIcon(c: Category) {
-  const slug = c.slug?.toLowerCase() ?? '';
-  if (slug.includes('moda') || slug.includes('ropa')) return Shirt;
-  if (slug.includes('tecnolog') || slug.includes('celular')) return Smartphone;
-  if (slug.includes('libro') || slug.includes('cultur')) return BookOpen;
-  if (slug.includes('hogar') || slug.includes('mueble')) return Sofa;
-  if (slug.includes('depor') || slug.includes('bici')) return Bike;
-  if (slug.includes('coleccion') || slug.includes('joya')) return Gem;
-  if (slug.includes('herram') || slug.includes('construc')) return Wrench;
-  if (slug.includes('niño') || slug.includes('bebé') || slug.includes('infant'))
-    return Baby;
-  if (slug.includes('music') || slug.includes('instrument')) return Music;
-  if (c.icon && ICON_MAP[c.icon]) return ICON_MAP[c.icon];
-  return Package;
-}
 
 interface Props {
   value?: string;
   onChange: (
     categoryId: string,
     isCollectible: boolean,
-    attributes?: Category['attributes']
+    attributes?: Category['attributes'],
   ) => void;
+}
+
+interface FlatRow {
+  node: CategoryNode;
+  pathLabel: string;
+}
+
+function flatten(nodes: CategoryNode[], trail: string[] = []): FlatRow[] {
+  const out: FlatRow[] = [];
+  for (const n of nodes) {
+    const here = [...trail, n.name];
+    out.push({ node: n, pathLabel: here.join(' › ') });
+    if (n.children?.length) out.push(...flatten(n.children, here));
+  }
+  return out;
 }
 
 export function CategorySelector({ value, onChange }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => catsApi.getCategories(),
+    queryKey: ['categories', 'tree'],
+    queryFn: () => catsApi.getTree(),
   });
 
-  const [parent, setParent] = useState<Category | null>(null);
+  const tree = data ?? [];
+  const [stack, setStack] = useState<CategoryNode[]>([]);
+  const [query, setQuery] = useState('');
+
+  const flat = useMemo(() => flatten(tree), [tree]);
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return flat
+      .filter(
+        (r) =>
+          r.node.name.toLowerCase().includes(q) ||
+          r.pathLabel.toLowerCase().includes(q),
+      )
+      .slice(0, 20);
+  }, [flat, query]);
 
   if (isLoading) {
     return (
@@ -75,114 +62,156 @@ export function CategorySelector({ value, onChange }: Props) {
     );
   }
 
-  const roots = (data ?? []).filter((c) => !c.parentId);
-  const selectedRoot =
-    parent ?? roots.find((r) => r.id === value || r.children?.some((c) => c.id === value));
+  const current: CategoryNode[] =
+    stack.length === 0 ? tree : (stack[stack.length - 1].children ?? []);
 
-  const breadcrumb = selectedRoot ? [selectedRoot.name] : [];
+  const pick = (n: CategoryNode) => {
+    if (n.children && n.children.length > 0) {
+      setStack((prev) => [...prev, n]);
+      setQuery('');
+      return;
+    }
+    onChange(n.id, !!n.isCollectible, undefined);
+  };
+
+  const breadcrumb = stack.map((s) => s.name);
 
   return (
     <div className="space-y-4">
-      {breadcrumb.length > 0 && (
-        <nav className="flex items-center gap-2 text-sm">
-          <button
-            onClick={() => setParent(null)}
-            className="text-tradealo-primary hover:underline"
-          >
-            Categorías
-          </button>
-          {breadcrumb.map((b, i) => (
-            <span key={i} className="flex items-center gap-2 text-tradealo-text-muted">
-              <ChevronRight size={14} />
-              <span className="text-tradealo-text font-medium">{b}</span>
-            </span>
-          ))}
-        </nav>
-      )}
+      <div className="relative">
+        <Search
+          size={14}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-tradealo-text-muted"
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar categoría (ej. zapatillas, mtb, ...)"
+          className="w-full h-10 pl-9 pr-3 rounded-lg border border-tradealo-border text-sm focus:outline-none focus:border-tradealo-primary"
+        />
+      </div>
 
-      {!selectedRoot ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {roots.map((c) => {
-            const Icon = pickIcon(c);
-            return (
+      {query.trim().length >= 2 ? (
+        <div className="space-y-1">
+          {searchResults.length === 0 ? (
+            <p className="text-sm text-tradealo-text-muted py-4 text-center">
+              Sin resultados para &quot;{query}&quot;
+            </p>
+          ) : (
+            searchResults.map((r) => (
               <button
-                key={c.id}
+                key={r.node.id}
                 type="button"
                 onClick={() => {
-                  if (c.children?.length) {
-                    setParent(c);
-                  } else {
-                    onChange(c.id, !!c.isCollectible, c.attributes);
-                  }
+                  setQuery('');
+                  setStack([]);
+                  onChange(r.node.id, !!r.node.isCollectible, undefined);
                 }}
                 className={cn(
-                  'group flex flex-col items-center justify-center gap-2 p-5 rounded-xl border bg-white transition-all',
-                  'border-tradealo-border hover:border-tradealo-primary hover:bg-tradealo-primary-light/40',
-                  value === c.id && 'border-tradealo-primary bg-tradealo-primary-light'
+                  'w-full text-left p-3 rounded-lg border bg-white hover:border-tradealo-primary transition-colors',
+                  value === r.node.id
+                    ? 'border-tradealo-primary bg-tradealo-primary-light'
+                    : 'border-tradealo-border',
                 )}
               >
-                <div className="w-12 h-12 rounded-lg bg-tradealo-primary-light flex items-center justify-center text-tradealo-primary-hover">
-                  <Icon size={22} />
-                </div>
-                <span className="font-medium text-sm text-center">{c.name}</span>
-                {c.isCollectible && (
-                  <span className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold">
-                    Coleccionable
-                  </span>
-                )}
+                <p className="text-sm font-medium text-tradealo-text">
+                  {r.node.name}
+                </p>
+                <p className="text-xs text-tradealo-text-muted">
+                  {r.pathLabel}
+                </p>
               </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div>
-          {selectedRoot.children && selectedRoot.children.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {selectedRoot.children.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() =>
-                    onChange(
-                      c.id,
-                      !!(c.isCollectible || selectedRoot.isCollectible),
-                      c.attributes ?? selectedRoot.attributes
-                    )
-                  }
-                  className={cn(
-                    'flex items-center justify-between gap-2 p-4 rounded-lg border bg-white text-left transition-all',
-                    'border-tradealo-border hover:border-tradealo-primary',
-                    value === c.id && 'border-tradealo-primary bg-tradealo-primary-light'
-                  )}
-                >
-                  <div>
-                    <p className="font-medium text-sm">{c.name}</p>
-                    {c.isCollectible && (
-                      <p className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold mt-0.5">
-                        Coleccionable
-                      </p>
-                    )}
-                  </div>
-                  <ChevronRight size={16} className="text-tradealo-text-muted" />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                onChange(
-                  selectedRoot.id,
-                  !!selectedRoot.isCollectible,
-                  selectedRoot.attributes
-                )
-              }
-              className="w-full p-4 rounded-lg border-2 border-tradealo-primary bg-tradealo-primary-light text-tradealo-primary-hover font-medium"
-            >
-              Seleccionar {selectedRoot.name}
-            </button>
+            ))
           )}
         </div>
+      ) : (
+        <>
+          {breadcrumb.length > 0 && (
+            <nav className="flex items-center gap-1 text-sm flex-wrap">
+              <button
+                type="button"
+                onClick={() => setStack([])}
+                className="text-tradealo-primary hover:underline"
+              >
+                Categorías
+              </button>
+              {breadcrumb.map((b, i) => (
+                <span
+                  key={i}
+                  className="flex items-center gap-1 text-tradealo-text-muted"
+                >
+                  <ChevronRight size={14} />
+                  <button
+                    type="button"
+                    onClick={() => setStack((prev) => prev.slice(0, i + 1))}
+                    className={cn(
+                      'font-medium',
+                      i === breadcrumb.length - 1
+                        ? 'text-tradealo-text'
+                        : 'text-tradealo-primary hover:underline',
+                    )}
+                  >
+                    {b}
+                  </button>
+                </span>
+              ))}
+            </nav>
+          )}
+
+          <div
+            className={cn(
+              'grid gap-2',
+              stack.length === 0
+                ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+                : 'grid-cols-1 sm:grid-cols-2',
+            )}
+          >
+            {current.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => pick(n)}
+                className={cn(
+                  'flex items-center justify-between gap-2 p-3 rounded-lg border bg-white text-left transition-all',
+                  'border-tradealo-border hover:border-tradealo-primary',
+                  value === n.id &&
+                    'border-tradealo-primary bg-tradealo-primary-light',
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-tradealo-text truncate">
+                    {n.name}
+                  </p>
+                  {n.isCollectible && (
+                    <p className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold mt-0.5">
+                      Coleccionable
+                    </p>
+                  )}
+                </div>
+                {n.children && n.children.length > 0 ? (
+                  <ChevronRight
+                    size={16}
+                    className="text-tradealo-text-muted shrink-0"
+                  />
+                ) : null}
+              </button>
+            ))}
+          </div>
+
+          {stack.length > 0 && current.length === 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const last = stack[stack.length - 1];
+                onChange(last.id, !!last.isCollectible, undefined);
+              }}
+              className="w-full p-4 rounded-lg border-2 border-tradealo-primary bg-tradealo-primary-light text-tradealo-primary-hover font-medium"
+            >
+              Seleccionar {stack[stack.length - 1].name}
+            </button>
+          )}
+        </>
       )}
     </div>
   );

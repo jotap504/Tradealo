@@ -91,11 +91,21 @@ export interface Bid {
 }
 
 export interface CategoryAttribute {
+  id?: string;
+  categoryId?: string;
   key: string;
   label: string;
   type: 'text' | 'number' | 'select' | 'boolean';
+  /** Legacy flat list of options. */
   options?: string[];
+  /** New backend shape: { values: [...] } | null. */
+  optionsValues?: string[] | null;
   required?: boolean;
+  /** Backend modern name; mirrors `required`. */
+  isRequired?: boolean;
+  /** Flag for variant dimensions (color/talle/...). */
+  isVariant?: boolean;
+  sortOrder?: number;
 }
 
 export interface Category {
