@@ -35,6 +35,8 @@ export const categories = pgTable('categories', {
   icon: varchar('icon', { length: 100 }),
   sortOrder: smallint('sort_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
+  depth: smallint('depth').notNull().default(0),
+  pathSlugs: text('path_slugs').array(),
 });
 
 export const categoryAttributes = pgTable('category_attributes', {
@@ -93,6 +95,7 @@ export const listings = pgTable(
     shippingDescription: text('shipping_description'),
 
     collectibleAttributes: jsonb('collectible_attributes'),
+    attributes: jsonb('attributes').notNull().default({}),
     contactInfo: jsonb('contact_info').notNull().default({}),
     paymentInfo: jsonb('payment_info'),
 
@@ -142,6 +145,32 @@ export const listings = pgTable(
   ],
 );
 
+export const listingVariants = pgTable(
+  'listing_variants',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listings.id, { onDelete: 'cascade' }),
+    attributeValues: jsonb('attribute_values').notNull(),
+    stock: integer('stock').notNull().default(0),
+    sku: varchar('sku', { length: 60 }),
+    price: decimal('price', { precision: 12, scale: 2 }),
+    weightGrams: integer('weight_grams'),
+    lengthCm: smallint('length_cm'),
+    widthCm: smallint('width_cm'),
+    heightCm: smallint('height_cm'),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index('idx_variants_listing').on(table.listingId)],
+);
+
 export const listingImages = pgTable(
   'listing_images',
   {
@@ -149,6 +178,9 @@ export const listingImages = pgTable(
     listingId: uuid('listing_id')
       .notNull()
       .references(() => listings.id, { onDelete: 'cascade' }),
+    variantId: uuid('variant_id').references(() => listingVariants.id, {
+      onDelete: 'set null',
+    }),
     url: varchar('url', { length: 500 }).notNull(),
     thumbnailUrl: varchar('thumbnail_url', { length: 500 }),
     r2Key: varchar('r2_key', { length: 500 }).notNull(),
