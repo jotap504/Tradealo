@@ -13,7 +13,14 @@ import { ImageUploader } from '@/components/listing/ImageUploader';
 import { AIGeneratorButton } from '@/components/listing/AIGeneratorButton';
 import { PurchaseModal } from '@/components/wallet/PurchaseModal';
 import { TokenBadge } from '@/components/wallet/TokenBadge';
-import { listings, wallet, categories as categoriesApi } from '@/lib/api';
+import {
+  listings,
+  wallet,
+  categories as categoriesApi,
+  listingVariants,
+  type VariantInput,
+} from '@/lib/api';
+import { VariantsBuilder } from '@/components/listing/VariantsBuilder';
 import { toast } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import {
@@ -73,6 +80,7 @@ interface FormData {
   paymentBankName: string;
   paymentBankAccountType: string;
   paymentBankAccountNumber: string;
+  variants: VariantInput[];
 }
 
 const EMPTY_FORM: FormData = {
@@ -105,6 +113,7 @@ const EMPTY_FORM: FormData = {
   paymentBankName: '',
   paymentBankAccountType: '',
   paymentBankAccountNumber: '',
+  variants: [],
 };
 
 const TOTAL_STEPS = 7;
@@ -275,6 +284,12 @@ export default function NewListingPage() {
         try {
           const created = await listings.createListing(buildPayload());
           setListingId(created.id);
+          if (
+            formData.saleType === 'stock' &&
+            formData.variants.length > 0
+          ) {
+            await listingVariants.replaceAll(created.id, formData.variants);
+          }
         } catch {
           toast.error('No se pudo guardar el borrador');
           setSaving(false);
@@ -327,6 +342,9 @@ export default function NewListingPage() {
     setSaving(true);
     try {
       await listings.updateListing(listingId, buildPayload());
+      if (formData.saleType === 'stock' && formData.variants.length > 0) {
+        await listingVariants.replaceAll(listingId, formData.variants);
+      }
       await listings.publishListing(listingId, {
         type: formData.type,
         durationDays: formData.durationDays,
@@ -693,6 +711,28 @@ export default function NewListingPage() {
                       value={formData.stock}
                       onChange={(e) => update({ stock: e.target.value })}
                     />
+
+                    {(formData.categoryAttributes ?? []).some(
+                      (a) => a.isVariant,
+                    ) && (
+                      <div className="rounded-xl border border-tradealo-border bg-white p-4 space-y-3">
+                        <div>
+                          <p className="font-heading font-semibold text-sm">
+                            Variantes
+                          </p>
+                          <p className="text-xs text-tradealo-text-muted">
+                            Si vendés el mismo producto en distintos colores,
+                            talles u otras opciones, definí cada combinación con
+                            su propio stock y precio.
+                          </p>
+                        </div>
+                        <VariantsBuilder
+                          attributes={formData.categoryAttributes ?? []}
+                          value={formData.variants}
+                          onChange={(variants) => update({ variants })}
+                        />
+                      </div>
+                    )}
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
