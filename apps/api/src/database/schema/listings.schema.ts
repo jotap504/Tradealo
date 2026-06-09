@@ -49,6 +49,7 @@ export const categoryAttributes = pgTable('category_attributes', {
   type: varchar('type', { length: 20 }).notNull(),
   options: jsonb('options'),
   isRequired: boolean('is_required').notNull().default(false),
+  isVariant: boolean('is_variant').notNull().default(false),
   sortOrder: smallint('sort_order').notNull().default(0),
 });
 

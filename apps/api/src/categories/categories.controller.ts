@@ -17,6 +17,13 @@ export class CategoriesController {
     return this.categoriesService.getTree()
   }
 
+  @Get(':slug/attributes')
+  getAttributes(@Param('slug') idOrSlug: string) {
+    return this.categoriesService
+      .getBySlug(idOrSlug)
+      .then((c) => this.categoriesService.getAttributesForCategory(c.id))
+  }
+
   @Get(':slug')
   getBySlug(@Param('slug') slug: string) {
     return this.categoriesService.getBySlug(slug)
