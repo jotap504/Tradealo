@@ -308,6 +308,32 @@ export class ListingsService {
       }
     }
 
+    if (dto.attrs) {
+      try {
+        const parsed = JSON.parse(dto.attrs) as Record<string, unknown>;
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          Object.keys(parsed).length > 0
+        ) {
+          const json = JSON.stringify(parsed);
+          conditions.push(
+            sql`(
+              ${schema.listings.attributes} @> ${json}::jsonb
+              OR EXISTS (
+                SELECT 1 FROM listing_variants lv
+                 WHERE lv.listing_id = ${schema.listings.id}
+                   AND lv.is_active = true
+                   AND lv.attribute_values @> ${json}::jsonb
+              )
+            )`,
+          );
+        }
+      } catch {
+        /* ignore malformed attrs */
+      }
+    }
+
     if (dto.hasYoutubeLive) {
       conditions.push(isNotNull(schema.listings.youtubeLiveId));
     }

@@ -71,6 +71,16 @@ export class ListListingsDto {
   @IsString()
   paymentMethods?: string;
 
+  /**
+   * Dynamic category attribute filters as a JSON-encoded object.
+   * Ex: attrs={"color":"rojo","talle":"38"}
+   * Matches listings whose attributes jsonb contains these pairs OR
+   * which have at least one active variant whose attribute_values contain them.
+   */
+  @IsOptional()
+  @IsString()
+  attrs?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
