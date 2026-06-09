@@ -563,7 +563,7 @@ export default function NewListingPage() {
                             className="w-full h-11 rounded-lg border border-tradealo-border px-3 text-sm focus:outline-none focus:border-tradealo-primary"
                           >
                             <option value="">Seleccioná…</option>
-                            {attr.options.map((o) => (
+                            {(attr.options?.values ?? []).map((o) => (
                               <option key={o} value={o}>{o}</option>
                             ))}
                           </select>

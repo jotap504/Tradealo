@@ -38,7 +38,12 @@ export class AiService {
       (process.env.AI_API_URL ?? 'https://api.deepseek.com/v1') +
       '/chat/completions';
     this.apiKey = process.env.AI_API_KEY ?? '';
-    this.model = process.env.AI_MODEL ?? 'deepseek-chat';
+    // Prefer text-tuned model. Fall back to generic AI_MODEL which in
+    // production may be set to a vision model.
+    this.model =
+      process.env.AI_TEXT_MODEL ??
+      process.env.AI_MODEL ??
+      'openai/gpt-4o-mini';
   }
 
   async generateListing(
@@ -99,6 +104,8 @@ export class AiService {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
+        'HTTP-Referer': process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
+        'X-Title': 'Trocalia AI',
       },
       body: JSON.stringify({
         model: this.model,
@@ -191,6 +198,9 @@ Escribí entre 300 y 800 caracteres, en español argentino informal, sin emojis,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.apiKey}`,
+          'HTTP-Referer':
+            process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
+          'X-Title': 'Trocalia AI',
         },
         body: JSON.stringify({
           model: this.model,

@@ -96,14 +96,12 @@ export interface CategoryAttribute {
   key: string;
   label: string;
   type: 'text' | 'number' | 'select' | 'boolean';
-  /** Legacy flat list of options. */
-  options?: string[];
-  /** New backend shape: { values: [...] } | null. */
-  optionsValues?: string[] | null;
+  /** Backend shape: { values: [...] } | null. */
+  options?: { values: string[] } | null;
   required?: boolean;
   /** Backend modern name; mirrors `required`. */
   isRequired?: boolean;
-  /** Flag for variant dimensions (color/talle/...). */
+  /** Whether the seller can use this attribute as a variant dimension. */
   isVariant?: boolean;
   sortOrder?: number;
 }
