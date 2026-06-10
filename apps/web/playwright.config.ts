@@ -28,5 +28,10 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'ignore',
     stderr: 'pipe',
+    env: {
+      // Override so page.route() mocks intercept correctly.
+      // Local API URL must match what the app calls, or mocks won't intercept.
+      NEXT_PUBLIC_API_URL: process.env.E2E_API_URL ?? 'http://localhost:3001',
+    },
   },
 });

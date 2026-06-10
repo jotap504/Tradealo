@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  API,
+  r,
   MOCK_USER,
   mockAuthenticatedUser,
   mockWalletBalance,
@@ -12,7 +12,7 @@ const MOCK_LISTING_ID = 'listing-draft-e2e-01';
 
 test.describe('E2E-01: Registro completo y primera publicación', () => {
   test('register → redirects to /login', async ({ page }) => {
-    await page.route(`${API}/auth/register`, (route) =>
+    await page.route(r('auth/register'), (route) =>
       route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -33,7 +33,7 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
   test('login → redirects to /dashboard', async ({ page }) => {
     let loginSucceeded = false;
 
-    await page.route(`${API}/auth/login`, (route) => {
+    await page.route(r('auth/login'), (route) => {
       loginSucceeded = true;
       route.fulfill({
         status: 200,
@@ -42,7 +42,7 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
       });
     });
     // Return 401 before login so AppProviders.initialize() doesn't auto-redirect
-    await page.route(`${API}/auth/me`, (route) => {
+    await page.route(r('auth/me'), (route) => {
       if (loginSucceeded) {
         route.fulfill({
           status: 200,
@@ -109,7 +109,7 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
     await mockWalletBalance(page, 10);
     await mockCategoriesEndpoint(page);
     await mockNotificationsEndpoint(page);
-    await page.route(`${API}/listings`, async (route) => {
+    await page.route(r('listings'), async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 201,
@@ -120,7 +120,7 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
         await route.continue();
       }
     });
-    await page.route(`${API}/wallet/packs`, (route) =>
+    await page.route(r('wallet/packs'), (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
