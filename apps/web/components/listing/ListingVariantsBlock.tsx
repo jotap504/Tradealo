@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   listingVariants as variantsApi,
   categories as catsApi,
+  type ListingVariant,
 } from '@/lib/api';
 import { VariantSelector } from './VariantSelector';
 
@@ -12,6 +14,8 @@ interface Props {
   categoryId?: string | null;
   basePrice: number;
   currency: 'ARS' | 'USD';
+  onSelectedChange?: (variant: ListingVariant | null) => void;
+  onVariantsLoaded?: (count: number) => void;
 }
 
 export function ListingVariantsBlock({
@@ -19,6 +23,8 @@ export function ListingVariantsBlock({
   categoryId,
   basePrice,
   currency,
+  onSelectedChange,
+  onVariantsLoaded,
 }: Props) {
   const { data: variants = [], isLoading } = useQuery({
     queryKey: ['listing', listingId, 'variants', 'public'],
@@ -33,6 +39,14 @@ export function ListingVariantsBlock({
     staleTime: 5 * 60_000,
   });
 
+  useEffect(() => {
+    if (!isLoading) {
+      onVariantsLoaded?.(variants.length);
+      if (variants.length > 0) onSelectedChange?.(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, variants.length]);
+
   if (isLoading) return null;
   if (!variants || variants.length === 0) return null;
 
@@ -44,6 +58,7 @@ export function ListingVariantsBlock({
         attributes={attributes}
         basePrice={basePrice}
         currency={currency}
+        onSelectedChange={onSelectedChange}
       />
     </div>
   );

@@ -63,6 +63,21 @@ export class ListingImagesController {
     return this.imagesService.reorder(user.sub, listingId, dto);
   }
 
+  @Patch(':imageId/variant')
+  assignVariant(
+    @CurrentUser() user: JwtPayload,
+    @Param('listingId') listingId: string,
+    @Param('imageId') imageId: string,
+    @Body() body: { variantId: string | null },
+  ) {
+    return this.imagesService.assignVariant(
+      user.sub,
+      listingId,
+      imageId,
+      body.variantId ?? null,
+    );
+  }
+
   @Delete(':imageId')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(

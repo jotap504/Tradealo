@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardBody } from '@/components/ui/Card';
 import { toast } from '@/lib/store';
-import { listings } from '@/lib/api';
+import { listings, type ListingVariant } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import type { Listing, Bid } from '@/types';
 
@@ -20,9 +20,11 @@ interface Props {
   showPhone?: boolean;
   phone?: string;
   sellerUsername?: string;
+  /** undefined = no variants (use listing.stock). null = has variants, none chosen yet. */
+  selectedVariant?: ListingVariant | null;
 }
 
-export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props) {
+export function SaleActions({ listing, showPhone, phone, sellerUsername, selectedVariant }: Props) {
   const router = useRouter();
   const [currentStock, setCurrentStock] = useState(listing.stock);
 
@@ -78,7 +80,13 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
 
   // Stock-based listing
   if (listing.saleType === 'stock') {
-    const outOfStock = currentStock !== undefined && currentStock <= 0;
+    const mustChoose = selectedVariant === null;
+    const effectiveStock = selectedVariant
+      ? selectedVariant.stock
+      : selectedVariant === undefined
+      ? currentStock
+      : 0;
+    const outOfStock = !mustChoose && (effectiveStock === undefined || effectiveStock <= 0);
 
     return (
       <Card>
@@ -97,21 +105,23 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername }: Props
           </p>
 
           <div className="border-t border-tradealo-border pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-tradealo-text">Stock disponible</span>
-              <span className={cn('text-sm font-bold', outOfStock ? 'text-tradealo-error' : 'text-tradealo-success')}>
-                {outOfStock ? 'Agotado' : currentStock}
-              </span>
-            </div>
+            {!mustChoose && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-tradealo-text">Stock disponible</span>
+                <span className={cn('text-sm font-bold', outOfStock ? 'text-tradealo-error' : 'text-tradealo-success')}>
+                  {outOfStock ? 'Agotado' : effectiveStock}
+                </span>
+              </div>
+            )}
             <Button
               fullWidth
               size="lg"
-              leftIcon={<ShoppingCart size={18} />}
-              disabled={outOfStock || buyMutation.isPending}
+              leftIcon={mustChoose ? undefined : <ShoppingCart size={18} />}
+              disabled={mustChoose || outOfStock || buyMutation.isPending}
               loading={buyMutation.isPending}
               onClick={() => buyMutation.mutate()}
             >
-              {outOfStock ? 'Sin stock' : 'Comprar'}
+              {mustChoose ? 'Elegí una variante' : outOfStock ? 'Sin stock' : 'Comprar'}
             </Button>
           </div>
         </CardBody>

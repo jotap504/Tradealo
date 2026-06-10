@@ -3,8 +3,7 @@ import type { Metadata } from 'next';
 import { API_URL } from '@/lib/constants';
 import { PriceDisplay } from '@/components/listing/PriceDisplay';
 import { SellerCard } from '@/components/listing/SellerCard';
-import { SaleActions } from '@/components/listing/SaleActions';
-import { ListingVariantsBlock } from '@/components/listing/ListingVariantsBlock';
+import { ListingBuyPanel } from '@/components/listing/ListingBuyPanel';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate } from '@/lib/utils';
 import type { Listing } from '@/types';
@@ -212,13 +211,7 @@ export default async function ListingDetailPage({
               size="lg"
             />
           </div>
-          <ListingVariantsBlock
-            listingId={listing.id}
-            categoryId={listing.category?.id}
-            basePrice={listing.price}
-            currency={listing.currency}
-          />
-          <SaleActions
+          <ListingBuyPanel
             listing={listing}
             showPhone={listing.showPhone}
             phone={listing.phone}

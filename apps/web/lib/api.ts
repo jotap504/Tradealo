@@ -486,6 +486,8 @@ export const images = {
     del<{ ok: true }>(`/listings/${listingId}/images/${imageId}`),
   reorder: (listingId: string, ids: string[]) =>
     patch<{ ok: true }>(`/listings/${listingId}/images/reorder`, { imageIds: ids }),
+  assignVariant: (listingId: string, imageId: string, variantId: string | null) =>
+    patch<ListingImage>(`/listings/${listingId}/images/${imageId}/variant`, { variantId }),
 };
 
 export const users = {

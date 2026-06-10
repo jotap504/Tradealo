@@ -19,6 +19,7 @@ import {
   categories as categoriesApi,
   listingVariants,
   type VariantInput,
+  type ListingVariant,
 } from '@/lib/api';
 import { VariantsBuilder } from '@/components/listing/VariantsBuilder';
 import { toast } from '@/lib/store';
@@ -166,6 +167,7 @@ export default function NewListingPage() {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [flowType, setFlowType] = useState<'traditional' | 'live' | null>(null);
   const [listingId, setListingId] = useState<string | null>(null);
+  const [savedVariants, setSavedVariants] = useState<ListingVariant[]>([]);
   const [saving, setSaving] = useState(false);
   const [purchaseModal, setPurchaseModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
@@ -294,7 +296,8 @@ export default function NewListingPage() {
             formData.saleType === 'stock' &&
             formData.variants.length > 0
           ) {
-            await listingVariants.replaceAll(created.id, formData.variants);
+            const saved = await listingVariants.replaceAll(created.id, formData.variants);
+            setSavedVariants(saved);
           }
         } catch {
           toast.error('No se pudo guardar el borrador');
@@ -632,7 +635,11 @@ export default function NewListingPage() {
                 Subí al menos 1 foto. Las primeras fotos son las más vistas.
               </p>
               {listingId ? (
-                <ImageUploader listingId={listingId} maxImages={8} />
+                <ImageUploader
+                  listingId={listingId}
+                  maxImages={8}
+                  variants={savedVariants.length > 0 ? savedVariants : undefined}
+                />
               ) : (
                 <p className="text-sm text-tradealo-error">
                   Hubo un error al crear el borrador. Volvé al paso anterior.

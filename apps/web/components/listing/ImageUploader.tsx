@@ -3,6 +3,7 @@
 import { useState, useCallback, DragEvent, ChangeEvent } from 'react';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { images as imagesApi } from '@/lib/api';
+import type { ListingVariant } from '@/lib/api';
 import { toast } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import type { ListingImage } from '@/types';
@@ -12,6 +13,7 @@ interface Props {
   initialImages?: ListingImage[];
   maxImages?: number;
   onChange?: (imgs: ListingImage[]) => void;
+  variants?: ListingVariant[];
 }
 
 export function ImageUploader({
@@ -19,6 +21,7 @@ export function ImageUploader({
   initialImages = [],
   maxImages = 8,
   onChange,
+  variants,
 }: Props) {
   const [imgs, setImgs] = useState<ListingImage[]>(initialImages);
   const [uploading, setUploading] = useState<number>(0);
@@ -121,6 +124,22 @@ export function ImageUploader({
 
   const canAdd = imgs.length < maxImages;
 
+  const variantLabel = (v: ListingVariant) =>
+    Object.values(v.attributeValues).join(' / ') || v.id.slice(-6);
+
+  const handleAssignVariant = async (imgId: string, variantId: string | null) => {
+    try {
+      await imagesApi.assignVariant(listingId, imgId, variantId);
+      setImgs((prev) => {
+        const next = prev.map((i) => i.id === imgId ? { ...i, variantId } : i);
+        onChange?.(next);
+        return next;
+      });
+    } catch {
+      toast.error('No se pudo asignar la variante');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div
@@ -174,10 +193,11 @@ export function ImageUploader({
               }}
               onDragEnd={() => setDraggingId(null)}
               className={cn(
-                'relative group aspect-square rounded-lg overflow-hidden border border-tradealo-border bg-gray-100 cursor-move',
+                'flex flex-col',
                 draggingId === img.id && 'opacity-50'
               )}
             >
+            <div className="relative group aspect-square rounded-lg overflow-hidden border border-tradealo-border bg-gray-100 cursor-move">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.url}
@@ -200,6 +220,22 @@ export function ImageUploader({
               >
                 <X size={12} />
               </button>
+            </div>
+            {variants && variants.length > 0 && (
+              <select
+                value={img.variantId ?? ''}
+                onChange={(e) => handleAssignVariant(img.id, e.target.value || null)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full mt-1 text-[11px] rounded border border-tradealo-border px-1 py-0.5 bg-white focus:outline-none focus:border-tradealo-primary truncate"
+              >
+                <option value="">Todas las variantes</option>
+                {variants.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {variantLabel(v)}
+                  </option>
+                ))}
+              </select>
+            )}
             </div>
           ))}
         </div>

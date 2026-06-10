@@ -142,6 +142,32 @@ export class ListingImagesService {
       .where(eq(schema.listingImages.listingId, listingId));
   }
 
+  async assignVariant(
+    userId: string,
+    listingId: string,
+    imageId: string,
+    variantId: string | null,
+  ) {
+    await this.assertOwner(userId, listingId);
+    const [image] = await this.db
+      .select()
+      .from(schema.listingImages)
+      .where(
+        and(
+          eq(schema.listingImages.id, imageId),
+          eq(schema.listingImages.listingId, listingId),
+        ),
+      )
+      .limit(1);
+    if (!image) throw new NotFoundException('IMAGE_NOT_FOUND');
+    const [updated] = await this.db
+      .update(schema.listingImages)
+      .set({ variantId: variantId ?? null })
+      .where(eq(schema.listingImages.id, imageId))
+      .returning();
+    return updated;
+  }
+
   async remove(userId: string, listingId: string, imageId: string) {
     await this.assertOwner(userId, listingId);
 

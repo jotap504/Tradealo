@@ -36,6 +36,7 @@ export interface ListingImage {
   url: string;
   thumbnailUrl?: string;
   sortOrder: number;
+  variantId?: string | null;
 }
 
 export type SaleType = 'contact' | 'stock' | 'auction' | 'live';
