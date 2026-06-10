@@ -203,6 +203,12 @@ export default function NewListingPage() {
     staleTime: 300_000,
   });
 
+  useEffect(() => {
+    if (selectedCategory?.attributes) {
+      setFormData((prev) => ({ ...prev, categoryAttributes: selectedCategory.attributes }));
+    }
+  }, [selectedCategory]);
+
   const update = (patch: Partial<FormData>) =>
     setFormData((prev) => ({ ...prev, ...patch }));
 
