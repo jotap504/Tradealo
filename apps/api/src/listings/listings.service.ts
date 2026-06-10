@@ -949,6 +949,7 @@ export class ListingsService {
   async buyNow(
     listingId: string,
     userId: string,
+    variantId?: string,
   ): Promise<{ conversationId: string; orderId: string }> {
     const [listing] = await this.db
       .select()
@@ -963,32 +964,81 @@ export class ListingsService {
       throw new BadRequestException('NOT_A_STOCK_LISTING');
     if (listing.status !== 'active')
       throw new BadRequestException('LISTING_NOT_ACTIVE');
-    if (!listing.stock || listing.stock <= 0)
-      throw new BadRequestException('OUT_OF_STOCK');
 
-    const [updated] = await this.db
-      .update(schema.listings)
-      .set({
-        stock: sql`${schema.listings.stock} - 1`,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(schema.listings.id, listingId),
-          sql`${schema.listings.stock} > 0`,
-        ),
-      )
-      .returning();
+    if (variantId) {
+      const [variant] = await this.db
+        .select()
+        .from(schema.listingVariants)
+        .where(
+          and(
+            eq(schema.listingVariants.id, variantId),
+            eq(schema.listingVariants.listingId, listingId),
+          ),
+        )
+        .limit(1);
 
-    if (!updated || (updated.stock ?? 0) < 0) {
-      throw new BadRequestException('OUT_OF_STOCK');
-    }
+      if (!variant) throw new NotFoundException('VARIANT_NOT_FOUND');
+      if (!variant.isActive) throw new BadRequestException('VARIANT_INACTIVE');
+      if (variant.stock <= 0) throw new BadRequestException('OUT_OF_STOCK');
 
-    if (updated.stock === 0) {
-      await this.db
+      const [updatedVariant] = await this.db
+        .update(schema.listingVariants)
+        .set({ stock: sql`${schema.listingVariants.stock} - 1`, updatedAt: new Date() })
+        .where(
+          and(
+            eq(schema.listingVariants.id, variantId),
+            gt(schema.listingVariants.stock, 0),
+          ),
+        )
+        .returning();
+
+      if (!updatedVariant || updatedVariant.stock < 0)
+        throw new BadRequestException('OUT_OF_STOCK');
+
+      const [remaining] = await this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.listingVariants)
+        .where(
+          and(
+            eq(schema.listingVariants.listingId, listingId),
+            gt(schema.listingVariants.stock, 0),
+            eq(schema.listingVariants.isActive, true),
+          ),
+        );
+
+      if ((remaining?.count ?? 0) === 0) {
+        await this.db
+          .update(schema.listings)
+          .set({ status: 'sold', soldAt: new Date(), updatedAt: new Date() })
+          .where(eq(schema.listings.id, listingId));
+      }
+    } else {
+      if (!listing.stock || listing.stock <= 0)
+        throw new BadRequestException('OUT_OF_STOCK');
+
+      const [updated] = await this.db
         .update(schema.listings)
-        .set({ status: 'sold', soldAt: new Date(), updatedAt: new Date() })
-        .where(eq(schema.listings.id, listingId));
+        .set({
+          stock: sql`${schema.listings.stock} - 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.listings.id, listingId),
+            sql`${schema.listings.stock} > 0`,
+          ),
+        )
+        .returning();
+
+      if (!updated || (updated.stock ?? 0) < 0)
+        throw new BadRequestException('OUT_OF_STOCK');
+
+      if (updated.stock === 0) {
+        await this.db
+          .update(schema.listings)
+          .set({ status: 'sold', soldAt: new Date(), updatedAt: new Date() })
+          .where(eq(schema.listings.id, listingId));
+      }
     }
 
     const conversation = await this.messagingService.findOrCreateConversation(

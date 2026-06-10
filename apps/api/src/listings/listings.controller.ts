@@ -189,9 +189,9 @@ export class ListingsController {
   buyNow(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
-    @Body() _dto: BuyNowDto,
+    @Body() dto: BuyNowDto,
   ) {
-    return this.listingsService.buyNow(id, user.sub);
+    return this.listingsService.buyNow(id, user.sub, dto.variantId);
   }
 
   @Post(':id/bids')

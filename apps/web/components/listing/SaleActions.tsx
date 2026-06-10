@@ -38,7 +38,7 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername, selecte
   const highestBid = bids.length > 0 ? bids[0] : null;
 
   const buyMutation = useMutation({
-    mutationFn: () => listings.buyNow(listing.id),
+    mutationFn: () => listings.buyNow(listing.id, selectedVariant?.id),
     onSuccess: (result) => {
       toast.success('¡Compra realizada!');
       if (currentStock !== undefined) {
