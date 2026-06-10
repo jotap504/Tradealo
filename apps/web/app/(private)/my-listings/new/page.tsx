@@ -36,6 +36,71 @@ import {
 } from '@/lib/constants';
 import type { Category, TokenPack, SaleType } from '@/types';
 
+// ─── Step IDs ────────────────────────────────────────────────────────────────
+const S_CATEGORY  = 1;
+const S_SALE_TYPE = 2;
+const S_DETAILS   = 3; // live: YouTube link  |  traditional: título/desc/atributos
+const S_VARIANTS  = 4; // stock only
+const S_PHOTOS    = 5;
+const S_PRICE     = 6;
+const S_PUBLISH   = 7;
+
+const STEP_LABELS: Record<number, string> = {
+  [S_CATEGORY]:  'Categoría',
+  [S_SALE_TYPE]: 'Venta',
+  [S_DETAILS]:   'Detalles',
+  [S_VARIANTS]:  'Variantes',
+  [S_PHOTOS]:    'Fotos',
+  [S_PRICE]:     'Precio',
+  [S_PUBLISH]:   'Publicar',
+};
+
+function getActiveSteps(saleType: SaleType | ''): number[] {
+  if (saleType === 'live')  return [S_CATEGORY, S_SALE_TYPE, S_DETAILS];
+  if (saleType === 'stock') return [S_CATEGORY, S_SALE_TYPE, S_DETAILS, S_VARIANTS, S_PHOTOS, S_PRICE, S_PUBLISH];
+  return                           [S_CATEGORY, S_SALE_TYPE, S_DETAILS, S_PHOTOS, S_PRICE, S_PUBLISH];
+}
+
+// ─── Step indicator ──────────────────────────────────────────────────────────
+function StepIndicator({ steps, currentStep }: { steps: number[]; currentStep: number }) {
+  const currentIndex = steps.indexOf(currentStep);
+  return (
+    <div className="flex items-center gap-2 mb-8">
+      {steps.map((stepId, i) => {
+        const done   = i < currentIndex;
+        const active = stepId === currentStep;
+        return (
+          <div key={stepId} className="flex items-center gap-2 flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
+                  done   ? 'bg-tradealo-success text-white'
+                  : active ? 'bg-tradealo-primary text-white'
+                           : 'bg-gray-200 text-gray-500',
+                )}
+              >
+                {done ? <Check size={12} strokeWidth={3} /> : i + 1}
+              </div>
+              <span className="text-[10px] text-tradealo-text-muted hidden sm:block">
+                {STEP_LABELS[stepId]}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className={cn(
+                  'flex-1 h-1 rounded-full mb-4',
+                  done ? 'bg-tradealo-primary' : 'bg-gray-200',
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function extractYoutubeId(input: string): string | null {
   if (!input) return null;
   const patterns = [
@@ -51,129 +116,89 @@ function extractYoutubeId(input: string): string | null {
   return null;
 }
 
+// ─── Form state ──────────────────────────────────────────────────────────────
 interface FormData {
-  categoryId: string;
-  isCollectible: boolean;
-  categoryAttributes?: Category['attributes'];
-  title: string;
-  description: string;
-  condition: import('@/types').ListingCondition;
-  attributes: Record<string, unknown>;
-  price: string;
-  currency: 'ARS' | 'USD';
-  negotiable: boolean;
-  paymentMethods: string[];
-  shippingOptions: string[];
-  shippingDescription: string;
-  province: string;
-  city: string;
-  type: 'standard' | 'premium';
-  durationDays: number;
-  saleType: SaleType;
-  stock: string;
-  desiredPrice: string;
-  contactPhone: string;
-  showWhatsApp: boolean;
-  youtubeLiveId: string;
-  usePaymentDefaults: boolean;
-  paymentCbu: string;
-  paymentAlias: string;
-  paymentBankName: string;
-  paymentBankAccountType: string;
+  categoryId:               string;
+  isCollectible:            boolean;
+  categoryAttributes?:      Category['attributes'];
+  saleType:                 SaleType | '';
+  title:                    string;
+  description:              string;
+  condition:                import('@/types').ListingCondition;
+  attributes:               Record<string, unknown>;
+  price:                    string;
+  currency:                 'ARS' | 'USD';
+  negotiable:               boolean;
+  paymentMethods:           string[];
+  shippingOptions:          string[];
+  shippingDescription:      string;
+  province:                 string;
+  city:                     string;
+  type:                     'standard' | 'premium';
+  durationDays:             number;
+  stock:                    string;
+  desiredPrice:             string;
+  contactPhone:             string;
+  showWhatsApp:             boolean;
+  youtubeLiveId:            string;
+  usePaymentDefaults:       boolean;
+  paymentCbu:               string;
+  paymentAlias:             string;
+  paymentBankName:          string;
+  paymentBankAccountType:   string;
   paymentBankAccountNumber: string;
-  variants: VariantInput[];
+  variants:                 VariantInput[];
 }
 
 const EMPTY_FORM: FormData = {
-  categoryId: '',
-  isCollectible: false,
-  categoryAttributes: undefined,
-  title: '',
-  description: '',
-  condition: 'used',
-  attributes: {},
-  price: '',
-  currency: 'ARS',
-  negotiable: false,
-  paymentMethods: [],
-  shippingOptions: [],
-  shippingDescription: '',
-  province: '',
-  city: '',
-  type: 'standard',
-  durationDays: 30,
-  saleType: 'contact',
-  stock: '',
-  desiredPrice: '',
-  contactPhone: '',
-  showWhatsApp: false,
-  youtubeLiveId: '',
-  usePaymentDefaults: true,
-  paymentCbu: '',
-  paymentAlias: '',
-  paymentBankName: '',
-  paymentBankAccountType: '',
+  categoryId:               '',
+  isCollectible:            false,
+  categoryAttributes:       undefined,
+  saleType:                 '',
+  title:                    '',
+  description:              '',
+  condition:                'used',
+  attributes:               {},
+  price:                    '',
+  currency:                 'ARS',
+  negotiable:               false,
+  paymentMethods:           [],
+  shippingOptions:          [],
+  shippingDescription:      '',
+  province:                 '',
+  city:                     '',
+  type:                     'standard',
+  durationDays:             30,
+  stock:                    '',
+  desiredPrice:             '',
+  contactPhone:             '',
+  showWhatsApp:             false,
+  youtubeLiveId:            '',
+  usePaymentDefaults:       true,
+  paymentCbu:               '',
+  paymentAlias:             '',
+  paymentBankName:          '',
+  paymentBankAccountType:   '',
   paymentBankAccountNumber: '',
-  variants: [],
+  variants:                 [],
 };
 
-const TOTAL_STEPS = 7;
-
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  const labels = ['Categoría', 'Tipo', 'Detalles', 'Fotos', 'Precio', 'Ubicación', 'Tipo'];
-  return (
-    <div className="flex items-center gap-2 mb-8">
-      {Array.from({ length: total }).map((_, i) => {
-        const step = i + 1;
-        const done = step < current;
-        const active = step === current;
-        return (
-          <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-                  done
-                    ? 'bg-tradealo-success text-white'
-                    : active
-                    ? 'bg-tradealo-primary text-white'
-                    : 'bg-gray-200 text-gray-500'
-                )}
-              >
-                {done ? <Check size={12} strokeWidth={3} /> : step}
-              </div>
-              <span className="text-[10px] text-tradealo-text-muted hidden sm:block">
-                {labels[i]}
-              </span>
-            </div>
-            {step < total && (
-              <div
-                className={cn(
-                  'flex-1 h-1 rounded-full mb-4',
-                  done ? 'bg-tradealo-primary' : 'bg-gray-200'
-                )}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
+// ─── Page ────────────────────────────────────────────────────────────────────
 export default function NewListingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
-  const [flowType, setFlowType] = useState<'traditional' | 'live' | null>(null);
-  const [listingId, setListingId] = useState<string | null>(null);
+  const [step, setStep]                   = useState(S_CATEGORY);
+  const [formData, setFormData]           = useState<FormData>(EMPTY_FORM);
+  const [listingId, setListingId]         = useState<string | null>(null);
   const [savedVariants, setSavedVariants] = useState<ListingVariant[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]               = useState(false);
   const [purchaseModal, setPurchaseModal] = useState(false);
-  const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
+  const [selectedPack, setSelectedPack]   = useState<TokenPack | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  const maxStep = flowType === 'live' ? 3 : TOTAL_STEPS;
+  const activeSteps        = getActiveSteps(formData.saleType);
+  const currentStepIndex   = activeSteps.indexOf(step);
+  const displayStepNumber  = currentStepIndex + 1;
+  const isLastStep         = currentStepIndex === activeSteps.length - 1;
 
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -195,7 +220,7 @@ export default function NewListingPage() {
     queryKey: ['token-packs'],
     queryFn: () => wallet.getPacks(),
     staleTime: 300_000,
-    enabled: step === TOTAL_STEPS && flowType === 'traditional',
+    enabled: step === S_PUBLISH,
   });
 
   const { data: selectedCategory } = useQuery({
@@ -214,71 +239,60 @@ export default function NewListingPage() {
   const update = (patch: Partial<FormData>) =>
     setFormData((prev) => ({ ...prev, ...patch }));
 
-  const baseCost = LISTING_BASE_COST[formData.type];
-  const multiplier = getDurationMultiplier(formData.durationDays);
-  const totalCost = Math.ceil(baseCost * multiplier);
-  const balance = balanceData?.balance ?? 0;
-  const hasTokens = balance >= totalCost;
+  const baseCost     = LISTING_BASE_COST[formData.type];
+  const multiplier   = getDurationMultiplier(formData.durationDays);
+  const totalCost    = Math.ceil(baseCost * multiplier);
+  const balance      = balanceData?.balance ?? 0;
+  const hasTokens    = balance >= totalCost;
   const hasFreeQuota = formData.type === 'standard' && (freeQuota?.remaining ?? 1) > 0;
-  const canAfford = hasTokens || hasFreeQuota;
+  const canAfford    = hasTokens || hasFreeQuota;
 
   const buildPayload = () => ({
-    categoryId: formData.categoryId,
-    type: formData.type,
-    title: formData.title,
-    description: formData.description,
-    condition: formData.condition,
+    categoryId:          formData.categoryId,
+    type:                formData.type,
+    title:               formData.title,
+    description:         formData.description,
+    condition:           formData.condition,
     collectibleAttributes: Object.keys(formData.attributes).length > 0 ? formData.attributes : undefined,
-    price: Number(formData.price),
-    currency: formData.currency,
-    priceNegotiable: formData.negotiable,
-    saleType: formData.saleType,
-    stock: formData.stock ? Number(formData.stock) : undefined,
-    desiredPrice: formData.desiredPrice ? Number(formData.desiredPrice) : undefined,
-    paymentMethods: formData.paymentMethods,
-    shippingOptions: formData.shippingOptions,
+    price:               Number(formData.price),
+    currency:            formData.currency,
+    priceNegotiable:     formData.negotiable,
+    saleType:            formData.saleType || 'contact',
+    stock:               formData.stock ? Number(formData.stock) : undefined,
+    desiredPrice:        formData.desiredPrice ? Number(formData.desiredPrice) : undefined,
+    paymentMethods:      formData.paymentMethods,
+    shippingOptions:     formData.shippingOptions,
     shippingDescription: formData.shippingDescription || undefined,
-    province: formData.province || undefined,
-    city: formData.city || undefined,
-    contactInfo: formData.contactPhone
+    province:            formData.province || undefined,
+    city:                formData.city || undefined,
+    contactInfo:         formData.contactPhone
       ? { phone: formData.contactPhone, showWhatsApp: formData.showWhatsApp }
       : undefined,
-    youtubeLiveId: extractYoutubeId(formData.youtubeLiveId) || undefined,
-    paymentInfo: formData.saleType === 'stock' && !formData.usePaymentDefaults
+    youtubeLiveId:       extractYoutubeId(formData.youtubeLiveId) || undefined,
+    paymentInfo:         formData.saleType === 'stock' && !formData.usePaymentDefaults
       ? {
-          cbu: formData.paymentCbu || undefined,
-          alias: formData.paymentAlias || undefined,
-          bankName: formData.paymentBankName || undefined,
-          bankAccountType: formData.paymentBankAccountType || undefined,
+          cbu:               formData.paymentCbu || undefined,
+          alias:             formData.paymentAlias || undefined,
+          bankName:          formData.paymentBankName || undefined,
+          bankAccountType:   formData.paymentBankAccountType || undefined,
           bankAccountNumber: formData.paymentBankAccountNumber || undefined,
         }
       : undefined,
   });
 
+  // ─── Navigation ─────────────────────────────────────────────────────────────
   const goNext = async () => {
-    if (step === 1 && !formData.categoryId) {
+    if (step === S_CATEGORY && !formData.categoryId) {
       toast.error('Seleccioná una categoría');
       return;
     }
-    if (step === 2) {
-      if (!flowType) {
-        toast.error('Seleccioná un tipo de publicación');
-        return;
-      }
-      if (flowType === 'live') {
-        update({
-          title: `En Vivo - ${selectedCategory?.name ?? formData.categoryId}`,
-          description: 'Publicación generada automáticamente para venta en vivo por YouTube. El vendedor se encuentra transmitiendo en este momento.',
-          price: '0',
-          saleType: 'live',
-          type: 'standard',
-          durationDays: 30,
-        });
-        setStep(3);
-        return;
-      }
+
+    if (step === S_SALE_TYPE && !formData.saleType) {
+      toast.error('Seleccioná cómo querés vender');
+      return;
     }
-    if (step === 3 && flowType !== 'live') {
+
+    if (step === S_DETAILS && formData.saleType !== 'live') {
       if (!formData.title.trim() || formData.title.trim().length < 5) {
         toast.error('El título debe tener al menos 5 caracteres');
         return;
@@ -292,13 +306,6 @@ export default function NewListingPage() {
         try {
           const created = await listings.createListing(buildPayload());
           setListingId(created.id);
-          if (
-            formData.saleType === 'stock' &&
-            formData.variants.length > 0
-          ) {
-            const saved = await listingVariants.replaceAll(created.id, formData.variants);
-            setSavedVariants(saved);
-          }
         } catch {
           toast.error('No se pudo guardar el borrador');
           setSaving(false);
@@ -307,18 +314,35 @@ export default function NewListingPage() {
         setSaving(false);
       }
     }
-    if (step === 5 && (!formData.price || isNaN(Number(formData.price)))) {
+
+    if (step === S_VARIANTS && listingId && formData.variants.length > 0) {
+      setSaving(true);
+      try {
+        const saved = await listingVariants.replaceAll(listingId, formData.variants);
+        setSavedVariants(saved);
+      } catch {
+        toast.error('No se pudo guardar las variantes');
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
+
+    if (step === S_PRICE && (!formData.price || isNaN(Number(formData.price)))) {
       toast.error('Ingresá un precio válido');
       return;
     }
-    if (step === 6 && !formData.province) {
-      toast.error('Seleccioná una provincia');
-      return;
+
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < activeSteps.length) {
+      setStep(activeSteps[nextIndex]);
     }
-    setStep((s) => Math.min(s + 1, maxStep));
   };
 
-  const goBack = () => setStep((s) => Math.max(s - 1, 1));
+  const goBack = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) setStep(activeSteps[prevIndex]);
+  };
 
   const handleCreateLive = async () => {
     const youtubeId = extractYoutubeId(formData.youtubeLiveId);
@@ -328,11 +352,16 @@ export default function NewListingPage() {
     }
     setSaving(true);
     try {
-      const created = await listings.createListing(buildPayload());
-      await listings.publishListing(created.id, {
-        type: 'standard',
-        durationDays: 30,
-      });
+      const payload = {
+        ...buildPayload(),
+        title:       `En Vivo - ${selectedCategory?.name ?? formData.categoryId}`,
+        description: 'Publicación generada automáticamente para venta en vivo por YouTube.',
+        price:       0,
+        saleType:    'live' as SaleType,
+        type:        'standard' as const,
+      };
+      const created = await listings.createListing(payload);
+      await listings.publishListing(created.id, { type: 'standard', durationDays: 30 });
       toast.success('¡Publicación en vivo creada!');
       router.push('/my-listings');
     } catch {
@@ -344,6 +373,10 @@ export default function NewListingPage() {
 
   const handlePublish = async () => {
     if (!listingId) return;
+    if (!formData.province) {
+      toast.error('Seleccioná una provincia');
+      return;
+    }
     if (!canAfford) {
       toast.error('No tenés suficientes tokens');
       return;
@@ -351,11 +384,8 @@ export default function NewListingPage() {
     setSaving(true);
     try {
       await listings.updateListing(listingId, buildPayload());
-      if (formData.saleType === 'stock' && formData.variants.length > 0) {
-        await listingVariants.replaceAll(listingId, formData.variants);
-      }
       await listings.publishListing(listingId, {
-        type: formData.type,
+        type:        formData.type,
         durationDays: formData.durationDays,
       });
       toast.success('¡Publicación enviada a revisión!');
@@ -372,140 +402,99 @@ export default function NewListingPage() {
     }
   };
 
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8" ref={formRef}>
       <h1 className="font-heading text-2xl font-bold text-tradealo-text mb-6">
         Nueva publicación
       </h1>
 
-      <StepIndicator current={step} total={TOTAL_STEPS} />
+      <StepIndicator steps={activeSteps} currentStep={step} />
 
       <Card>
         <CardBody className="p-6 space-y-6">
-          {/* STEP 1 — Category */}
-          {step === 1 && (
+
+          {/* ── STEP 1: Categoría ──────────────────────────────────────────── */}
+          {step === S_CATEGORY && (
             <div>
               <h2 className="font-heading font-semibold text-lg mb-4">
-                Paso 1: Elegí una categoría
+                Paso {displayStepNumber}: Elegí una categoría
               </h2>
               <CategorySelector
                 value={formData.categoryId}
                 onChange={(catId, isCollectible, attrs) => {
                   update({ categoryId: catId, isCollectible, categoryAttributes: attrs });
-                  setStep(2);
+                  setStep(S_SALE_TYPE);
                 }}
               />
             </div>
           )}
 
-          {/* STEP 2 — Tipo de publicación */}
-          {step === 2 && (
+          {/* ── STEP 2: Método de venta ────────────────────────────────────── */}
+          {step === S_SALE_TYPE && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 2: Tipo de publicación
+                Paso {displayStepNumber}: ¿Cómo querés vender?
               </h2>
               <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFlowType('traditional');
-                    update({ saleType: 'contact' });
-                  }}
-                  className={cn(
-                    'p-6 rounded-xl border-2 text-left transition-all',
-                    flowType === 'traditional'
-                      ? 'border-tradealo-primary bg-tradealo-primary-light'
-                      : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
-                  )}
-                >
-                  <h3 className="font-heading font-semibold text-lg mb-2">
-                    Venta Tradicional
-                  </h3>
-                  <p className="text-sm text-tradealo-text-muted leading-relaxed">
-                    Completá el formulario completo con fotos, precio, ubicación
-                    y más. Ideal para vender productos con todos los detalles.
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFlowType('live');
-                    update({ saleType: 'live' });
-                  }}
-                  className={cn(
-                    'p-6 rounded-xl border-2 text-left transition-all',
-                    flowType === 'live'
-                      ? 'border-tradealo-primary bg-tradealo-primary-light'
-                      : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
-                  )}
-                >
-                  <h3 className="font-heading font-semibold text-lg mb-2">
-                    Venta en Vivo
-                  </h3>
-                  <p className="text-sm text-tradealo-text-muted leading-relaxed">
-                    Creamos la publicación automáticamente. Solo necesitás el
-                    link de tu transmisión de YouTube. Consume 1 token.
-                  </p>
-                </button>
+                {([
+                  {
+                    value:  'contact' as SaleType,
+                    label:  'Contacto libre',
+                    desc:   'Los compradores te contactan para coordinar precio y entrega.',
+                  },
+                  {
+                    value:  'stock' as SaleType,
+                    label:  'Con stock',
+                    desc:   'Definí cantidad, variantes (talle, color…) y precio por opción.',
+                  },
+                  {
+                    value:  'auction' as SaleType,
+                    label:  'Subasta',
+                    desc:   'Los compradores hacen ofertas; el mejor precio gana.',
+                  },
+                  {
+                    value:  'live' as SaleType,
+                    label:  'En Vivo',
+                    desc:   'Publicación automática vinculada a tu transmisión de YouTube.',
+                  },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update({ saleType: opt.value })}
+                    className={cn(
+                      'p-5 rounded-xl border-2 text-left transition-all',
+                      formData.saleType === opt.value
+                        ? 'border-tradealo-primary bg-tradealo-primary-light'
+                        : 'border-tradealo-border bg-white hover:border-tradealo-primary/40',
+                    )}
+                  >
+                    <h3 className="font-heading font-semibold text-base mb-1">{opt.label}</h3>
+                    <p className="text-xs text-tradealo-text-muted leading-relaxed">{opt.desc}</p>
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          {/* STEP 3 — Live branch */}
-          {step === 3 && flowType === 'live' && (
+          {/* ── STEP 3a: Detalles del producto (traditional) ───────────────── */}
+          {step === S_DETAILS && formData.saleType !== 'live' && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Link de tu transmisión
+                Paso {displayStepNumber}: Detalles del producto
               </h2>
+
               <Input
-                label="Link o ID de YouTube"
-                placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
-                value={formData.youtubeLiveId}
-                onChange={(e) => update({ youtubeLiveId: e.target.value })}
-                helper="Pegá el link de tu transmisión en vivo de YouTube."
+                label="Título"
+                placeholder="Ej: Zapatillas Nike Air Max talle 42"
+                value={formData.title}
+                onChange={(e) => update({ title: e.target.value })}
+                showCount
+                minLength={5}
+                maxLength={150}
               />
-              {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
-                <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
-                    className="w-full h-full"
-                    allow="encrypted-media"
-                    allowFullScreen
-                    title="Vista previa del video"
-                  />
-                </div>
-              )}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-tradealo-border">
-                <div className="flex items-center justify-between font-semibold text-sm">
-                  <span>Costo</span>
-                  <span className="text-tradealo-primary">1 token</span>
-                </div>
-                <p className="text-xs text-tradealo-text-muted">
-                  La publicación se crea automáticamente con datos básicos y se
-                  publica de inmediato por 30 días. El título será &ldquo;En
-                  Vivo - {selectedCategory?.name ?? '...'}&rdquo;.
-                </p>
-              </div>
-            </div>
-          )}
 
-          {/* STEP 3 — Traditional: Product info */}
-          {step === 3 && flowType !== 'live' && (
-            <div className="space-y-5">
-              <h2 className="font-heading font-semibold text-lg">
-                Paso 3: Información del producto
-              </h2>
-              <div className="space-y-1">
-                <Input
-                  label="Título"
-                  placeholder="Ej: Bicicleta rodado 26 en buen estado"
-                  value={formData.title}
-                  onChange={(e) => update({ title: e.target.value })}
-                  showCount
-                  minLength={5}
-                  maxLength={150}
-                />
-              </div>
               <div className="space-y-1">
                 <Textarea
                   label="Descripción"
@@ -524,6 +513,7 @@ export default function NewListingPage() {
                   titleRequired={!formData.title.trim() || formData.title.trim().length < 5}
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-tradealo-text mb-2">
                   Estado del artículo
@@ -538,7 +528,7 @@ export default function NewListingPage() {
                         'py-3 rounded-xl border text-sm font-medium transition-all',
                         formData.condition === c.value
                           ? 'border-tradealo-primary bg-tradealo-primary-light text-tradealo-primary-hover'
-                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
+                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40',
                       )}
                     >
                       {c.label}
@@ -546,31 +536,10 @@ export default function NewListingPage() {
                   ))}
                 </div>
               </div>
-              <div className="border-t border-tradealo-border pt-4">
-                <h3 className="font-heading font-semibold text-sm mb-2">
-                  Video de presentación (opcional)
-                </h3>
-                <Input
-                  label="Link o ID de YouTube"
-                  placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
-                  value={formData.youtubeLiveId}
-                  onChange={(e) => update({ youtubeLiveId: e.target.value })}
-                  helper="Mostrá tu producto en video. Acepta link de YouTube o ID del video."
-                />
-                {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
-                  <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
-                      className="w-full h-full"
-                      allow="encrypted-media"
-                      allowFullScreen
-                      title="Vista previa del video"
-                    />
-                  </div>
-                )}
-              </div>
+
+              {/* Atributos de categoría */}
               {formData.categoryAttributes && formData.categoryAttributes.length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-4 border-t border-tradealo-border pt-4">
                   <h3 className="font-heading font-semibold text-sm">
                     Características específicas
                   </h3>
@@ -622,18 +591,108 @@ export default function NewListingPage() {
                   ))}
                 </div>
               )}
+
+              {/* Video opcional */}
+              <div className="border-t border-tradealo-border pt-4">
+                <h3 className="font-heading font-semibold text-sm mb-2">
+                  Video de presentación (opcional)
+                </h3>
+                <Input
+                  label="Link o ID de YouTube"
+                  placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
+                  value={formData.youtubeLiveId}
+                  onChange={(e) => update({ youtubeLiveId: e.target.value })}
+                  helper="Mostrá tu producto en video."
+                />
+                {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
+                  <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
+                      className="w-full h-full"
+                      allow="encrypted-media"
+                      allowFullScreen
+                      title="Vista previa del video"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* STEP 4 — Photos */}
-          {step === 4 && (
-            <div className="space-y-4">
+          {/* ── STEP 3b: Link YouTube (live) ───────────────────────────────── */}
+          {step === S_DETAILS && formData.saleType === 'live' && (
+            <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 4: Fotos del producto
+                Paso {displayStepNumber}: Link de tu transmisión
               </h2>
-              <p className="text-sm text-tradealo-text-muted">
-                Subí al menos 1 foto. Las primeras fotos son las más vistas.
-              </p>
+              <Input
+                label="Link o ID de YouTube"
+                placeholder="Ej: https://youtube.com/watch?v=dQw4w9WgXcQ"
+                value={formData.youtubeLiveId}
+                onChange={(e) => update({ youtubeLiveId: e.target.value })}
+                helper="Pegá el link de tu transmisión en vivo de YouTube."
+              />
+              {formData.youtubeLiveId && extractYoutubeId(formData.youtubeLiveId) && (
+                <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${extractYoutubeId(formData.youtubeLiveId)}?rel=0`}
+                    className="w-full h-full"
+                    allow="encrypted-media"
+                    allowFullScreen
+                    title="Vista previa del video"
+                  />
+                </div>
+              )}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-tradealo-border">
+                <div className="flex items-center justify-between font-semibold text-sm">
+                  <span>Costo</span>
+                  <span className="text-tradealo-primary">1 token</span>
+                </div>
+                <p className="text-xs text-tradealo-text-muted">
+                  La publicación se crea automáticamente y se publica de inmediato por 30 días.
+                  El título será &ldquo;En Vivo — {selectedCategory?.name ?? '...'}&rdquo;.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 4: Variantes (stock only) ────────────────────────────── */}
+          {step === S_VARIANTS && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="font-heading font-semibold text-lg">
+                  Paso {displayStepNumber}: Variantes
+                </h2>
+                <p className="text-sm text-tradealo-text-muted mt-1">
+                  Definí las opciones (color, talle, capacidad…) y el stock por combinación.
+                  Si vendés un único producto sin opciones, podés saltear este paso.
+                </p>
+              </div>
+              <VariantsBuilder
+                attributes={formData.categoryAttributes ?? []}
+                value={formData.variants}
+                onChange={(variants) => update({ variants })}
+              />
+              {formData.variants.length > 0 && (
+                <p className="text-xs text-tradealo-text-muted">
+                  En el paso siguiente podrás asignar fotos a cada variante.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ── STEP 5: Fotos ─────────────────────────────────────────────── */}
+          {step === S_PHOTOS && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="font-heading font-semibold text-lg">
+                  Paso {displayStepNumber}: Fotos del producto
+                </h2>
+                <p className="text-sm text-tradealo-text-muted mt-1">
+                  Subí al menos 1 foto.
+                  {savedVariants.length > 0 && ' Podés asignar cada foto a una variante específica.'}
+                </p>
+              </div>
               {listingId ? (
                 <ImageUploader
                   listingId={listingId}
@@ -648,16 +707,21 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 5 — Price & contact */}
-          {step === 5 && (
+          {/* ── STEP 6: Precio y envío ────────────────────────────────────── */}
+          {step === S_PRICE && (
             <div className="space-y-5">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 5: Precio y contacto
+                Paso {displayStepNumber}: Precio y envío
               </h2>
+
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Input
-                    label="Precio"
+                    label={
+                      formData.saleType === 'stock' && formData.variants.length > 0
+                        ? 'Precio base (las variantes pueden tener precio propio)'
+                        : 'Precio'
+                    }
                     type="number"
                     placeholder="0"
                     value={formData.price}
@@ -679,6 +743,7 @@ export default function NewListingPage() {
                   </select>
                 </div>
               </div>
+
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -688,125 +753,68 @@ export default function NewListingPage() {
                 />
                 <span className="text-sm font-medium">Precio negociable</span>
               </label>
-              <div className="border-t border-tradealo-border pt-4">
-                <label className="block text-sm font-medium text-tradealo-text mb-2">
-                  Tipo de venta
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { value: 'contact' as SaleType, label: 'Contacto libre', desc: 'Te contactan y arreglan' },
-                    { value: 'stock' as SaleType, label: 'Stock', desc: 'Vendé con cantidad' },
-                    { value: 'auction' as SaleType, label: 'Subasta', desc: 'Ofertas y precio deseado' },
-                  ]).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => update({ saleType: opt.value })}
-                      className={cn(
-                        'p-3 rounded-xl border text-left transition-all',
-                        formData.saleType === opt.value
-                          ? 'border-tradealo-primary bg-tradealo-primary-light'
-                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
-                      )}
-                    >
-                      <p className="text-sm font-semibold">{opt.label}</p>
-                      <p className="text-[10px] text-tradealo-text-muted mt-0.5">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-                {formData.saleType === 'stock' && (
-                  <div className="mt-3 space-y-3">
-                    <Input
-                      label="Cantidad en stock"
-                      type="number"
-                      placeholder="Ej: 5"
-                      min="1"
-                      value={formData.stock}
-                      onChange={(e) => update({ stock: e.target.value })}
-                    />
 
-                    <div className="rounded-xl border border-tradealo-border bg-white p-4 space-y-3">
-                      <div>
-                        <p className="font-heading font-semibold text-sm">
-                          Variantes
-                        </p>
-                        <p className="text-xs text-tradealo-text-muted">
-                          Si vendés el mismo producto en distintos colores,
-                          talles u otras opciones, definí cada combinación con
-                          su propio stock y precio.
-                        </p>
-                      </div>
-                      <VariantsBuilder
-                        attributes={formData.categoryAttributes ?? []}
-                        value={formData.variants}
-                        onChange={(variants) => update({ variants })}
-                      />
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.usePaymentDefaults}
-                        onChange={(e) => update({ usePaymentDefaults: e.target.checked })}
-                        className="w-4 h-4 rounded text-tradealo-primary"
-                      />
-                      <span className="text-sm">Usar mis datos de pago guardados</span>
-                    </label>
-                    {!formData.usePaymentDefaults && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl">
-                        <Input
-                          label="CBU"
-                          placeholder="0000000000000000000000"
-                          maxLength={22}
-                          value={formData.paymentCbu}
-                          onChange={(e) => update({ paymentCbu: e.target.value })}
-                        />
-                        <Input
-                          label="Alias"
-                          placeholder="mi.alias.de.cbu"
-                          maxLength={50}
-                          value={formData.paymentAlias}
-                          onChange={(e) => update({ paymentAlias: e.target.value })}
-                        />
-                        <Input
-                          label="Banco"
-                          placeholder="Ej: Banco Nación"
-                          maxLength={100}
-                          value={formData.paymentBankName}
-                          onChange={(e) => update({ paymentBankName: e.target.value })}
-                        />
-                        <Input
-                          label="Tipo de cuenta"
-                          placeholder="corriente / caja de ahorro"
-                          maxLength={30}
-                          value={formData.paymentBankAccountType}
-                          onChange={(e) => update({ paymentBankAccountType: e.target.value })}
-                        />
-                        <Input
-                          label="Número de cuenta"
-                          placeholder="Ej: 123456789"
-                          maxLength={30}
-                          value={formData.paymentBankAccountNumber}
-                          onChange={(e) => update({ paymentBankAccountNumber: e.target.value })}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-                {formData.saleType === 'auction' && (
-                  <div className="mt-3">
-                    <Input
-                      label="Precio deseado (opcional)"
-                      type="number"
-                      placeholder="Ej: 50000"
-                      min="0"
-                      value={formData.desiredPrice}
-                      onChange={(e) => update({ desiredPrice: e.target.value })}
-                      helper="Si alguien ofrece este monto, la subasta finaliza automáticamente"
+              {/* Stock global — solo si stock sin variantes */}
+              {formData.saleType === 'stock' && formData.variants.length === 0 && (
+                <Input
+                  label="Cantidad en stock"
+                  type="number"
+                  placeholder="Ej: 5"
+                  min="1"
+                  value={formData.stock}
+                  onChange={(e) => update({ stock: e.target.value })}
+                />
+              )}
+
+              {/* Precio deseado (subasta) */}
+              {formData.saleType === 'auction' && (
+                <Input
+                  label="Precio deseado (opcional)"
+                  type="number"
+                  placeholder="Ej: 50000"
+                  min="0"
+                  value={formData.desiredPrice}
+                  onChange={(e) => update({ desiredPrice: e.target.value })}
+                  helper="Si alguien ofrece este monto, la subasta finaliza automáticamente"
+                />
+              )}
+
+              {/* Datos de cobro (stock) */}
+              {formData.saleType === 'stock' && (
+                <div className="border-t border-tradealo-border pt-4 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.usePaymentDefaults}
+                      onChange={(e) => update({ usePaymentDefaults: e.target.checked })}
+                      className="w-4 h-4 rounded text-tradealo-primary"
                     />
-                  </div>
-                )}
-              </div>
-              <div>
+                    <span className="text-sm">Usar mis datos de pago guardados</span>
+                  </label>
+                  {!formData.usePaymentDefaults && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl">
+                      <Input label="CBU" placeholder="0000000000000000000000" maxLength={22}
+                        value={formData.paymentCbu}
+                        onChange={(e) => update({ paymentCbu: e.target.value })} />
+                      <Input label="Alias" placeholder="mi.alias.de.cbu" maxLength={50}
+                        value={formData.paymentAlias}
+                        onChange={(e) => update({ paymentAlias: e.target.value })} />
+                      <Input label="Banco" placeholder="Ej: Banco Nación" maxLength={100}
+                        value={formData.paymentBankName}
+                        onChange={(e) => update({ paymentBankName: e.target.value })} />
+                      <Input label="Tipo de cuenta" placeholder="corriente / caja de ahorro" maxLength={30}
+                        value={formData.paymentBankAccountType}
+                        onChange={(e) => update({ paymentBankAccountType: e.target.value })} />
+                      <Input label="Número de cuenta" placeholder="Ej: 123456789" maxLength={30}
+                        value={formData.paymentBankAccountNumber}
+                        onChange={(e) => update({ paymentBankAccountNumber: e.target.value })} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Métodos de pago */}
+              <div className="border-t border-tradealo-border pt-4">
                 <label className="block text-sm font-medium text-tradealo-text mb-2">
                   Métodos de pago aceptados
                 </label>
@@ -829,7 +837,9 @@ export default function NewListingPage() {
                   ))}
                 </div>
               </div>
-              <div>
+
+              {/* Envío */}
+              <div className="border-t border-tradealo-border pt-4">
                 <label className="block text-sm font-medium text-tradealo-text mb-2">
                   Opciones de envío
                 </label>
@@ -851,23 +861,25 @@ export default function NewListingPage() {
                     </label>
                   ))}
                 </div>
+                <Textarea
+                  label="Detalles de envío (opcional)"
+                  placeholder="Ej: Envío a todo el país, costo a cargo del comprador"
+                  rows={3}
+                  value={formData.shippingDescription}
+                  onChange={(e) => update({ shippingDescription: e.target.value })}
+                  showCount
+                  maxLength={500}
+                  className="mt-3"
+                />
               </div>
-              <Textarea
-                label="Detalles de envío (opcional)"
-                placeholder="Ej: Envío a todo el país por Correo Argentino, costo a cargo del comprador"
-                rows={3}
-                value={formData.shippingDescription}
-                onChange={(e) => update({ shippingDescription: e.target.value })}
-                showCount
-                maxLength={500}
-              />
 
+              {/* Contacto */}
               <div className="border-t border-tradealo-border pt-4">
-                <h3 className="font-heading font-semibold text-sm mb-3">
-                  Datos de contacto para el comprador
+                <h3 className="font-heading font-semibold text-sm mb-2">
+                  Datos de contacto
                 </h3>
                 <p className="text-xs text-tradealo-text-muted mb-3">
-                  Estos datos se enviarán automáticamente al comprador cuando realice una compra.
+                  Se envían automáticamente al comprador al realizar una compra.
                 </p>
                 <Input
                   label="Teléfono de contacto"
@@ -889,72 +901,74 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* STEP 6 — Location */}
-          {step === 6 && (
-            <div className="space-y-5">
-              <h2 className="font-heading font-semibold text-lg">
-                Paso 6: Ubicación
-              </h2>
-              <ProvinceSelector
-                label="Provincia"
-                value={formData.province}
-                onChange={(e) => update({ province: e.target.value })}
-              />
-              <Input
-                label="Ciudad"
-                placeholder="Ej: Córdoba"
-                value={formData.city}
-                onChange={(e) => update({ city: e.target.value })}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  if (!navigator.geolocation) return;
-                  navigator.geolocation.getCurrentPosition(
-                    () => toast.info('Ubicación obtenida'),
-                    () => toast.error('No pudimos obtener tu ubicación')
-                  );
-                }}
-              >
-                Usar mi ubicación
-              </Button>
-            </div>
-          )}
-
-          {/* STEP 7 — Type & duration */}
-          {step === 7 && (
+          {/* ── STEP 7: Publicar (ubicación + tipo + duración + resumen) ───── */}
+          {step === S_PUBLISH && (
             <div className="space-y-6">
               <h2 className="font-heading font-semibold text-lg">
-                Paso 7: Tipo y duración
+                Paso {displayStepNumber}: Revisá y publicá
               </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {(['standard', 'premium'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => update({ type: t })}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all',
-                      formData.type === t
-                        ? 'border-tradealo-primary bg-tradealo-primary-light'
-                        : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
-                    )}
-                  >
-                    <p className="font-heading font-semibold capitalize">{t}</p>
-                    <p className="text-xs text-tradealo-text-muted mt-1">
-                      {t === 'standard'
-                        ? 'Gratis con tu cuota mensual'
-                        : 'Destacado — requiere tokens'}
-                    </p>
-                    <p className="text-xs font-semibold text-tradealo-primary mt-2">
-                      Base: {LISTING_BASE_COST[t]} token
-                      {LISTING_BASE_COST[t] !== 1 ? 's' : ''}
-                    </p>
-                  </button>
-                ))}
+
+              {/* Ubicación */}
+              <div className="space-y-3">
+                <h3 className="font-heading font-semibold text-sm">Ubicación</h3>
+                <ProvinceSelector
+                  label="Provincia"
+                  value={formData.province}
+                  onChange={(e) => update({ province: e.target.value })}
+                />
+                <Input
+                  label="Ciudad"
+                  placeholder="Ej: Córdoba"
+                  value={formData.city}
+                  onChange={(e) => update({ city: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    if (!navigator.geolocation) return;
+                    navigator.geolocation.getCurrentPosition(
+                      () => toast.info('Ubicación obtenida'),
+                      () => toast.error('No pudimos obtener tu ubicación'),
+                    );
+                  }}
+                >
+                  Usar mi ubicación
+                </Button>
               </div>
+
+              {/* Tipo de publicación */}
+              <div className="border-t border-tradealo-border pt-5 space-y-3">
+                <h3 className="font-heading font-semibold text-sm">Tipo de publicación</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['standard', 'premium'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => update({ type: t })}
+                      className={cn(
+                        'p-4 rounded-xl border-2 text-left transition-all',
+                        formData.type === t
+                          ? 'border-tradealo-primary bg-tradealo-primary-light'
+                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40',
+                      )}
+                    >
+                      <p className="font-heading font-semibold capitalize">{t}</p>
+                      <p className="text-xs text-tradealo-text-muted mt-1">
+                        {t === 'standard'
+                          ? 'Gratis con tu cuota mensual'
+                          : 'Destacado — requiere tokens'}
+                      </p>
+                      <p className="text-xs font-semibold text-tradealo-primary mt-2">
+                        Base: {LISTING_BASE_COST[t]} token{LISTING_BASE_COST[t] !== 1 ? 's' : ''}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duración */}
               <div>
                 <label className="block text-sm font-medium text-tradealo-text mb-2">
                   Duración
@@ -969,7 +983,7 @@ export default function NewListingPage() {
                         'py-3 rounded-xl border text-sm font-medium transition-all',
                         formData.durationDays === d.days
                           ? 'border-tradealo-primary bg-tradealo-primary-light text-tradealo-primary-hover'
-                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40'
+                          : 'border-tradealo-border bg-white hover:border-tradealo-primary/40',
                       )}
                     >
                       {d.label}
@@ -992,13 +1006,13 @@ export default function NewListingPage() {
                     }}
                     className="w-24 h-10 rounded-lg border border-tradealo-border px-3 text-sm text-center focus:outline-none focus:border-tradealo-primary"
                   />
-                  <span className="text-sm text-tradealo-text-muted">días (1-90)</span>
+                  <span className="text-sm text-tradealo-text-muted">días (1–90)</span>
                 </div>
               </div>
+
+              {/* Resumen de costo */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-tradealo-border">
-                <h3 className="font-heading font-semibold text-sm">
-                  Resumen de costo
-                </h3>
+                <h3 className="font-heading font-semibold text-sm">Resumen de costo</h3>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-tradealo-text-muted">Tipo</span>
                   <span className="capitalize">{formData.type}</span>
@@ -1031,10 +1045,7 @@ export default function NewListingPage() {
                       className="underline"
                       onClick={() => {
                         const cheap = packs?.sort((a, b) => a.priceArs - b.priceArs)[0];
-                        if (cheap) {
-                          setSelectedPack(cheap);
-                          setPurchaseModal(true);
-                        }
+                        if (cheap) { setSelectedPack(cheap); setPurchaseModal(true); }
                       }}
                     >
                       Comprá tokens
@@ -1042,52 +1053,50 @@ export default function NewListingPage() {
                   </p>
                 )}
               </div>
+
+              {/* Resumen de publicación */}
               <div className="bg-tradealo-primary-light rounded-xl p-4 space-y-1 text-sm">
-                <p className="font-heading font-semibold text-tradealo-primary-hover">
-                  Resumen de tu publicación
-                </p>
+                <p className="font-heading font-semibold text-tradealo-primary-hover">Resumen</p>
                 <p className="text-tradealo-text truncate">
-                  <span className="font-medium">Título: </span>
-                  {formData.title}
+                  <span className="font-medium">Título: </span>{formData.title}
                 </p>
                 <p className="text-tradealo-text">
                   <span className="font-medium">Precio: </span>
                   {formData.price} {formData.currency}
                 </p>
+                {formData.variants.length > 0 && (
+                  <p className="text-tradealo-text">
+                    <span className="font-medium">Variantes: </span>
+                    {formData.variants.length} combinaciones
+                  </p>
+                )}
                 <p className="text-tradealo-text">
                   <span className="font-medium">Ubicación: </span>
-                  {formData.city ? `${formData.city}, ` : ''}
-                  {formData.province}
+                  {formData.city ? `${formData.city}, ` : ''}{formData.province}
                 </p>
               </div>
             </div>
           )}
+
         </CardBody>
       </Card>
 
-      {/* Navigation buttons */}
+      {/* ── Navigation buttons ───────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mt-6">
         <Button
           variant="ghost"
           onClick={goBack}
-          disabled={step === 1}
+          disabled={step === S_CATEGORY}
           leftIcon={<ChevronLeft size={16} />}
         >
           Anterior
         </Button>
-        {step === 3 && flowType === 'live' ? (
+
+        {step === S_DETAILS && formData.saleType === 'live' ? (
           <Button onClick={handleCreateLive} loading={saving}>
             Crear publicación en vivo
           </Button>
-        ) : step < maxStep ? (
-          <Button
-            onClick={goNext}
-            loading={saving}
-            rightIcon={<ChevronRight size={16} />}
-          >
-            Siguiente
-          </Button>
-        ) : (
+        ) : isLastStep ? (
           <Button
             data-testid="publish-btn"
             onClick={handlePublish}
@@ -1095,6 +1104,14 @@ export default function NewListingPage() {
             disabled={!canAfford}
           >
             Publicar
+          </Button>
+        ) : (
+          <Button
+            onClick={goNext}
+            loading={saving}
+            rightIcon={<ChevronRight size={16} />}
+          >
+            Siguiente
           </Button>
         )}
       </div>
