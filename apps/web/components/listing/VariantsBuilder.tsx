@@ -191,8 +191,10 @@ export function VariantsBuilder({ attributes, value, onChange }: Props) {
 
   if (variantable.length === 0) {
     return (
-      <div className="text-sm text-tradealo-text-muted">
-        Esta categoría no tiene atributos configurados como variantes.
+      <div className="text-sm text-tradealo-text-muted bg-gray-50 rounded-lg p-3">
+        Esta categoría no tiene atributos de variante configurados. Si tu
+        producto tiene múltiples opciones (talle, color, etc.), asegurate de
+        haber seleccionado la subcategoría correcta.
       </div>
     );
   }

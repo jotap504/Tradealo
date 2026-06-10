@@ -725,27 +725,23 @@ export default function NewListingPage() {
                       onChange={(e) => update({ stock: e.target.value })}
                     />
 
-                    {(formData.categoryAttributes ?? []).some(
-                      (a) => a.isVariant,
-                    ) && (
-                      <div className="rounded-xl border border-tradealo-border bg-white p-4 space-y-3">
-                        <div>
-                          <p className="font-heading font-semibold text-sm">
-                            Variantes
-                          </p>
-                          <p className="text-xs text-tradealo-text-muted">
-                            Si vendés el mismo producto en distintos colores,
-                            talles u otras opciones, definí cada combinación con
-                            su propio stock y precio.
-                          </p>
-                        </div>
-                        <VariantsBuilder
-                          attributes={formData.categoryAttributes ?? []}
-                          value={formData.variants}
-                          onChange={(variants) => update({ variants })}
-                        />
+                    <div className="rounded-xl border border-tradealo-border bg-white p-4 space-y-3">
+                      <div>
+                        <p className="font-heading font-semibold text-sm">
+                          Variantes
+                        </p>
+                        <p className="text-xs text-tradealo-text-muted">
+                          Si vendés el mismo producto en distintos colores,
+                          talles u otras opciones, definí cada combinación con
+                          su propio stock y precio.
+                        </p>
                       </div>
-                    )}
+                      <VariantsBuilder
+                        attributes={formData.categoryAttributes ?? []}
+                        value={formData.variants}
+                        onChange={(variants) => update({ variants })}
+                      />
+                    </div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
