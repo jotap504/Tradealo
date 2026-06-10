@@ -251,7 +251,9 @@ function extractFields(
 
   const title = get('title');
   const description = get('description');
-  const priceRaw = get('price').replace(/[^\d.,-]/g, '').replace(',', '.');
+  const priceRaw = get('price')
+    .replace(/[^\d.,-]/g, '')
+    .replace(',', '.');
   const price = priceRaw ? Number(priceRaw) : NaN;
   const currencyRaw = get('currency').toUpperCase();
   const currency: 'ARS' | 'USD' = currencyRaw === 'USD' ? 'USD' : 'ARS';

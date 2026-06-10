@@ -95,7 +95,13 @@ export class MercadolibreController {
         constraint?: string;
         column?: string;
         table?: string;
-        cause?: { message?: string; code?: string; detail?: string; constraint?: string; column?: string };
+        cause?: {
+          message?: string;
+          code?: string;
+          detail?: string;
+          constraint?: string;
+          column?: string;
+        };
       };
       const pg = e.cause ?? e;
       const summary = [

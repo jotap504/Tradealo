@@ -41,9 +41,7 @@ export class AiService {
     // Prefer text-tuned model. Fall back to generic AI_MODEL which in
     // production may be set to a vision model.
     this.model =
-      process.env.AI_TEXT_MODEL ??
-      process.env.AI_MODEL ??
-      'openai/gpt-4o-mini';
+      process.env.AI_TEXT_MODEL ?? process.env.AI_MODEL ?? 'openai/gpt-4o-mini';
   }
 
   async generateListing(
@@ -104,7 +102,8 @@ export class AiService {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
-        'HTTP-Referer': process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
+        'HTTP-Referer':
+          process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
         'X-Title': 'Trocalia AI',
       },
       body: JSON.stringify({

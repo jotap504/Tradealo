@@ -3,7 +3,8 @@
     "render.yaml",
     "apps/api/.env.production.example",
     "apps/api/src/database/database.module.ts",
-    "apps/api/src/auth/firebase.service.ts"
+    "apps/api/src/auth/firebase.service.ts",
+    "apps/web/.env.local"
   ],
   "domains": [],
   "commands": []

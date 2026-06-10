@@ -49,9 +49,7 @@ export class ExcelAiMapperService {
       '/chat/completions';
     this.apiKey = process.env.AI_API_KEY ?? '';
     this.model =
-      process.env.AI_TEXT_MODEL ??
-      process.env.AI_MODEL ??
-      'openai/gpt-4o-mini';
+      process.env.AI_TEXT_MODEL ?? process.env.AI_MODEL ?? 'openai/gpt-4o-mini';
   }
 
   async detectMapping(
@@ -72,7 +70,8 @@ export class ExcelAiMapperService {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
-        'HTTP-Referer': process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
+        'HTTP-Referer':
+          process.env.APP_URL ?? 'https://tradealo-web.vercel.app',
         'X-Title': 'Trocalia Excel Import',
       },
       body: JSON.stringify({

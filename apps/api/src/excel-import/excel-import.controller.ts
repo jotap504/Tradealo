@@ -64,10 +64,7 @@ export class ExcelImportController {
   }
 
   @Get(':jobId')
-  async getJob(
-    @CurrentUser() user: JwtPayload,
-    @Param('jobId') jobId: string,
-  ) {
+  async getJob(@CurrentUser() user: JwtPayload, @Param('jobId') jobId: string) {
     const [job] = await this.db
       .select()
       .from(schema.importJobs)

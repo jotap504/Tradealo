@@ -42,9 +42,7 @@ export class MlAiDrafterService {
     // Prefer a text-specific model for drafting/copywriting; fall back to
     // the generic AI_MODEL (which in production is currently a vision model).
     this.model =
-      process.env.AI_TEXT_MODEL ??
-      process.env.AI_MODEL ??
-      'openai/gpt-4o-mini';
+      process.env.AI_TEXT_MODEL ?? process.env.AI_MODEL ?? 'openai/gpt-4o-mini';
   }
 
   async draftListingCopy(
