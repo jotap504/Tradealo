@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Heart -->
+  <path d="M150 232 C148 230 72 182 72 130 C72 101 91 83 114 83 C130 83 143 92 150 104 C157 92 170 83 186 83 C209 83 228 101 228 130 C228 182 152 230 150 232Z" fill="#FF6384"/>
+  <!-- Medical cross white -->
+  <rect x="133" y="118" width="34" height="80" rx="8" fill="white" opacity="0.92"/>
+  <rect x="113" y="138" width="74" height="34" rx="8" fill="white" opacity="0.92"/>
+  <!-- Small heart highlight -->
+  <ellipse cx="123" cy="118" rx="14" ry="10" fill="white" opacity="0.25"/>
+</svg>

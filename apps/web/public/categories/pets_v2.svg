@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Toe pads -->
+  <ellipse cx="103" cy="126" rx="22" ry="27" fill="#F5A623"/>
+  <ellipse cx="148" cy="108" rx="22" ry="27" fill="#F5A623"/>
+  <ellipse cx="193" cy="116" rx="22" ry="27" fill="#F5A623"/>
+  <ellipse cx="222" cy="155" rx="20" ry="25" fill="#F5A623"/>
+  <!-- Central pad -->
+  <path d="M150 220 C118 220 90 198 90 172 C90 154 103 140 120 136 C130 133 140 133 150 133 C160 133 170 133 180 136 C197 140 210 154 210 172 C210 198 182 220 150 220Z" fill="#F5A623"/>
+  <!-- Small highlight on central pad -->
+  <ellipse cx="138" cy="162" rx="10" ry="8" fill="white" opacity="0.3"/>
+</svg>

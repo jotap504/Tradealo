@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Large gear -->
+  <circle cx="145" cy="158" r="50" fill="#5B8DEF"/>
+  <circle cx="145" cy="158" r="32" fill="white"/>
+  <circle cx="145" cy="158" r="16" fill="#5B8DEF"/>
+  <!-- Gear teeth (8 teeth using rects rotated around center) -->
+  <rect x="133" y="103" width="24" height="18" rx="5" fill="#5B8DEF"/>
+  <rect x="133" y="195" width="24" height="18" rx="5" fill="#5B8DEF"/>
+  <rect x="90" y="146" width="18" height="24" rx="5" fill="#5B8DEF"/>
+  <rect x="178" y="146" width="18" height="24" rx="5" fill="#5B8DEF"/>
+  <rect x="101" y="112" width="18" height="18" rx="5" fill="#5B8DEF" transform="rotate(45 110 121)"/>
+  <rect x="163" y="112" width="18" height="18" rx="5" fill="#5B8DEF" transform="rotate(45 172 121)"/>
+  <rect x="101" y="168" width="18" height="18" rx="5" fill="#5B8DEF" transform="rotate(45 110 177)"/>
+  <rect x="163" y="168" width="18" height="18" rx="5" fill="#5B8DEF" transform="rotate(45 172 177)"/>
+  <!-- Wrench overlaid top-right -->
+  <path d="M196 78 Q210 72 220 82 Q228 94 218 104 L185 137 L174 126 Z" fill="#3A6FD8"/>
+  <path d="M174 126 L185 137 L152 170 Q144 178 136 170 Q128 162 136 154 Z" fill="#3A6FD8"/>
+  <!-- Wrench head hole -->
+  <circle cx="210" cy="88" r="7" fill="white"/>
+</svg>

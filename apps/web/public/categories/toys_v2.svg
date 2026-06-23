@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Block C top-left -->
+  <rect x="65" y="90" width="75" height="75" rx="12" fill="#FF6B6B"/>
+  <text x="102" y="143" font-family="Arial, sans-serif" font-weight="bold" font-size="36" fill="white" text-anchor="middle">C</text>
+  <!-- Shadow edge -->
+  <rect x="65" y="152" width="75" height="13" rx="0" fill="#D95555" rx="0"/>
+  <rect x="65" y="152" width="75" height="6" rx="0" fill="#D95555"/>
+  <!-- Block B top-right -->
+  <rect x="160" y="90" width="75" height="75" rx="12" fill="#FFD166"/>
+  <text x="197" y="143" font-family="Arial, sans-serif" font-weight="bold" font-size="36" fill="white" text-anchor="middle">B</text>
+  <rect x="160" y="152" width="75" height="6" fill="#E0B040"/>
+  <!-- Block A bottom center -->
+  <rect x="112" y="178" width="76" height="76" rx="12" fill="#6BCB77"/>
+  <text x="150" y="231" font-family="Arial, sans-serif" font-weight="bold" font-size="36" fill="white" text-anchor="middle">A</text>
+  <rect x="112" y="241" width="76" height="6" fill="#4DA85A" rx="0"/>
+</svg>

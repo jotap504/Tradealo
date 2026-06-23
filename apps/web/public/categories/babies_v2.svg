@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Baby onesie body -->
+  <rect x="105" y="150" width="90" height="92" rx="14" fill="#A8D8EA"/>
+  <rect x="105" y="218" width="37" height="24" rx="8" fill="#7EC8DF"/>
+  <rect x="158" y="218" width="37" height="24" rx="8" fill="#7EC8DF"/>
+  <!-- Collar -->
+  <path d="M105 164 Q150 180 195 164 L195 150 Q150 166 105 150 Z" fill="#7EC8DF"/>
+  <!-- Sleeves -->
+  <path d="M105 162 L70 147 Q58 141 60 157 L73 180 Q78 190 93 184 L105 177 Z" fill="#A8D8EA"/>
+  <path d="M195 162 L230 147 Q242 141 240 157 L227 180 Q222 190 207 184 L195 177 Z" fill="#A8D8EA"/>
+  <!-- Baby head -->
+  <circle cx="150" cy="116" r="43" fill="#FFD7A8"/>
+  <!-- Eyes -->
+  <circle cx="137" cy="112" r="5" fill="#4A3728"/>
+  <circle cx="163" cy="112" r="5" fill="#4A3728"/>
+  <circle cx="139" cy="110" r="1.8" fill="white"/>
+  <circle cx="165" cy="110" r="1.8" fill="white"/>
+  <!-- Smile -->
+  <path d="M138 127 Q150 136 162 127" stroke="#C07840" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Cheeks -->
+  <ellipse cx="126" cy="121" rx="10" ry="7" fill="#FFB5C2" opacity="0.65"/>
+  <ellipse cx="174" cy="121" rx="10" ry="7" fill="#FFB5C2" opacity="0.65"/>
+  <!-- Hair -->
+  <path d="M136 76 Q150 67 164 76 Q160 84 150 81 Q140 84 136 76Z" fill="#C89660"/>
+</svg>

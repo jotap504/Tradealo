@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="white"/>
+  <!-- Sole -->
+  <path d="M48 215 Q48 235 78 235 L238 235 Q262 235 262 218 Q262 204 242 200 L195 197 L48 215Z" fill="#1A1A2E"/>
+  <!-- Sole highlight strip -->
+  <path d="M48 218 Q50 230 78 230 L238 230 Q256 230 258 220" stroke="#333355" stroke-width="2.5" fill="none"/>
+  <!-- Shoe upper -->
+  <path d="M48 215 L58 168 Q64 150 86 143 L138 132 L172 128 Q206 125 228 141 L244 158 Q262 175 262 198 L242 200 Z" fill="#E53935"/>
+  <!-- Toe cap highlight -->
+  <path d="M58 168 Q64 150 86 143 L118 136 Q96 160 86 182 L62 197 Z" fill="#FF5252"/>
+  <!-- Tongue -->
+  <path d="M148 128 L146 195 Q150 200 154 195 L154 128 Z" fill="#C62828"/>
+  <!-- Laces -->
+  <path d="M120 152 L180 148" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M116 166 L184 162" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M114 180 L186 175" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Heel detail -->
+  <path d="M224 157 Q252 172 256 196 L242 200 Q242 178 226 163 Z" fill="#C62828"/>
+  <!-- Nike-style swoosh-ish detail -->
+  <path d="M90 180 Q130 158 200 165" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.4" fill="none"/>
+</svg>
