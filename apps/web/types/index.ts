@@ -29,6 +29,7 @@ export interface User {
   shopSlug?: string | null;
   phone?: string;
   phoneVerified?: boolean;
+  hasPassword?: boolean;
 }
 
 export interface ListingImage {

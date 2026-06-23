@@ -1,7 +1,7 @@
 import { pgTable, uuid, jsonb, timestamp, index } from 'drizzle-orm/pg-core';
 import { orderStatusEnum } from './enums';
 import { users } from './users.schema';
-import { listings } from './listings.schema';
+import { listings, listingVariants } from './listings.schema';
 import { conversations } from './messages.schema';
 
 export const orders = pgTable(
@@ -11,6 +11,9 @@ export const orders = pgTable(
     listingId: uuid('listing_id')
       .notNull()
       .references(() => listings.id),
+    variantId: uuid('variant_id').references(() => listingVariants.id, {
+      onDelete: 'set null',
+    }),
     buyerId: uuid('buyer_id')
       .notNull()
       .references(() => users.id),

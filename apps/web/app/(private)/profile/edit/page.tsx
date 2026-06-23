@@ -7,12 +7,29 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Camera } from 'lucide-react';
 import { useAuthStore, toast } from '@/lib/store';
-import { users } from '@/lib/api';
+import { users, auth as authApi } from '@/lib/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ProvinceSelector } from '@/components/ui/ProvinceSelector';
 import { Card, CardBody } from '@/components/ui/Card';
+
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Ingresá tu contraseña actual'),
+    newPassword: z
+      .string()
+      .min(8, 'Mínimo 8 caracteres')
+      .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
+      .regex(/\d/, 'Debe incluir al menos un número'),
+    confirmPassword: z.string().min(1, 'Confirmá la nueva contraseña'),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
+
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 const schema = z.object({
   username: z
@@ -39,6 +56,30 @@ export default function EditProfilePage() {
   const avatarRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const {
+    register: registerPwd,
+    handleSubmit: handleSubmitPwd,
+    reset: resetPwd,
+    formState: { errors: pwdErrors, isSubmitting: pwdSubmitting },
+  } = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) });
+
+  const onChangePassword = async (values: PasswordFormValues) => {
+    try {
+      await authApi.changePassword(values.currentPassword, values.newPassword);
+      toast.success('Contraseña actualizada');
+      resetPwd();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message;
+      if (msg === 'CURRENT_PASSWORD_INCORRECT') {
+        toast.error('La contraseña actual es incorrecta');
+      } else {
+        toast.error('No se pudo cambiar la contraseña');
+      }
+    }
+  };
 
   const {
     register,
@@ -254,6 +295,47 @@ export default function EditProfilePage() {
           </form>
         </CardBody>
       </Card>
+      {user.hasPassword && (
+        <Card>
+          <CardBody className="p-6 space-y-4">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-tradealo-text mb-1">
+                Cambiar contraseña
+              </h2>
+              <p className="text-sm text-tradealo-text-muted">
+                Ingresá tu contraseña actual y la nueva para actualizarla.
+              </p>
+            </div>
+            <form onSubmit={handleSubmitPwd(onChangePassword)} className="space-y-4">
+              <Input
+                label="Contraseña actual"
+                type="password"
+                placeholder="••••••••"
+                {...registerPwd('currentPassword')}
+                error={pwdErrors.currentPassword?.message}
+              />
+              <Input
+                label="Nueva contraseña"
+                type="password"
+                placeholder="••••••••"
+                {...registerPwd('newPassword')}
+                error={pwdErrors.newPassword?.message}
+                helper="Mínimo 8 caracteres, una mayúscula y un número"
+              />
+              <Input
+                label="Confirmar nueva contraseña"
+                type="password"
+                placeholder="••••••••"
+                {...registerPwd('confirmPassword')}
+                error={pwdErrors.confirmPassword?.message}
+              />
+              <Button type="submit" loading={pwdSubmitting}>
+                Cambiar contraseña
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+      )}
     </div>
   );
 }

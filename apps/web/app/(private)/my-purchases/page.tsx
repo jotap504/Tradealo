@@ -167,6 +167,19 @@ function PurchaseRow({ order, openDispute }: { order: PurchaseOrder; openDispute
           </span>
         </div>
 
+        {order.variantAttributeValues && Object.keys(order.variantAttributeValues).length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {Object.entries(order.variantAttributeValues).map(([k, v]) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-1 bg-tradealo-primary/10 text-tradealo-primary text-[11px] font-medium px-2 py-0.5 rounded-full"
+              >
+                <span className="text-tradealo-text-muted capitalize">{k}:</span> {String(v)}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
           <span className="font-heading font-semibold text-tradealo-text text-sm sm:text-base">
             {formatPrice(price, order.listing.currency)}

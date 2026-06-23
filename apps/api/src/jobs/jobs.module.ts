@@ -1,35 +1,50 @@
 import {
-  Module, OnModuleInit, OnModuleDestroy, Inject, Logger,
-} from '@nestjs/common'
-import { Queue, Worker } from 'bullmq'
-import type Redis from 'ioredis'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { REDIS_TOKEN } from '../redis/redis.module'
-import { SearchService } from '../search/search.service'
-import { NotificationsService } from '../notifications/notifications.service'
-import { DRIZZLE_TOKEN } from '../database/database.module'
-import { SearchModule } from '../search/search.module'
-import { NotificationsModule } from '../notifications/notifications.module'
-import { ListingsModule } from '../listings/listings.module'
-import { ListingsService } from '../listings/listings.service'
-import { MercadolibreModule } from '../mercadolibre/mercadolibre.module'
-import { MercadolibreApiClient } from '../mercadolibre/mercadolibre-api.client'
-import { MercadolibreOauthService } from '../mercadolibre/mercadolibre-oauth.service'
-import { MlImageService } from '../mercadolibre/ml-image.service'
-import { MlAiDrafterService } from '../mercadolibre/ml-ai-drafter.service'
-import * as schema from '../database/schema'
-import { JobsService } from './jobs.service'
+  Module,
+  OnModuleInit,
+  OnModuleDestroy,
+  Inject,
+  Logger,
+} from '@nestjs/common';
+import { Queue, Worker } from 'bullmq';
+import type Redis from 'ioredis';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { REDIS_TOKEN } from '../redis/redis.module';
+import { SearchService } from '../search/search.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { DRIZZLE_TOKEN } from '../database/database.module';
+import { SearchModule } from '../search/search.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { ListingsModule } from '../listings/listings.module';
+import { ListingsService } from '../listings/listings.service';
+import { MercadolibreModule } from '../mercadolibre/mercadolibre.module';
+import { MercadolibreApiClient } from '../mercadolibre/mercadolibre-api.client';
+import { MercadolibreOauthService } from '../mercadolibre/mercadolibre-oauth.service';
+import { MlImageService } from '../mercadolibre/ml-image.service';
+import { MlAiDrafterService } from '../mercadolibre/ml-ai-drafter.service';
+import * as schema from '../database/schema';
+import { JobsService } from './jobs.service';
 import {
-  SEARCH_QUEUE, NOTIFICATION_QUEUE, LISTING_EXPIRY_QUEUE, ML_IMPORT_QUEUE,
-  SEARCH_QUEUE_TOKEN, NOTIFICATION_QUEUE_TOKEN, LISTING_EXPIRY_QUEUE_TOKEN, ML_IMPORT_QUEUE_TOKEN,
-} from './jobs.constants'
-import { processSearchIndex } from './processors/search-index.processor'
-import { processNotification } from './processors/notification.processor'
-import { processListingExpiry } from './processors/listing-expiry.processor'
-import { processMlImport } from './processors/ml-import.processor'
+  SEARCH_QUEUE,
+  NOTIFICATION_QUEUE,
+  LISTING_EXPIRY_QUEUE,
+  ML_IMPORT_QUEUE,
+  SEARCH_QUEUE_TOKEN,
+  NOTIFICATION_QUEUE_TOKEN,
+  LISTING_EXPIRY_QUEUE_TOKEN,
+  ML_IMPORT_QUEUE_TOKEN,
+} from './jobs.constants';
+import { processSearchIndex } from './processors/search-index.processor';
+import { processNotification } from './processors/notification.processor';
+import { processListingExpiry } from './processors/listing-expiry.processor';
+import { processMlImport } from './processors/ml-import.processor';
 
 @Module({
-  imports: [SearchModule, NotificationsModule, ListingsModule, MercadolibreModule],
+  imports: [
+    SearchModule,
+    NotificationsModule,
+    ListingsModule,
+    MercadolibreModule,
+  ],
   providers: [
     JobsService,
     {
@@ -60,8 +75,8 @@ import { processMlImport } from './processors/ml-import.processor'
   exports: [JobsService],
 })
 export class JobsModule implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(JobsModule.name)
-  private workers: Worker[] = []
+  private readonly logger = new Logger(JobsModule.name);
+  private workers: Worker[] = [];
 
   constructor(
     @Inject(REDIS_TOKEN) private readonly redis: Redis,
@@ -79,7 +94,7 @@ export class JobsModule implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const connection = this.redis
+    const connection = this.redis;
 
     this.workers = [
       new Worker(
@@ -115,27 +130,27 @@ export class JobsModule implements OnModuleInit, OnModuleDestroy {
           }),
         { connection, concurrency: 2 },
       ),
-    ]
+    ];
 
     this.workers.forEach((w) => {
       w.on('failed', (job, err) => {
-        this.logger.error(`Job failed [${job?.name}]`, err)
-      })
-    })
+        this.logger.error(`Job failed [${job?.name}]`, err);
+      });
+    });
 
     await this.expiryQueue.add(
       'expire-listings',
       {},
       { repeat: { pattern: '0 2 * * *' }, jobId: 'listing-expiry-daily' },
-    )
+    );
 
-    this.logger.log('BullMQ workers started')
+    this.logger.log('BullMQ workers started');
   }
 
   async onModuleDestroy(): Promise<void> {
-    await Promise.all(this.workers.map((w) => w.close()))
-    await this.searchQueue.close()
-    await this.expiryQueue.close()
-    await this.mlImportQueue.close()
+    await Promise.all(this.workers.map((w) => w.close()));
+    await this.searchQueue.close();
+    await this.expiryQueue.close();
+    await this.mlImportQueue.close();
   }
 }

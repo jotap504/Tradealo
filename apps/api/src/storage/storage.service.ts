@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { StorageClient } from '@supabase/storage-js';
 
 const PRESIGNED_PUT_TTL = 300;
@@ -64,11 +68,19 @@ export class StorageService {
     buffer: Buffer,
     contentType: string,
   ): Promise<string> {
-    if (!this.storage) throw new Error('Storage not configured');
+    if (!this.storage)
+      throw new InternalServerErrorException('Storage not configured');
     const { error } = await this.storage
       .from(this.bucket)
       .upload(key, buffer, { contentType, upsert: true });
-    if (error) throw error;
+    if (error) {
+      this.logger.error(
+        `Storage upload failed for key ${key}: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        `Storage upload failed: ${error.message}`,
+      );
+    }
     return this.getPublicUrl(key);
   }
 

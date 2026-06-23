@@ -52,8 +52,10 @@ export function ImageUploader({
           return next;
         });
       } catch (err: unknown) {
-        const apiMsg = (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message;
+        console.error('[ImageUploader] upload failed:', err);
+        const apiMsg = (err as { response?: { data?: { error?: { message?: string }; message?: string } } })
+          ?.response?.data?.error?.message
+          ?? (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
         toast.error(apiMsg ?? 'Falló la subida de la imagen');
       }
     },

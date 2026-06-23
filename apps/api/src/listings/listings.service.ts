@@ -965,6 +965,8 @@ export class ListingsService {
     if (listing.status !== 'active')
       throw new BadRequestException('LISTING_NOT_ACTIVE');
 
+    let purchasedVariantAttrs: Record<string, string> | null = null;
+
     if (variantId) {
       const [variant] = await this.db
         .select()
@@ -980,10 +982,14 @@ export class ListingsService {
       if (!variant) throw new NotFoundException('VARIANT_NOT_FOUND');
       if (!variant.isActive) throw new BadRequestException('VARIANT_INACTIVE');
       if (variant.stock <= 0) throw new BadRequestException('OUT_OF_STOCK');
+      purchasedVariantAttrs = variant.attributeValues as Record<string, string>;
 
       const [updatedVariant] = await this.db
         .update(schema.listingVariants)
-        .set({ stock: sql`${schema.listingVariants.stock} - 1`, updatedAt: new Date() })
+        .set({
+          stock: sql`${schema.listingVariants.stock} - 1`,
+          updatedAt: new Date(),
+        })
         .where(
           and(
             eq(schema.listingVariants.id, variantId),
@@ -1046,8 +1052,17 @@ export class ListingsService {
       listingId,
     );
 
-    // Build message with seller contact info
+    // Build message with variant detail and seller contact info
     let contactMessage = '¡Hola! Quiero comprar este producto.';
+    if (
+      purchasedVariantAttrs &&
+      Object.keys(purchasedVariantAttrs).length > 0
+    ) {
+      const attrStr = Object.entries(purchasedVariantAttrs)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
+      contactMessage += `\n📦 Variante seleccionada: ${attrStr}`;
+    }
     const contactInfo = listing.contactInfo as
       | Record<string, unknown>
       | undefined;
@@ -1114,6 +1129,7 @@ export class ListingsService {
     // Create the order
     const order = await this.ordersService.create({
       listingId,
+      variantId: variantId ?? undefined,
       buyerId: userId,
       sellerId: listing.userId,
       conversationId: conversation.id,

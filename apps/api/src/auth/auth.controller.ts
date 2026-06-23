@@ -25,6 +25,7 @@ import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import type { GoogleProfile } from './strategies/google.strategy';
 import type { Request } from 'express';
 import { PhoneVerifyDto } from './dto/phone.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -70,6 +71,19 @@ export class AuthController {
   @RateLimit({ ttl: 60, limit: 10, keyBy: 'ip' })
   async phoneLogin(@Body() dto: PhoneVerifyDto) {
     return this.authService.loginWithPhone(dto.idToken);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(
+      user.sub,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Post('phone/link')

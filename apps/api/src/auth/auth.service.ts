@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  BadRequestException,
   ConflictException,
   UnauthorizedException,
   ForbiddenException,
@@ -47,6 +48,7 @@ export interface UserSummary {
   createdAt: Date;
   phone: string | null;
   phoneVerified: boolean;
+  hasPassword: boolean;
 }
 
 @Injectable()
@@ -155,6 +157,7 @@ export class AuthService {
         createdAt: user.createdAt,
         phone: null,
         phoneVerified: false,
+        hasPassword: true,
       },
     };
   }
@@ -223,6 +226,7 @@ export class AuthService {
         createdAt: user.createdAt,
         phone: user.phone ?? null,
         phoneVerified: user.phoneVerified ?? false,
+        hasPassword: true,
       },
     };
   }
@@ -316,7 +320,33 @@ export class AuthService {
       createdAt: user.createdAt,
       phone: user.phone ?? null,
       phoneVerified: user.phoneVerified ?? false,
+      hasPassword: !!user.passwordHash,
     };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const [row] = await this.db
+      .select({ passwordHash: schema.users.passwordHash })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (!row) throw new NotFoundException('USER_NOT_FOUND');
+    if (!row.passwordHash)
+      throw new BadRequestException('PASSWORD_LOGIN_NOT_AVAILABLE');
+
+    const valid = await bcrypt.compare(currentPassword, row.passwordHash);
+    if (!valid) throw new UnauthorizedException('CURRENT_PASSWORD_INCORRECT');
+
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await this.db
+      .update(schema.users)
+      .set({ passwordHash: newHash, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
   }
 
   async findOrCreateGoogleUser(
@@ -358,6 +388,7 @@ export class AuthService {
           createdAt: byGoogleId.user.createdAt,
           phone: byGoogleId.user.phone ?? null,
           phoneVerified: byGoogleId.user.phoneVerified ?? false,
+          hasPassword: !!byGoogleId.user.passwordHash,
         },
       };
     }
@@ -398,6 +429,7 @@ export class AuthService {
           createdAt: byEmail.user.createdAt,
           phone: byEmail.user.phone ?? null,
           phoneVerified: byEmail.user.phoneVerified ?? false,
+          hasPassword: !!byEmail.user.passwordHash,
         },
       };
     }
@@ -472,6 +504,7 @@ export class AuthService {
         createdAt: newUser.createdAt,
         phone: null,
         phoneVerified: false,
+        hasPassword: false,
       },
     };
   }
@@ -602,6 +635,7 @@ export class AuthService {
         createdAt: user.createdAt,
         phone: user.phone ?? null,
         phoneVerified: true,
+        hasPassword: !!user.passwordHash,
       },
     };
   }

@@ -25,6 +25,7 @@ export class OrdersService {
 
   async create(data: {
     listingId: string;
+    variantId?: string;
     buyerId: string;
     sellerId: string;
     conversationId: string;
@@ -34,6 +35,7 @@ export class OrdersService {
       .insert(schema.orders)
       .values({
         listingId: data.listingId,
+        variantId: data.variantId ?? null,
         buyerId: data.buyerId,
         sellerId: data.sellerId,
         conversationId: data.conversationId,
@@ -94,6 +96,7 @@ export class OrdersService {
           username: schema.userProfiles.username,
           avatarUrl: schema.userProfiles.avatarUrl,
         },
+        variantAttributeValues: schema.listingVariants.attributeValues,
       })
       .from(schema.orders)
       .innerJoin(
@@ -104,6 +107,10 @@ export class OrdersService {
       .leftJoin(
         schema.userProfiles,
         eq(schema.userProfiles.userId, schema.orders.sellerId),
+      )
+      .leftJoin(
+        schema.listingVariants,
+        eq(schema.orders.variantId, schema.listingVariants.id),
       )
       .where(eq(schema.orders.buyerId, userId))
       .orderBy(sql`${schema.orders.createdAt} DESC`);
@@ -135,6 +142,8 @@ export class OrdersService {
         username: r.sellerProfile?.username ?? null,
         avatarUrl: r.sellerProfile?.avatarUrl ?? null,
       },
+      variantAttributeValues:
+        (r.variantAttributeValues as Record<string, string> | null) ?? null,
     }));
   }
 
@@ -173,6 +182,7 @@ export class OrdersService {
           comment: sellerReviewAlias.comment,
           createdAt: sellerReviewAlias.createdAt,
         },
+        variantAttributeValues: schema.listingVariants.attributeValues,
       })
       .from(schema.orders)
       .innerJoin(
@@ -183,6 +193,10 @@ export class OrdersService {
       .leftJoin(
         schema.userProfiles,
         eq(schema.userProfiles.userId, schema.orders.buyerId),
+      )
+      .leftJoin(
+        schema.listingVariants,
+        eq(schema.orders.variantId, schema.listingVariants.id),
       )
       .leftJoin(
         buyerReviewAlias,
@@ -230,6 +244,8 @@ export class OrdersService {
         username: r.buyerProfile?.username ?? null,
         avatarUrl: r.buyerProfile?.avatarUrl ?? null,
       },
+      variantAttributeValues:
+        (r.variantAttributeValues as Record<string, string> | null) ?? null,
       buyerReview: r.buyerReview?.id
         ? {
             id: r.buyerReview.id,
@@ -304,14 +320,24 @@ export class OrdersService {
       .where(eq(schema.orders.id, orderId))
       .returning();
 
-    // Restore stock
-    await this.db
-      .update(schema.listings)
-      .set({
-        stock: sql`${schema.listings.stock} + 1`,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.listings.id, order.listingId));
+    // Restore stock — variant level if the order had one, listing level otherwise
+    if (order.variantId) {
+      await this.db
+        .update(schema.listingVariants)
+        .set({
+          stock: sql`${schema.listingVariants.stock} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.listingVariants.id, order.variantId));
+    } else {
+      await this.db
+        .update(schema.listings)
+        .set({
+          stock: sql`${schema.listings.stock} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.listings.id, order.listingId));
+    }
 
     // If listing was set to sold, revert to active
     await this.db

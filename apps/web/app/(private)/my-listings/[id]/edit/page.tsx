@@ -13,7 +13,7 @@ import { AIGeneratorButton } from '@/components/listing/AIGeneratorButton';
 import { PurchaseModal } from '@/components/wallet/PurchaseModal';
 import { TokenBadge } from '@/components/wallet/TokenBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { listings, wallet } from '@/lib/api';
+import { listings, wallet, listingVariants, type ListingVariant } from '@/lib/api';
 import { toast } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import {
@@ -114,6 +114,7 @@ export default function EditListingPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savedVariants, setSavedVariants] = useState<ListingVariant[]>([]);
   const [purchaseModal, setPurchaseModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -133,6 +134,17 @@ export default function EditListingPage() {
     queryFn: () => wallet.getBalance(),
     staleTime: 60_000,
   });
+
+  const { data: variantsData } = useQuery({
+    queryKey: ['listing-variants', id],
+    queryFn: () => listingVariants.list(id),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (variantsData) setSavedVariants(variantsData);
+  }, [variantsData]);
 
   const { data: packs } = useQuery({
     queryKey: ['token-packs'],
@@ -313,10 +325,16 @@ export default function EditListingPage() {
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="font-heading font-semibold text-lg">Fotos</h2>
+              {savedVariants.length > 0 && (
+                <p className="text-sm text-tradealo-text-muted">
+                  Podés asignar cada foto a una variante específica usando el selector debajo de cada imagen.
+                </p>
+              )}
               <ImageUploader
                 listingId={id}
                 initialImages={listing?.images ?? []}
                 maxImages={8}
+                variants={savedVariants.length > 0 ? savedVariants : undefined}
               />
             </div>
           )}

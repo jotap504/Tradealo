@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardBody } from '@/components/ui/Card';
 import { toast } from '@/lib/store';
 import { listings, type ListingVariant } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
 import { formatPrice, cn } from '@/lib/utils';
 import type { Listing, Bid } from '@/types';
 
@@ -24,8 +25,19 @@ interface Props {
   selectedVariant?: ListingVariant | null;
 }
 
+const BUY_ERROR_MESSAGES: Record<string, string> = {
+  LISTING_NOT_ACTIVE: 'Esta publicación no está disponible en este momento.',
+  NOT_A_STOCK_LISTING: 'Esta publicación no permite compra directa.',
+  CANNOT_BUY_OWN_LISTING: 'No podés comprar tu propia publicación.',
+  OUT_OF_STOCK: 'Sin stock disponible para esta variante.',
+  VARIANT_INACTIVE: 'Esta variante no está disponible.',
+  VARIANT_NOT_FOUND: 'Variante no encontrada.',
+};
+
 export function SaleActions({ listing, showPhone, phone, sellerUsername, selectedVariant }: Props) {
   const router = useRouter();
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const isOwner = !!currentUserId && currentUserId === listing.seller?.id;
   const [currentStock, setCurrentStock] = useState(listing.stock);
 
   const { data: bids = [], refetch: refetchBids } = useQuery({
@@ -46,8 +58,10 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername, selecte
       }
       router.push(`/messages/${result.conversationId}`);
     },
-    onError: () => {
-      toast.error('No se pudo realizar la compra.');
+    onError: (err: unknown) => {
+      const code = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      toast.error(BUY_ERROR_MESSAGES[code ?? ''] ?? 'No se pudo realizar la compra.');
     },
   });
 
@@ -80,6 +94,7 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername, selecte
 
   // Stock-based listing
   if (listing.saleType === 'stock') {
+    const isListingUnavailable = isOwner || listing.status !== 'active';
     const mustChoose = selectedVariant === null;
     const effectiveStock = selectedVariant
       ? selectedVariant.stock
@@ -116,12 +131,20 @@ export function SaleActions({ listing, showPhone, phone, sellerUsername, selecte
             <Button
               fullWidth
               size="lg"
-              leftIcon={mustChoose ? undefined : <ShoppingCart size={18} />}
-              disabled={mustChoose || outOfStock || buyMutation.isPending}
+              leftIcon={mustChoose || isListingUnavailable ? undefined : <ShoppingCart size={18} />}
+              disabled={isListingUnavailable || mustChoose || outOfStock || buyMutation.isPending}
               loading={buyMutation.isPending}
               onClick={() => buyMutation.mutate()}
             >
-              {mustChoose ? 'Elegí una variante' : outOfStock ? 'Sin stock' : 'Comprar'}
+              {isOwner
+                ? 'Tu publicación'
+                : isListingUnavailable
+                ? 'No disponible'
+                : mustChoose
+                ? 'Elegí una variante'
+                : outOfStock
+                ? 'Sin stock'
+                : 'Comprar'}
             </Button>
           </div>
         </CardBody>

@@ -245,6 +245,8 @@ export const auth = {
   },
   phoneLink: async (idToken: string) =>
     post<{ phone: string; phoneVerified: boolean }>('/auth/phone/link', { idToken }),
+  changePassword: async (currentPassword: string, newPassword: string) =>
+    post<void>('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export interface ListingsQuery {
@@ -541,6 +543,7 @@ export interface SaleOrder extends Order {
     username: string | null;
     avatarUrl: string | null;
   };
+  variantAttributeValues: Record<string, string> | null;
   buyerReview: {
     id: string;
     rating: number;
@@ -571,6 +574,7 @@ export interface PurchaseOrder extends Order {
     username: string | null;
     avatarUrl: string | null;
   };
+  variantAttributeValues: Record<string, string> | null;
 }
 
 export const orders = {
