@@ -11,12 +11,12 @@ import {
 const MOCK_LISTING_ID = 'listing-draft-e2e-01';
 
 test.describe('E2E-01: Registro completo y primera publicación', () => {
-  test('register → redirects to /login', async ({ page }) => {
+  test('register → shows phone verification step', async ({ page }) => {
     await page.route(r('auth/register'), (route) =>
       route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'Verification email sent' }),
+        body: JSON.stringify({ user: MOCK_USER }),
       })
     );
 
@@ -27,7 +27,7 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
     await page.fill('[name=confirmPassword]', 'TestPass123');
     await page.click('button[type=submit]');
 
-    await expect(page).toHaveURL('/login', { timeout: 10000 });
+    await expect(page.locator('text=¡Cuenta creada!')).toBeVisible({ timeout: 10000 });
   });
 
   test('login → redirects to /dashboard', async ({ page }) => {
@@ -83,8 +83,8 @@ test.describe('E2E-01: Registro completo y primera publicación', () => {
     await page.goto('/my-listings/new');
     await expect(page.locator('text=Nueva publicación')).toBeVisible();
 
-    // 6 step circles visible in the stepper (numbers 1-6)
-    const stepCircles = page.locator('.rounded-full').filter({ hasText: /^[1-6]$/ });
+    // 6 step circles visible in the stepper
+    const stepCircles = page.locator('[data-testid="step-circle"]');
     await expect(stepCircles).toHaveCount(6);
   });
 

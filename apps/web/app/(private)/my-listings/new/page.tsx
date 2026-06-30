@@ -73,6 +73,7 @@ function StepIndicator({ steps, currentStep }: { steps: number[]; currentStep: n
           <div key={stepId} className="flex items-center gap-2 flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1">
               <div
+                data-testid="step-circle"
                 className={cn(
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
                   done   ? 'bg-tradealo-success text-white'

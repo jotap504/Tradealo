@@ -14,7 +14,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helper, leftIcon, rightSlot, showCount, className, id, ...rest },
+    { label, error, helper, leftIcon, rightSlot, showCount, className, id, minLength, ...rest },
     ref
   ) => {
     const inputId =
@@ -27,7 +27,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       if (rest.value !== undefined) setLen(String(rest.value).length);
     }, [rest.value]);
 
-    const minLen = rest.minLength !== undefined ? Number(rest.minLength) : undefined;
+    const minLen = minLength !== undefined ? Number(minLength) : undefined;
     const maxLen = rest.maxLength !== undefined ? Number(rest.maxLength) : undefined;
     const belowMin = minLen !== undefined && len < minLen;
 

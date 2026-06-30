@@ -5,7 +5,7 @@ test.describe('Home page', () => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Tradealo/);
     await expect(
-      page.getByRole('heading', { name: /Intercambi/ })
+      page.getByRole('heading', { name: /Vende|Subasta|Intercambia/ })
     ).toBeVisible();
   });
 

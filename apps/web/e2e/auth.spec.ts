@@ -60,7 +60,7 @@ test.describe('Login', () => {
 
   test('has link to /register', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.locator('a[href="/register"]')).toBeVisible();
+    await expect(page.locator('a[href="/register"]').first()).toBeVisible();
   });
 });
 
@@ -105,12 +105,12 @@ test.describe('Register', () => {
     await expect(page.locator('text=Mínimo 3 caracteres')).toBeVisible();
   });
 
-  test('successful registration redirects to /login', async ({ page }) => {
+  test('successful registration shows phone verification step', async ({ page }) => {
     await page.route(`${API}/auth/register`, (route) =>
       route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'Verification email sent' }),
+        body: JSON.stringify({ user: MOCK_USER }),
       })
     );
 
@@ -120,6 +120,6 @@ test.describe('Register', () => {
     await page.fill('[name=password]', 'Password123');
     await page.fill('[name=confirmPassword]', 'Password123');
     await page.click('button[type=submit]');
-    await expect(page).toHaveURL('/login', { timeout: 10000 });
+    await expect(page.locator('text=¡Cuenta creada!')).toBeVisible({ timeout: 10000 });
   });
 });

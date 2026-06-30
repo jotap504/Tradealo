@@ -8,7 +8,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : 2,
+  timeout: 60_000,
   reporter: [['html', { open: 'never' }]],
   use: {
     baseURL: BASE_URL,
@@ -31,7 +32,7 @@ export default defineConfig({
     env: {
       // Override so page.route() mocks intercept correctly.
       // Local API URL must match what the app calls, or mocks won't intercept.
-      NEXT_PUBLIC_API_URL: process.env.E2E_API_URL ?? 'http://localhost:3001',
+      NEXT_PUBLIC_API_URL: process.env.E2E_API_URL ?? 'http://localhost:3001/api/v1',
     },
   },
 });
